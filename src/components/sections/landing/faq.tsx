@@ -99,14 +99,10 @@ export default function Faq() {
           <div className={`lg:col-span-5 flex flex-col justify-center space-y-8 lg:sticky lg:top-32 ${isVisible ? 'animate-fade-up' : 'opacity-0'}`}>
             <div className="space-y-6">
               
-              {/* Badge VIP Interactive Hover */}
-              <div className="group/badge inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/80 backdrop-blur-md border border-gray-200/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] cursor-default hover:scale-105 hover:shadow-md hover:border-green-200 transition-all duration-300">
-                <span className="text-[#1A453A] transition-transform duration-300 group-hover/badge:-translate-y-1 group-hover/badge:translate-x-1">
-                  <IconMessageCircle />
-                </span>
-                <span className="text-[11px] font-extrabold text-gray-700 uppercase tracking-[0.2em]">
-                  Pusat Bantuan
-                </span>
+              {/* TAG PILL STANDAR */}
+              <div className="inline-flex w-max items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-100/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)] backdrop-blur-md">
+                <span className="w-2 h-2 rounded-full bg-[#1A453A] animate-pulse"></span>
+                <span className="text-[9px] md:text-[10px] font-black text-[#1A453A] uppercase tracking-[0.25em]">Pusat Bantuan</span>
               </div>
 
               {/* Heading */}

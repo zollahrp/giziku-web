@@ -181,9 +181,13 @@ export default function Testimonial() {
 
           {/* TEXT HEADER - Delay 900ms */}
           <div className={`absolute bottom-[20px] md:bottom-0 left-1/2 -translate-x-1/2 w-full max-w-3xl text-center flex flex-col items-center z-20 ${isVisible ? 'fade-up' : 'opacity-0'}`} style={{ animationDelay: '900ms' }}>
-            <div className="inline-flex items-center justify-center px-5 py-1.5 rounded-full border border-gray-200 text-xs font-bold text-gray-600 mb-5 bg-white shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
-              Testimonials
+            
+            {/* INI TAG YANG UDAH DI-UPDATE BIAR SAMA KAYAK HERO & ABOUT */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-100/80 mb-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] backdrop-blur-md">
+               <span className="w-2 h-2 rounded-full bg-[#1A453A] animate-pulse"></span>
+               <span className="text-[9px] md:text-[10px] font-black text-[#1A453A] uppercase tracking-[0.25em]">Testimonials</span>
             </div>
+
             <h2 className="text-3xl md:text-[2.5rem] lg:text-[2.75rem] font-black text-gray-950 tracking-tight leading-[1.15]">
               Dipercaya oleh ibu-ibu penggerak dan <br className="hidden md:block" />
               <span className="text-gray-400">ribuan keluarga Indonesia</span>

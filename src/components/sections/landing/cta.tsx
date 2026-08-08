@@ -104,18 +104,15 @@ export default function CTA() {
       {/* ========================================== */}
       <div className={`text-center z-20 shrink-0 px-4 flex flex-col items-center ${isVisible ? 'animate-fade-up' : 'opacity-0'}`} style={{ animationDelay: '100ms' }}>
         
-        {/* Badge / Pill */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-50 border border-green-200 text-green-700 text-xs md:text-sm font-bold mb-4 md:mb-6 shadow-sm">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-          </span>
-          Aplikasi Nutrisi AI #1 di Indonesia
+        {/* TAG PILL STANDAR (Sama dengan section lain) */}
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-100/80 mb-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] backdrop-blur-md">
+           <span className="w-2 h-2 rounded-full bg-[#1A453A] animate-pulse"></span>
+           <span className="text-[9px] md:text-[10px] font-black text-[#1A453A] uppercase tracking-[0.25em]">Aplikasi Nutrisi AI #1 di Indonesia</span>
         </div>
 
         {/* Enhanced Typography Gradient */}
-        <h2 className="text-3xl md:text-5xl lg:text-[4rem] font-black uppercase tracking-tighter leading-none text-transparent bg-clip-text bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 drop-shadow-sm">
-          TRANSFORMASI <span className="text-gray-300 bg-none">GIZIMU HARI INI</span>
+        <h2 className="text-3xl md:text-5xl lg:text-[4rem] font-black uppercase tracking-tighter leading-none text-gray-950">
+          TRANSFORMASI <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1A453A] via-emerald-600 to-green-500 drop-shadow-sm">GIZIMU HARI INI</span>
         </h2>
       </div>
 

@@ -35,12 +35,11 @@ export default function CaraKerja() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // KATA-KATA DIUBAH TOTAL: Fokus ke "Cara Pakai" bukan jualan fitur lagi
   const steps = [
     {
       num: "01",
       title: "Jepret Sebelum Makan",
-      desc: "Buka aplikasi dan foto piringmu. Tidak perlu mengetik manual, biarkan AI yang bekerja mengenali bahan dan porsinya.",
+      desc: "Buka aplikasi dan foto piringmu. Tidak perlu mengetik manual, biarkan AI pintar kami yang bekerja mengenali bahan dan porsinya.",
       icon: <IconCamera />,
     },
     {
@@ -52,132 +51,169 @@ export default function CaraKerja() {
     {
       num: "03",
       title: "Eksekusi Menu Esok",
-      desc: "Ikuti panduan resep sehat yang otomatis disiapkan untuk esok hari, menyesuaikan dengan evaluasi diet dan dompetmu.",
+      desc: "Ikuti panduan resep sehat yang otomatis disiapkan untuk esok hari, menyesuaikan dengan evaluasi diet dan isi dompetmu.",
       icon: <IconPlan />,
     }
   ];
 
   const getStepClass = (index: number) => {
-    const baseClass = "absolute top-1/2 -translate-y-1/2 w-[280px] md:w-[320px] flex flex-col items-start text-left transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)]";
+    const baseClass = "col-start-1 row-start-1 w-full flex flex-col items-start text-left transition-all duration-[1000ms] ease-[cubic-bezier(0.22,1,0.36,1)]";
     
-    if (phase === 0) {
-      if (index === 0) return `${baseClass} left-[10%] md:left-[15%] opacity-100 scale-100 z-20`;
-      return `${baseClass} left-[10%] md:left-[15%] opacity-0 scale-50 z-0 pointer-events-none`;
-    }
-    
-    if (phase === 1) {
-      if (index === 0) return `${baseClass} left-[-10%] md:left-[5%] opacity-0 md:opacity-30 scale-75 z-0 blur-sm`;
-      if (index === 1) return `${baseClass} left-[10%] md:left-[15%] opacity-100 scale-100 z-20`;
-      return `${baseClass} left-[10%] md:left-[15%] opacity-0 scale-50 z-0 pointer-events-none`;
-    }
-    
-    if (phase === 2) {
-      if (index === 0) return `${baseClass} left-[-20%] md:left-[-5%] opacity-0 scale-50 z-0 pointer-events-none blur-md`;
-      if (index === 1) return `${baseClass} left-[-10%] md:left-[5%] opacity-0 md:opacity-30 scale-75 z-0 blur-sm`;
-      if (index === 2) return `${baseClass} left-[10%] md:left-[15%] opacity-100 scale-100 z-20`;
+    if (index === phase) {
+      return `${baseClass} translate-y-0 opacity-100 z-20`;
+    } else if (index < phase) {
+      return `${baseClass} -translate-y-8 opacity-0 z-0 pointer-events-none blur-[4px]`;
+    } else {
+      return `${baseClass} translate-y-8 opacity-0 z-0 pointer-events-none`;
     }
   };
 
   const getVisualClass = (index: number) => {
-    const baseClass = "absolute top-1/2 -translate-y-1/2 w-full h-full object-cover transition-all duration-[1000ms] ease-in-out";
-    if (index === phase) return `${baseClass} opacity-100 scale-100`;
-    if (index < phase) return `${baseClass} opacity-0 scale-110`;
-    return `${baseClass} opacity-0 scale-90`;
+    const baseClass = "absolute inset-0 w-full h-full object-cover transition-all duration-[1200ms] ease-[cubic-bezier(0.25,1,0.5,1)]";
+    if (index === phase) return `${baseClass} opacity-100 scale-100 z-10`;
+    if (index < phase) return `${baseClass} opacity-0 scale-105 z-0`;
+    return `${baseClass} opacity-0 scale-95 z-0`;
   };
 
   return (
-    <section ref={sectionRef} className="w-full min-h-[400vh] relative bg-[#fafafa]" id="cara-kerja">
+    <section ref={sectionRef} className="w-full min-h-[400vh] relative bg-[#FAFAFA]" id="cara-kerja">
       
-      <div className="sticky top-0 h-screen w-full overflow-hidden">
+      {/* Sticky Container */}
+      <div className="sticky top-0 h-[100dvh] w-full overflow-hidden flex flex-col justify-center">
         
-        <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1.5px,transparent_1.5px)] [background-size:24px_24px] opacity-40"></div>
-        <div className={`absolute -bottom-10 -left-10 w-[400px] h-[400px] bg-green-50 rounded-full blur-[100px] transition-opacity duration-1000 ${phase >= 1 ? 'opacity-100' : 'opacity-0'}`}></div>
+        {/* Ambient Background & Grid */}
+        <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1.5px,transparent_1.5px)] [background-size:24px_24px] opacity-50 z-0"></div>
+        <div className={`absolute -bottom-10 -left-10 w-[400px] h-[400px] bg-green-100/50 rounded-full blur-[120px] transition-opacity duration-1000 z-0 ${phase >= 1 ? 'opacity-100' : 'opacity-0'}`}></div>
 
-        <div className="absolute top-[8%] left-[10%] md:left-[15%] z-30 px-6 max-w-xl">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-100 mb-5 shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-[#1A453A] animate-pulse"></span>
-            <span className="text-[10px] font-black text-[#1A453A] uppercase tracking-[0.2em]">Pengalaman Pengguna</span>
+        {/* --- GIANT WATERMARK --- */}
+        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-0 pointer-events-none select-none transition-all duration-[2000ms] ease-out`}>
+          <div aria-hidden="true" className="text-[130px] md:text-[220px] lg:text-[350px] font-black text-[#1A453A]/[0.02] tracking-tighter leading-[0.8] whitespace-nowrap uppercase">
+            MUDAH
           </div>
-          <h2 className="text-3xl md:text-5xl font-black text-gray-950 tracking-tighter leading-tight">
-            Semudah Memotret <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1A453A] to-green-500">Makan Siangmu</span>
-          </h2>
         </div>
 
-        <div className="mx-auto max-w-[1400px] h-full relative">
+        {/* --- MAIN GRID LAYOUT --- */}
+        <div className="w-full max-w-[1300px] mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 relative z-10 pt-16 md:pt-10 lg:pt-0">
           
-          {steps.map((step, index) => (
-            <div key={index} className={getStepClass(index)}>
-              
-              <div className="text-[70px] font-black text-[#1A453A] opacity-20 tracking-tighter mb-4 select-none">
-                {step.num}
-              </div>
-
-              <div className="relative z-10 w-20 h-20 rounded-3xl bg-white border border-gray-100 shadow-lg flex items-center justify-center mb-8">
-                <div className="absolute inset-0 bg-gray-50 rounded-3xl"></div>
-                <div className="z-10 text-[#1A453A]">
-                  {step.icon}
-                </div>
-              </div>
-
-              <h3 className="text-2xl md:text-3xl font-black mb-4 text-gray-900 tracking-tight">
-                {step.title}
-              </h3>
-              <p className="text-base leading-relaxed font-medium text-gray-600">
-                {step.desc}
-              </p>
-
-            </div>
-          ))}
-
-          <div className={`absolute top-1/2 -translate-y-1/2 right-[5%] md:right-[10%] w-[50%] h-[60%] transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${phase === 0 ? 'opacity-0 translate-y-10' : 'opacity-100 translate-y-[-50%]'}`}>
+          {/* KOLOM KIRI: TEKS & NAVIGASI */}
+          <div className="flex flex-col justify-center">
             
-            <div className="relative w-full h-full rounded-[2.5rem] bg-white/60 p-4 border border-white shadow-[0_30px_70px_rgba(0,0,0,0.1)] backdrop-blur-2xl overflow-hidden ring-[12px] ring-white">
-              
-              <div className={getVisualClass(0)}>
-                <img 
-                  src="https://images.unsplash.com/photo-1544025162-8366fd4d3ceb?q=80&w=1000&auto=format&fit=crop" 
-                  alt="Ayam Panggang Scanned" 
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-4 border-2 border-dashed border-white/50 rounded-2xl flex items-center justify-center">
-                  <span className="bg-[#1A453A]/80 text-white font-bold text-xs px-3 py-1 rounded-full backdrop-blur-sm animate-pulse">AI Scanning...</span>
-                </div>
+            {/* Header / Title */}
+            <div className="mb-8 md:mb-14">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-100/80 mb-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] backdrop-blur-md">
+                <span className="w-2 h-2 rounded-full bg-[#1A453A] animate-pulse"></span>
+                <span className="text-[9px] md:text-[10px] font-black text-[#1A453A] uppercase tracking-[0.25em]">Pengalaman Pengguna</span>
               </div>
+              <h2 className="text-4xl md:text-5xl lg:text-[3.75rem] font-black text-gray-950 tracking-tighter leading-[1.05] mb-6">
+                Semudah Memotret <br/> 
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1A453A] via-emerald-600 to-green-500 drop-shadow-sm">
+                  Makan Siangmu
+                </span>
+              </h2>
 
-              <div className={getVisualClass(1)}>
-                <div className="w-full h-full bg-gradient-to-br from-green-50 to-white flex items-center justify-center p-10">
-                  <div className="bg-white p-6 rounded-3xl shadow-xl border border-gray-100 w-full">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Target Harian</p>
-                    <p className="text-3xl font-black text-gray-950 mb-4">1850 / <span className="text-xl text-gray-400">2100 Kkal</span></p>
-                    <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-green-400 to-[#1A453A]" style={{ width: '85%' }}></div>
-                    </div>
-                  </div>
-                </div>
+              {/* INDIKATOR PROGRES (Glowing Active State) */}
+              <div className="flex gap-2">
+                {[0, 1, 2].map((i) => (
+                  <div 
+                    key={i} 
+                    className={`h-1.5 rounded-full transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                      phase === i 
+                      ? 'w-12 bg-[#1A453A] shadow-[0_0_10px_rgba(26,69,58,0.4)]' 
+                      : 'w-3 bg-gray-200'
+                    }`} 
+                  />
+                ))}
               </div>
-
-              <div className={getVisualClass(2)}>
-                <img 
-                  src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1000&auto=format&fit=crop" 
-                  alt="Rekomendasi Menu Sehat" 
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-md p-3 rounded-xl border border-white shadow-lg">
-                  <p className="text-sm font-bold text-gray-950">Menu Esok: Salad Super</p>
-                  <p className="text-xs text-green-700 font-bold">Hemat Rp 12.000!</p>
-                </div>
-              </div>
-
             </div>
 
-            <div className="absolute -bottom-6 -right-6 w-full h-full border-2 border-dashed border-gray-300 rounded-[2.5rem] z-0 opacity-70" />
+            {/* Area Langkah (Fixed Height Container) */}
+            <div className="relative w-full h-[180px] md:h-[220px]">
+              <div className="grid w-full h-full relative">
+                {steps.map((step, index) => (
+                  <div key={index} className={getStepClass(index)}>
+                    
+                    {/* Background Number Elegan (HOLLOW OUTLINE TEXT) */}
+                    <div className="absolute -left-2 md:-left-6 -top-6 md:-top-10 text-[100px] md:text-[140px] font-black text-transparent [-webkit-text-stroke:2px_rgba(26,69,58,0.06)] select-none pointer-events-none tracking-tighter leading-none z-0">
+                      {step.num}
+                    </div>
+                    
+                    <div className="relative z-10 flex gap-5 lg:gap-6 items-start">
+                      {/* Ikon Langkah (Lebih Besar, Bayangan Menyebar) */}
+                      <div className="shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-[1.25rem] md:rounded-[1.5rem] bg-white border border-white shadow-[0_20px_40px_rgba(26,69,58,0.06)] flex items-center justify-center relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-green-50/80 to-white/20"></div>
+                        <div className="relative z-10 text-[#1A453A] [&>svg]:w-7 [&>svg]:h-7 md:[&>svg]:w-8 md:[&>svg]:h-8 transform transition-transform duration-500 group-hover:scale-110">
+                          {step.icon}
+                        </div>
+                      </div>
+                      
+                      {/* Teks Judul & Deskripsi */}
+                      <div className="flex flex-col pt-1 md:pt-2">
+                        <h3 className="text-xl md:text-2xl lg:text-[1.75rem] font-black text-gray-900 tracking-tight mb-2 md:mb-3">
+                          {step.title}
+                        </h3>
+                        <p className="text-sm md:text-base leading-relaxed font-medium text-gray-500 max-w-[95%]">
+                          {step.desc}
+                        </p>
+                      </div>
+                    </div>
+
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+
+          {/* KOLOM KANAN: VISUAL IMAGE FRAME */}
+          <div className="flex flex-col items-center justify-center relative h-[38vh] md:h-[45vh] lg:h-auto mt-4 lg:mt-0">
+             
+             {/* GLOWING AURA DI BELAKANG FRAME */}
+             <div className="absolute inset-0 bg-gradient-to-tr from-green-400/20 via-[#1A453A]/20 to-transparent blur-[50px] rounded-full scale-90 -z-10 animate-pulse" />
+
+             {/* Frame Estetik Premium */}
+             <div className="relative z-10 w-full max-w-lg aspect-square lg:aspect-[4/3] rounded-[2rem] md:rounded-[2.5rem] bg-gray-900 p-2.5 md:p-3 shadow-[0_30px_80px_rgba(26,69,58,0.2)] ring-[6px] md:ring-[10px] ring-white/90 group">
+               
+               {/* Detail Kaca/Pantulan Cahaya di atas Frame */}
+               <div className="absolute inset-0 rounded-[2rem] md:rounded-[2.5rem] bg-gradient-to-tr from-white/15 to-transparent pointer-events-none z-20 mix-blend-overlay"></div>
+
+               <div className="relative h-full w-full overflow-hidden rounded-[1.5rem] md:rounded-[2rem] bg-gray-900">
+                 
+                 {/* Visual 1 */}
+                 <div className={getVisualClass(0)}>
+                   <img src="/cara-1.jpg" alt="Step 1: Jepret Makanan" className="w-full h-full object-cover opacity-90" />
+                   {/* Overlay Gelap Tipis biar teks AI kebaca */}
+                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+                   <div className="absolute inset-4 border-[1.5px] border-dashed border-white/60 rounded-2xl flex items-end justify-start p-3 md:p-4">
+                     <span className="bg-[#1A453A]/95 text-white font-bold text-[10px] md:text-xs px-4 py-2.5 rounded-full backdrop-blur-md shadow-xl flex items-center gap-2 border border-white/10">
+                       <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.8)]"></span>
+                       AI Scanning...
+                     </span>
+                   </div>
+                 </div>
+                 
+                 {/* Visual 2 */}
+                 <div className={getVisualClass(1)}>
+                   <img src="/cara-2.jpg" alt="Step 2: Cek Rapor" className="w-full h-full object-cover" />
+                 </div>
+                 
+                 {/* Visual 3 */}
+                 <div className={getVisualClass(2)}>
+                   <img src="/cara-3.jpg" alt="Step 3: Eksekusi Menu" className="w-full h-full object-cover" />
+                 </div>
+
+               </div>
+             </div>
+
+             {/* Dashed Border Ornament di belakang gambar */}
+             <div className="absolute -bottom-4 -right-2 md:-bottom-6 md:-right-6 w-full max-w-lg aspect-square lg:aspect-[4/3] border-[2px] border-dashed border-gray-300 rounded-[2rem] md:rounded-[2.5rem] z-0 opacity-60 transition-transform duration-1000 animate-float" />
           </div>
 
         </div>
         
-        <div className="absolute bottom-[5%] left-1/2 -translate-x-1/2 flex flex-col items-center opacity-30 animate-bounce z-20">
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Scroll</span>
-          <div className="w-px h-10 bg-gray-400"></div>
+        {/* INDIKATOR SCROLL DI BAWAH */}
+        <div className="absolute bottom-[2%] md:bottom-[4%] left-1/2 -translate-x-1/2 flex flex-col items-center opacity-40 animate-bounce z-20">
+          <span className="text-[9px] font-bold text-[#1A453A] uppercase tracking-widest mb-1.5">Scroll</span>
+          <div className="w-px h-8 md:h-12 bg-gradient-to-b from-[#1A453A] to-transparent"></div>
         </div>
 
       </div>
@@ -188,6 +224,6 @@ export default function CaraKerja() {
 // ==========================================
 // KUMPULAN SVG ICONS
 // ==========================================
-const IconCamera = () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>;
-const IconAnalytics = () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>;
-const IconPlan = () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8.01" y2="14"/><line x1="12" y1="14" x2="12.01" y2="14"/><line x1="16" y1="14" x2="16.01" y2="14"/><line x1="8" y1="18" x2="8.01" y2="18"/><line x1="12" y1="18" x2="12.01" y2="18"/><line x1="16" y1="18" x2="16.01" y2="18"/></svg>;
+const IconCamera = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>;
+const IconAnalytics = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>;
+const IconPlan = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8.01" y2="14"/><line x1="12" y1="14" x2="12.01" y2="14"/><line x1="16" y1="14" x2="16.01" y2="14"/><line x1="8" y1="18" x2="8.01" y2="18"/><line x1="12" y1="18" x2="12.01" y2="18"/><line x1="16" y1="18" x2="16.01" y2="18"/></svg>;

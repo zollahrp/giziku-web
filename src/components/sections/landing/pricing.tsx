@@ -120,16 +120,17 @@ export default function Pricing() {
 
       <div className="max-w-[1400px] w-full mx-auto px-6 relative z-10 flex flex-col items-center">
         
-        {/* --- Header (Tipografi Gede & Bold Ala Hero) --- */}
-        <div className={`text-center flex flex-col items-center mb-16 ${isVisible ? 'animate-text-enter delay-0' : 'opacity-0'}`}>
-          <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-green-600 flex items-center gap-4 justify-center">
-            <span className="h-px w-8 bg-green-600"></span>
-            PRICING PLAN
-            <span className="h-px w-8 bg-green-600"></span>
-          </p>
+        {/* --- Header --- */}
+        <div className={`text-center flex flex-col items-center mb-14 md:mb-16 ${isVisible ? 'animate-text-enter delay-0' : 'opacity-0'}`}>
           
-          <h2 className="text-5xl font-black tracking-tighter text-gray-900 sm:text-6xl lg:text-[4.5rem] lg:leading-[1.1] mb-6">
-            Mulai Dari <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1A453A] to-green-500">Nol</span>.<br />
+          {/* UPDATED TAG PILL STANDAR (Sama dengan Misi Kami & Pengalaman Pengguna) */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-100/80 mb-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] backdrop-blur-md">
+             <span className="w-2 h-2 rounded-full bg-[#1A453A] animate-pulse"></span>
+             <span className="text-[9px] md:text-[10px] font-black text-[#1A453A] uppercase tracking-[0.25em]">Pricing Plan</span>
+          </div>
+          
+          <h2 className="text-4xl md:text-5xl lg:text-[4rem] font-black tracking-tighter text-gray-950 leading-[1.05] mb-8">
+            Mulai Dari <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1A453A] via-emerald-600 to-green-500 drop-shadow-sm">Nol</span>.<br />
             Upgrade Kapan Aja.
           </h2>
 
