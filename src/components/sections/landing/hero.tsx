@@ -3,106 +3,106 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
-// --- DATA MENU (Diupdate dengan Tab Cara Memasak) ---
+// --- DATA MENU (Diupdate sesuai 5 Kategori Wajib GIZIKU) ---
 const menuData = [
   {
     id: 1,
-    titleTop: "AYAM",
+    titleTop: "SALMON",
     titleBottom: "PANGGANG",
-    cal: "450",
-    prep: "15 Min",
-    protein: "38g",
-    category: "High Protein",
-    rating: "4.8",
-    desc: "Tinggi protein dan rendah lemak. Sangat cocok untuk makan siang, memenuhi 40% kebutuhan protein harianmu. Cocok untuk defisit kalori.",
-    ingredients: ["150g Dada Ayam Fillet", "1 sdm Minyak Zaitun", "1 sdt Bawang Putih Bubuk", "Garam Laut & Lada Hitam", "Rosemary Segar"],
+    cal: "420",
+    prep: "20 Min",
+    protein: "34g",
+    category: "Premium & Lemak Sehat",
+    rating: "4.9",
+    desc: "Mewakili menu premium yang kaya Omega-3. Kombinasi warna pink cerah dan sayuran hijau memberikan asupan gizi seimbang yang sangat menggugah selera.",
+    ingredients: ["150g Fillet Salmon Premium", "Asparagus Segar", "Brokoli Hijau", "1 sdm Minyak Zaitun", "Perasan Lemon"],
     steps: [
-      "Panaskan oven pada suhu 200°C.",
-      "Lumuri dada ayam dengan minyak zaitun, bawang putih, garam, dan lada hingga rata.",
-      "Panggang selama 20-25 menit hingga ayam matang sempurna.",
-      "Sajikan hangat dengan taburan rosemary segar di atasnya."
+      "Keringkan permukaan salmon menggunakan tisu dapur agar krispi saat dipanggang.",
+      "Panaskan teflon anti lengket atau panggangan dengan sedikit minyak zaitun.",
+      "Panggang salmon bersama asparagus dan brokoli di pinggirannya hingga kecoklatan.",
+      "Sajikan hangat dengan perasan lemon di atasnya."
     ],
-    img: "https://images.unsplash.com/photo-1544025162-8366fd4d3ceb?q=80&w=800&auto=format&fit=crop",
-    thumb: "Ayam Panggang",
+    img: "/image/salmon-panggang.jpg",
+    thumb: "Salmon Panggang",
   },
   {
     id: 2,
-    titleTop: "SALAD",
-    titleBottom: "SAYURAN",
-    cal: "220",
-    prep: "10 Min",
-    protein: "12g",
-    category: "Low Calorie",
-    rating: "4.9",
-    desc: "Kaya serat dan vitamin dengan siraman olive oil murni. Menjaga pencernaan tetap sehat dan memberi kesegaran maksimal di siang hari.",
-    ingredients: ["Daun Selada Segar", "Tomat Ceri", "Mentimun", "Dressing Minyak Zaitun", "Potongan Telur Rebus"],
+    titleTop: "AYAM",
+    titleBottom: "ROSEMARY",
+    cal: "350",
+    prep: "15 Min",
+    protein: "40g",
+    category: "Klasik Defisit Kalori",
+    rating: "4.8",
+    desc: "Menu wajib untuk kamu yang sedang diet atau fokus nge-gym. Tinggi protein untuk muscle building dengan garis panggangan kecoklatan yang sempurna.",
+    ingredients: ["150g Dada Ayam Fillet", "Rosemary Segar", "Tomat Ceri Merah", "Garam Laut & Lada Hitam", "1 sdt Minyak Zaitun"],
     steps: [
-      "Cuci bersih semua sayuran dengan air mengalir.",
-      "Potong selada, mentimun, dan tomat ceri sesuai selera.",
-      "Rebus telur hingga matang, kupas lalu potong menjadi 4 bagian.",
-      "Campur semua bahan di mangkuk, siram dengan olive oil."
+      "Lumuri dada ayam dengan minyak zaitun, garam, lada, dan rosemary segar.",
+      "Panaskan panggangan hingga benar-benar panas.",
+      "Panggang ayam hingga terbentuk grill marks (garis panggangan) yang cantik dan matang sempurna.",
+      "Sajikan dengan potongan tomat ceri segar agar tidak pucat."
     ],
-    img: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=800&auto=format&fit=crop",
-    thumb: "Salad Segar",
+    img: "/image/ayam-rosemary.jpg",
+    thumb: "Ayam Rosemary",
   },
   {
     id: 3,
-    titleTop: "SALMON",
-    titleBottom: "TERIYAKI",
-    cal: "510",
-    prep: "20 Min",
-    protein: "42g",
-    category: "Omega-3 Rich",
-    rating: "5.0",
-    desc: "Sajian premium kaya Omega-3 untuk kesehatan jantung dan otak. Disajikan dengan asparagus panggang dan sedikit taburan wijen organik.",
-    ingredients: ["200g Fillet Salmon", "Saus Teriyaki Diet", "Asparagus", "Biji Wijen Panggang", "Perasan Lemon"],
+    titleTop: "QUINOA",
+    titleBottom: "SALAD BOWL",
+    cal: "320",
+    prep: "10 Min",
+    protein: "12g",
+    category: "Vegan Friendly",
+    rating: "4.9",
+    desc: "Modern, super sehat, dan penuh warna pelangi. Pilihan estetis dan kaya serat untuk target pasar vegan atau sekadar ingin asupan sayur ekstra.",
+    ingredients: ["Quinoa Matang", "Irisan Kol Merah", "Potongan Alpukat", "Jagung Manis Rebus", "Dressing Wijen Sangrai"],
     steps: [
-      "Keringkan permukaan salmon menggunakan tisu dapur.",
-      "Panggang salmon di teflon anti lengket hingga kecoklatan.",
-      "Tuang saus teriyaki, masak perlahan hingga saus mengental.",
-      "Panggang asparagus, sajikan bersama salmon dan taburan wijen."
+      "Siapkan mangkuk (bowl) bundar yang cukup besar.",
+      "Susun quinoa matang di bagian tengah sebagai sumber karbohidrat.",
+      "Kelilingi quinoa dengan kol merah, alpukat hijau, dan jagung kuning (warna pelangi).",
+      "Siram dengan dressing wijen sangrai tepat sebelum dinikmati."
     ],
-    img: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=800&auto=format&fit=crop",
-    thumb: "Salmon Teriyaki",
+    img: "/image/quinoa-bowl.jpg",
+    thumb: "Quinoa Bowl",
   },
   {
     id: 4,
     titleTop: "BEEF",
-    titleBottom: "BOWL",
-    cal: "650",
-    prep: "25 Min",
-    protein: "35g",
-    category: "Energy Booster",
-    rating: "4.7",
-    desc: "Irisan daging sapi rendah lemak yang juicy. Sumber energi dan zat besi terbaik untuk kamu yang aktif berolahraga atau bekerja seharian.",
-    ingredients: ["150g Daging Sapi Iris", "Bawang Bombay", "Kecap Asin Diet", "Nasi Shirataki", "Daun Bawang"],
+    titleBottom: "SHIRATAKI",
+    cal: "380",
+    prep: "20 Min",
+    protein: "28g",
+    category: "Comfort Food Diet",
+    rating: "5.0",
+    desc: "Makan enak tanpa takut kalori melonjak! Daging sapi lezat berpadu dengan shirataki rendah karbohidrat. Solusi tepat untuk diet yang menyenangkan.",
+    ingredients: ["150g Irisan Daging Sapi Tipis", "Mie / Nasi Shirataki", "Bawang Bombay Iris", "Kecap Asin Diet", "Daun Bawang & Wijen"],
     steps: [
-      "Tumis irisan bawang bombay hingga harum dan layu.",
-      "Masukkan daging sapi iris, masak hingga berubah warna.",
-      "Tambahkan kecap asin diet dan sedikit air, biarkan meresap.",
-      "Tuang ke atas nasi shirataki hangat, taburi daun bawang."
+      "Tiriskan dan bilas shirataki, lalu rebus sebentar atau sangrai hingga kering.",
+      "Tumis irisan bawang bombay hingga harum, masukkan daging sapi tipis.",
+      "Tambahkan kecap asin diet, masak hingga daging berubah warna dan bumbu meresap.",
+      "Tuang tumisan daging ke atas shirataki di mangkuk putih, taburi wijen dan daun bawang."
     ],
-    img: "https://images.unsplash.com/photo-1525648199074-cee30ba79a4a?q=80&w=800&auto=format&fit=crop",
-    thumb: "Beef Bowl",
+    img: "/image/beef-shirataki.jpg",
+    thumb: "Beef Shirataki",
   },
   {
     id: 5,
     titleTop: "BERRY",
     titleBottom: "SMOOTHIE",
-    cal: "180",
+    cal: "210",
     prep: "5 Min",
     protein: "8g",
-    category: "Antioxidant",
+    category: "Antioxidant Rich",
     rating: "4.9",
-    desc: "Campuran buah berry antioksidan tinggi. Manis alami tanpa gula tambahan, penutup sempurna atau sarapan ringan yang super sehat.",
-    ingredients: ["Stroberi Segar", "Blueberry", "Susu Almond murni", "1 sdm Chia Seeds", "Es Batu"],
+    desc: "Pilihan sarapan manis nan sehat. Warna ungu magenta dari berry memberikan kesegaran ekstra dan kaya akan antioksidan untuk memulai harimu.",
+    ingredients: ["Mixed Berries (Stroberi & Blueberry)", "Susu Almond Tanpa Gula", "Potongan Pisang Segar", "1 sdm Chia Seeds", "Es Batu"],
     steps: [
-      "Siapkan blender yang sudah bersih.",
-      "Masukkan stroberi, blueberry, susu almond, dan es batu.",
-      "Blender dengan kecepatan tinggi hingga teksturnya halus merata.",
-      "Tuang ke gelas, taburi chia seeds di atasnya sebelum disajikan."
+      "Siapkan blender bersih, masukkan mixed berries, sedikit pisang, susu almond, dan es batu.",
+      "Blender dengan kecepatan tinggi hingga teksturnya kental, halus, dan warnanya menyatu sempurna.",
+      "Tuang smoothie ke dalam mangkuk atau gelas lebar.",
+      "Beri topping sisa potongan pisang dan taburan chia seeds sebelum disajikan."
     ],
-    img: "https://images.unsplash.com/photo-1553530666-ba11a7664483?q=80&w=800&auto=format&fit=crop",
+    img: "/image/berry-smoothie.jpg",
     thumb: "Berry Smoothie",
   },
 ];
@@ -112,7 +112,6 @@ export default function Hero() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [active, setActive] = useState(0);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
-  // State Tab diupdate jadi 3 pilihan
   const [activeTab, setActiveTab] = useState<"nutrisi" | "bahan" | "langkah">("nutrisi");
   const [savedRecipes, setSavedRecipes] = useState<number[]>([]);
 
@@ -158,7 +157,7 @@ export default function Hero() {
   const isCurrentlySaved = savedRecipes.includes(active);
 
   return (
-    <section className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#FAFAFA] pt-16">
+    <section className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#FAFAFA] pt-32 lg:pt-44 pb-12">
       
       <style dangerouslySetInnerHTML={{
         __html: `
@@ -215,7 +214,7 @@ export default function Hero() {
         <div className="absolute bottom-[25%] right-[20%] text-gray-400"><IconPlus /></div>
       </div>
 
-      <div className={`absolute right-[5%] top-[18%] z-20 hidden lg:flex items-center gap-3 rounded-2xl bg-white/70 p-3 backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.05)] border border-white transition-all duration-1000 ease-out animate-float ${isLoaded ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'}`}>
+      <div className={`absolute right-[5%] top-[25%] z-20 hidden lg:flex items-center gap-3 rounded-2xl bg-white/70 p-3 backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.05)] border border-white transition-all duration-1000 ease-out animate-float ${isLoaded ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'}`}>
         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600 shadow-inner">
           <IconSparkle />
         </span>
@@ -300,7 +299,7 @@ export default function Hero() {
               </button>
             </div>
 
-            {/* --- INNER CARD NUTRISI (Desain Baru Diperbagus) --- */}
+            {/* --- INNER CARD NUTRISI (Desain Baru Diperbagus dengan Cursor Pointer) --- */}
             <div className={`mt-10 opacity-0 ${isAnimatingOut ? 'animate-text-exit' : 'animate-text-enter delay-200'}`}>
               
               <div className="max-w-xl rounded-3xl bg-white/80 p-6 shadow-[0_10px_40px_rgba(0,0,0,0.05)] backdrop-blur-xl border border-gray-100/50">
@@ -316,13 +315,14 @@ export default function Hero() {
                     }}
                   ></div>
                   
-                  <button onClick={() => setActiveTab("nutrisi")} className={`relative z-10 flex-1 py-2.5 text-xs sm:text-sm font-bold transition-colors duration-300 ${activeTab === "nutrisi" ? "text-gray-900" : "text-gray-400 hover:text-gray-700"}`}>
+                  {/* UPDATE KUNCI: Menambahkan cursor-pointer pada setiap tombol tab */}
+                  <button onClick={() => setActiveTab("nutrisi")} className={`relative z-10 flex-1 py-2.5 text-xs sm:text-sm font-bold cursor-pointer transition-colors duration-300 ${activeTab === "nutrisi" ? "text-gray-900" : "text-gray-400 hover:text-gray-700"}`}>
                     Nutrisi Total
                   </button>
-                  <button onClick={() => setActiveTab("bahan")} className={`relative z-10 flex-1 py-2.5 text-xs sm:text-sm font-bold transition-colors duration-300 ${activeTab === "bahan" ? "text-gray-900" : "text-gray-400 hover:text-gray-700"}`}>
+                  <button onClick={() => setActiveTab("bahan")} className={`relative z-10 flex-1 py-2.5 text-xs sm:text-sm font-bold cursor-pointer transition-colors duration-300 ${activeTab === "bahan" ? "text-gray-900" : "text-gray-400 hover:text-gray-700"}`}>
                     Bahan Baku
                   </button>
-                  <button onClick={() => setActiveTab("langkah")} className={`relative z-10 flex-1 py-2.5 text-xs sm:text-sm font-bold transition-colors duration-300 ${activeTab === "langkah" ? "text-gray-900" : "text-gray-400 hover:text-gray-700"}`}>
+                  <button onClick={() => setActiveTab("langkah")} className={`relative z-10 flex-1 py-2.5 text-xs sm:text-sm font-bold cursor-pointer transition-colors duration-300 ${activeTab === "langkah" ? "text-gray-900" : "text-gray-400 hover:text-gray-700"}`}>
                     Cara Masak
                   </button>
                 </div>
