@@ -1,175 +1,601 @@
 "use client";
 
+import { useState, useEffect } from "react";
+
 export default function HomePage() {
+  const [activeTab, setActiveTab] = useState("Harian");
+  const [showDetailNutrisi, setShowDetailNutrisi] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    setIsLoaded(true);
+  }, []);
+
   return (
-    <div className="w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="w-full pb-12 flex flex-col xl:flex-row gap-6 relative overflow-x-hidden">
       
-      {/* Header Profile */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <p className="text-sm font-bold text-green-600 uppercase tracking-widest mb-1">Ringkasan Hari Ini</p>
-          <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">
-            Halo, Zolla!
-          </h1>
-          <p className="text-gray-500 font-medium mt-2">Mari pantau nutrisi dan anggaran makanmu hari ini.</p>
-        </div>
-        <div className="text-left md:text-right bg-white p-3 rounded-2xl border border-gray-100 shadow-sm w-fit">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tanggal</p>
-          <p className="text-sm font-bold text-gray-800">Senin, 14 Agustus</p>
-        </div>
-      </div>
-
-      {/* Grid Utama Analitik */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Kartu Kalori Utama */}
-        <div className="lg:col-span-2 bg-gradient-to-br from-[#1A453A] to-emerald-800 rounded-[2rem] p-8 text-white shadow-[0_20px_40px_-15px_rgba(26,69,58,0.4)] relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+      {/* INJEKSI CSS ANIMASI KUSTOM */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .animate-fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeUpAnim 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          }
+          @keyframes fadeUpAnim {
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .delay-100 { animation-delay: 0.1s; }
+          .delay-200 { animation-delay: 0.2s; }
+          .delay-300 { animation-delay: 0.3s; }
+          .delay-400 { animation-delay: 0.4s; }
+          .delay-500 { animation-delay: 0.5s; }
           
-          <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
-            <div className="w-full md:w-1/2 space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 mb-2 backdrop-blur-md">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-                <span className="text-[9px] font-black text-green-50 uppercase tracking-[0.2em]">Sisa Kalori</span>
-              </div>
-              <h2 className="text-5xl md:text-6xl font-black tracking-tighter">
-                550 <span className="text-xl text-green-200/80 font-bold">Kkal</span>
-              </h2>
-              <p className="text-sm font-medium text-green-100/80 pt-2">
-                Kamu telah mengonsumsi 1.450 dari target 2.000 Kkal harian.
-              </p>
-            </div>
-
-            {/* Circular Progress Bar Simulasi */}
-            <div className="relative w-40 h-40 flex items-center justify-center">
-              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="12" fill="none" />
-                <circle cx="50" cy="50" r="40" stroke="#4ADE80" strokeWidth="12" fill="none" strokeDasharray="251.2" strokeDashoffset="62.8" className="transition-all duration-1000 ease-out" />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-black text-white">72%</span>
-                <span className="text-[10px] font-bold text-green-200 uppercase tracking-widest">Terpenuhi</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Kartu Anggaran / Budget */}
-        <div className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-[0_10px_30px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-          <div>
-            <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-500 mb-4">
-              <IconWallet />
-            </div>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">Pengeluaran Makan</p>
-            <h3 className="text-3xl font-black text-gray-900 tracking-tight">Rp 45.000</h3>
-          </div>
+          @keyframes spin-slow {
+            100% { transform: rotate(360deg); }
+          }
+          .animate-spin-slow {
+            animation: spin-slow 8s linear infinite;
+          }
           
-          <div className="mt-6 space-y-2">
-            <div className="flex justify-between text-xs font-bold">
-              <span className="text-gray-500">Batas Harian</span>
-              <span className="text-gray-900">Rp 75.000</span>
-            </div>
-            <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-              <div className="w-[60%] h-full bg-orange-400 rounded-full"></div>
-            </div>
-            <p className="text-[10px] font-bold text-orange-500 text-right pt-1">Tersisa Rp 30.000</p>
-          </div>
-        </div>
-      </div>
+          .hover-float:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 25px -5px rgba(0, 0, 0, 0.08);
+          }
+        `
+      }} />
 
-      {/* Grid Bawah: Makronutrisi & Aktivitas */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Detail Makronutrisi */}
-        <div className="lg:col-span-7 bg-white rounded-[2rem] p-8 border border-gray-100 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-          <h3 className="text-lg font-black text-gray-900 mb-6">Distribusi Makronutrisi</h3>
-          <div className="space-y-6">
-            
-            <div>
-              <div className="flex justify-between text-sm font-bold mb-2">
-                <span className="text-gray-600 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-blue-500"></span>Protein</span>
-                <span className="text-gray-900">75g / 120g</span>
+      {/* ======================================= */}
+      {/* MODAL DETAIL NUTRISI (POP-UP) */}
+      {/* ======================================= */}
+      {showDetailNutrisi && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-2xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
+            <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center">
+                  <IconActivity className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-slate-900 tracking-tight">Detail Nutrisi Harian</h2>
+                  <p className="text-xs font-bold text-slate-500 mt-0.5">Pantauan Mikro & Makro Gizi (19 Mei 2026)</p>
+                </div>
               </div>
-              <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-                <div className="w-[62%] h-full bg-blue-500 rounded-full"></div>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-sm font-bold mb-2">
-                <span className="text-gray-600 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-yellow-400"></span>Lemak Sehat</span>
-                <span className="text-gray-900">40g / 65g</span>
-              </div>
-              <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-                <div className="w-[61%] h-full bg-yellow-400 rounded-full"></div>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-sm font-bold mb-2">
-                <span className="text-gray-600 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-purple-500"></span>Karbohidrat</span>
-                <span className="text-gray-900">180g / 250g</span>
-              </div>
-              <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-                <div className="w-[72%] h-full bg-purple-500 rounded-full"></div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Aktivitas Terakhir */}
-        <div className="lg:col-span-5 bg-white rounded-[2rem] p-8 border border-gray-100 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-black text-gray-900">Aktivitas Terakhir</h3>
-            <button className="text-xs font-bold text-green-600 hover:text-[#1A453A] transition-colors cursor-pointer">Lihat Semua</button>
-          </div>
-
-          <div className="space-y-5">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-green-600">
-                <IconCamera />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-bold text-gray-900">Scan Nasi Goreng</p>
-                <p className="text-xs font-medium text-gray-500">Makan Siang • 450 Kkal</p>
-              </div>
-              <p className="text-xs font-bold text-gray-400">12:30</p>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
-                <IconBot />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-bold text-gray-900">Tanya GiziBot</p>
-                <p className="text-xs font-medium text-gray-500">Rekomendasi sarapan</p>
-              </div>
-              <p className="text-xs font-bold text-gray-400">07:15</p>
+              <button onClick={() => setShowDetailNutrisi(false)} className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-rose-100 hover:text-rose-500 flex items-center justify-center transition-colors cursor-pointer">
+                <IconClose className="w-4 h-4" />
+              </button>
             </div>
             
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-600">
-                <IconFire />
+            <div className="p-6 md:p-8 overflow-y-auto custom-scroll space-y-8">
+              <div>
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-4">Gizi Mikro (Vitamin & Mineral)</h3>
+                <div className="space-y-5 bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                  
+                  <div className="group">
+                    <div className="flex justify-between items-end mb-2">
+                      <span className="text-xs font-bold text-slate-700">Vitamin C</span>
+                      <span className="text-[11px] font-black text-slate-900">45mg <span className="text-slate-400">/ 90mg</span></span>
+                    </div>
+                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-orange-400 rounded-full group-hover:bg-orange-500 transition-colors" style={{ width: '50%' }}></div>
+                    </div>
+                  </div>
+
+                  <div className="group">
+                    <div className="flex justify-between items-end mb-2">
+                      <span className="text-xs font-bold text-slate-700">Serat Pangan</span>
+                      <span className="text-[11px] font-black text-[#1EAB57]">28g <span className="text-slate-400">/ 30g</span></span>
+                    </div>
+                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-[#1EAB57] rounded-full group-hover:bg-[#168E46] transition-colors" style={{ width: '93%' }}></div>
+                    </div>
+                  </div>
+
+                  <div className="group">
+                    <div className="flex justify-between items-end mb-2">
+                      <span className="text-xs font-bold text-slate-700">Kalsium</span>
+                      <span className="text-[11px] font-black text-slate-900">400mg <span className="text-slate-400">/ 1000mg</span></span>
+                    </div>
+                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-400 rounded-full group-hover:bg-blue-500 transition-colors" style={{ width: '40%' }}></div>
+                    </div>
+                  </div>
+
+                  <div className="group">
+                    <div className="flex justify-between items-end mb-2">
+                      <span className="text-xs font-bold text-slate-700">Zat Besi</span>
+                      <span className="text-[11px] font-black text-slate-900">12mg <span className="text-slate-400">/ 18mg</span></span>
+                    </div>
+                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-rose-400 rounded-full group-hover:bg-rose-500 transition-colors" style={{ width: '66%' }}></div>
+                    </div>
+                  </div>
+
+                </div>
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-bold text-gray-900">Target Mingguan</p>
-                <p className="text-xs font-medium text-gray-500">Berhasil turun 0.5 Kg</p>
+
+              <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 flex items-start gap-4 transform transition-transform hover:scale-[1.02]">
+                <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-500 flex items-center justify-center shrink-0">
+                  <IconSparkles className="w-4 h-4 animate-pulse" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-indigo-900 mb-1">Saran Nutrisi AI</h4>
+                  <p className="text-[11px] font-medium text-indigo-700 leading-relaxed">Asupan kalsiummu masih cukup rendah (40%). Disarankan untuk mengonsumsi susu, keju, atau sayuran berdaun hijau gelap di jadwal makan malam.</p>
+                </div>
               </div>
-              <p className="text-xs font-bold text-gray-400">Kemarin</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* ======================================= */}
+      {/* BAGIAN KIRI & TENGAH (MAIN ANALYTICS) */}
+      {/* ======================================= */}
+      <div className="flex-1 space-y-6 min-w-0">
+        
+        {/* TOP NAVBAR (Search & Profile) */}
+        <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm relative z-10 ${isLoaded ? 'animate-fade-up' : 'opacity-0'}`}>
+          <div className="relative w-full md:max-w-xs xl:max-w-md group">
+            <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+            <input 
+              type="text" 
+              placeholder="Cari menu, resep..." 
+              className="w-full bg-slate-50 border-none rounded-xl py-2.5 pl-10 pr-4 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all"
+            />
+          </div>
+
+          <div className="flex items-center gap-4 self-end sm:self-auto shrink-0">
+            <button className="relative w-10 h-10 rounded-full hover:bg-slate-50 flex items-center justify-center text-slate-500 transition-colors hover:text-emerald-500 active:scale-95 cursor-pointer">
+              <IconBell className="w-5 h-5" />
+              <span className="absolute top-2 right-2.5 w-2 h-2 rounded-full bg-red-500 border-2 border-white animate-pulse"></span>
+            </button>
+            <div className="flex items-center gap-3 pl-4 border-l border-slate-100 cursor-pointer group">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-black text-slate-900 leading-none group-hover:text-emerald-600 transition-colors">Zolla Perdana</p>
+                <p className="text-[10px] font-bold text-emerald-600 mt-1 uppercase tracking-wider">Pro Member</p>
+              </div>
+              <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200 group-hover:border-emerald-500 transition-colors shadow-sm shrink-0">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop" alt="Profile" className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* HERO BANNER & AI CHART */}
+        <div className={`bg-white rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden transition-all duration-500 ${isLoaded ? 'animate-fade-up delay-100' : 'opacity-0'}`}>
+          <div className="p-6 md:p-8 bg-gradient-to-r from-[#F0FDF4] to-[#E8F8EE] border-b border-emerald-100/50 flex flex-col md:flex-row gap-6 justify-between items-start md:items-center relative overflow-hidden">
+            <div className="absolute right-0 top-0 w-64 h-64 bg-white/40 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/4 animate-pulse"></div>
+            
+            <div className="flex gap-4 relative z-10">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#1EAB57] to-[#127236] text-white flex items-center justify-center shadow-[0_5px_15px_rgba(30,171,87,0.3)] shrink-0 transform transition-transform hover:rotate-12">
+                <IconSparkles className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-slate-900 tracking-tight mb-1">
+                  Halo Zolla, ini ringkasan hari ini!
+                </h2>
+                <p className="text-sm font-medium text-slate-600 leading-relaxed max-w-2xl">
+                  Berdasarkan target <strong className="text-slate-900">Penurunan Berat Badan</strong>, asupan proteinmu sangat baik (62%). Kemarin ada lonjakan kalori di makan malam. Tetap di bawah garis putus-putus untuk capai berat ideal 62kg!
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-white/60 backdrop-blur-sm p-1 rounded-xl flex items-center border border-white/80 shadow-sm relative z-10 shrink-0">
+              {['Harian', 'Mingguan', 'Bulanan'].map((tab) => (
+                <button 
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer ${
+                    activeTab === tab 
+                    ? 'bg-white text-[#1EAB57] shadow-sm transform scale-105' 
+                    : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="p-6 md:p-8 relative">
+            <div className="flex justify-between items-end mb-6">
+              <div>
+                <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Tren Konsumsi Kalori</h3>
+                <p className="text-xs font-bold text-slate-400 mt-1">{activeTab} vs Target Harian</p>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2"><span className="w-3 h-1 bg-[#1EAB57] rounded-full"></span><span className="text-[10px] font-bold text-slate-500 uppercase hidden sm:block">Aktual</span></div>
+                <div className="flex items-center gap-2"><span className="w-3 h-1 bg-red-400 rounded-full border border-dashed border-white"></span><span className="text-[10px] font-bold text-slate-500 uppercase hidden sm:block">Batas</span></div>
+              </div>
+            </div>
+
+            <div className="w-full h-[220px] relative group">
+              <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-[10px] font-bold text-slate-400 pb-6 transition-opacity">
+                <span>2500</span>
+                <span className="text-red-500 font-black">1770</span>
+                <span>1000</span>
+                <span>0</span>
+              </div>
+
+              <div className="ml-8 md:ml-10 h-full relative">
+                <svg viewBox="0 0 800 200" preserveAspectRatio="none" className="w-full h-full overflow-visible">
+                  <line x1="0" y1="20" x2="800" y2="20" stroke="#F1F5F9" strokeWidth="1" className="transition-all duration-500 group-hover:stroke-slate-200" />
+                  <line x1="0" y1="95" x2="800" y2="95" stroke="#F1F5F9" strokeWidth="1" className="transition-all duration-500 group-hover:stroke-slate-200" />
+                  <line x1="0" y1="170" x2="800" y2="170" stroke="#F1F5F9" strokeWidth="1" className="transition-all duration-500 group-hover:stroke-slate-200" />
+                  
+                  <line x1="0" y1="80" x2="800" y2="80" stroke="#EF4444" strokeWidth="2" strokeDasharray="6 6" className="opacity-60" />
+                  
+                  <defs>
+                    <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#1EAB57" stopOpacity="0.2" />
+                      <stop offset="100%" stopColor="#1EAB57" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  
+                  <path d="M 0,140 L 133,120 L 266,90 L 400,60 L 533,100 L 666,130 L 800,110" fill="url(#chartGradient)" stroke="none" className="animate-[fadeUpAnim_1.5s_ease-out_forwards] opacity-0" />
+                  
+                  <path d="M 0,140 L 133,120 L 266,90 L 400,60 L 533,100 L 666,130 L 800,110" fill="none" stroke="#1EAB57" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="1500" strokeDashoffset={isLoaded ? "0" : "1500"} className="drop-shadow-sm transition-all duration-[2000ms] ease-in-out" />
+
+                  <circle cx="0" cy="140" r="5" fill="#fff" stroke="#1EAB57" strokeWidth="3" className="hover:r-7 transition-all cursor-pointer" />
+                  <circle cx="133" cy="120" r="5" fill="#fff" stroke="#1EAB57" strokeWidth="3" className="hover:r-7 transition-all cursor-pointer" />
+                  <circle cx="266" cy="90" r="5" fill="#fff" stroke="#1EAB57" strokeWidth="3" className="hover:r-7 transition-all cursor-pointer" />
+                  <circle cx="400" cy="60" r="6" fill="#EF4444" stroke="#fff" strokeWidth="2" className="animate-pulse shadow-md hover:r-8 transition-all cursor-pointer" />
+                  <circle cx="533" cy="100" r="5" fill="#fff" stroke="#1EAB57" strokeWidth="3" className="hover:r-7 transition-all cursor-pointer" />
+                  <circle cx="666" cy="130" r="5" fill="#fff" stroke="#1EAB57" strokeWidth="3" className="hover:r-7 transition-all cursor-pointer" />
+                  <circle cx="800" cy="110" r="5" fill="#fff" stroke="#1EAB57" strokeWidth="3" className="hover:r-7 transition-all cursor-pointer" />
+                </svg>
+
+                <div className="absolute -bottom-6 left-0 w-full flex justify-between text-[10px] font-bold text-slate-400 px-1">
+                  <span>Sen</span>
+                  <span>Sel</span>
+                  <span>Rab</span>
+                  <span className="text-red-500 font-black bg-red-50 px-2 py-0.5 rounded">Kam</span>
+                  <span>Jum</span>
+                  <span>Sab</span>
+                  <span>Min</span>
+                </div>
+
+                <div className="absolute left-1/2 top-4 -translate-x-1/2 bg-white border border-slate-100 text-slate-900 text-[10px] font-bold py-1.5 px-3 rounded-lg shadow-xl flex flex-col items-center animate-bounce">
+                  <span>2,100 Kkal</span>
+                  <span className="text-rose-500 font-black">Over limit!</span>
+                  <div className="absolute -bottom-1 w-2 h-2 bg-white border-b border-r border-slate-100 rotate-45"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 4 PILAR METRIK MAKRO */}
+        <div className={`grid grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 ${isLoaded ? 'animate-fade-up delay-200' : 'opacity-0'}`}>
+          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between hover-float transition-all duration-300 group cursor-pointer">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Sisa Kalori Harian</p>
+                <h3 className="text-2xl md:text-3xl font-black text-slate-900 group-hover:text-emerald-600 transition-colors">550<span className="text-xs font-semibold text-slate-400">kcal</span></h3>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                <IconActivity className="w-4 h-4" />
+              </div>
+            </div>
+            <div>
+              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2">
+                <div className="h-full bg-emerald-500 rounded-full" style={{ width: '68%' }}></div>
+              </div>
+              <p className="text-[10px] font-bold text-emerald-500">1220 / 1770 Kkal</p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between hover-float transition-all duration-300 group cursor-pointer">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Protein Harian</p>
+                <h3 className="text-2xl md:text-3xl font-black text-slate-900 group-hover:text-blue-600 transition-colors">75<span className="text-xs font-semibold text-slate-400">g</span></h3>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                <IconDumbbell className="w-4 h-4" />
+              </div>
+            </div>
+            <div>
+              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2">
+                <div className="h-full bg-blue-500 rounded-full" style={{ width: '62%' }}></div>
+              </div>
+              <p className="text-[10px] font-bold text-slate-400">Target: 120g</p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between hover-float transition-all duration-300 group cursor-pointer">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Karbo Harian</p>
+                <h3 className="text-2xl md:text-3xl font-black text-slate-900 group-hover:text-amber-500 transition-colors">180<span className="text-xs font-semibold text-slate-400">g</span></h3>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                <IconBread className="w-4 h-4" />
+              </div>
+            </div>
+            <div>
+              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2">
+                <div className="h-full bg-amber-500 rounded-full" style={{ width: '72%' }}></div>
+              </div>
+              <p className="text-[10px] font-bold text-slate-400">Target: 250g</p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between hover-float transition-all duration-300 group cursor-pointer">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Lemak Harian</p>
+                <h3 className="text-2xl md:text-3xl font-black text-slate-900 group-hover:text-rose-500 transition-colors">40<span className="text-xs font-semibold text-slate-400">g</span></h3>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                <IconDrop className="w-4 h-4" />
+              </div>
+            </div>
+            <div>
+              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2">
+                <div className="h-full bg-rose-500 rounded-full" style={{ width: '61%' }}></div>
+              </div>
+              <p className="text-[10px] font-bold text-slate-400">Target: 65g</p>
+            </div>
+          </div>
+        </div>
+
+        {/* KONDISI TUBUH & TOMBOL DETAIL NUTRISI (Merged Compact) */}
+        <div className={`bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-6 relative overflow-hidden hover:shadow-md transition-shadow duration-300 ${isLoaded ? 'animate-fade-up delay-300' : 'opacity-0'}`}>
+          <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-emerald-100/50 rounded-full blur-[40px] pointer-events-none animate-pulse"></div>
+          
+          <div className="flex-1 w-full grid grid-cols-2 md:grid-cols-4 gap-4 relative z-10">
+            <div className="bg-slate-50 hover:bg-slate-100 transition-colors rounded-xl p-3 border border-slate-100/50 cursor-pointer text-center md:text-left">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 line-clamp-1">Target Tubuh</p>
+              <p className="text-xs sm:text-sm font-black text-slate-900 line-clamp-1">Turun Berat</p>
+            </div>
+            <div className="bg-slate-50 hover:bg-slate-100 transition-colors rounded-xl p-3 border border-slate-100/50 cursor-pointer text-center md:text-left">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 line-clamp-1">BMI Status</p>
+              <p className="text-xs sm:text-sm font-black text-[#1EAB57] line-clamp-1">Normal</p>
+            </div>
+            <div className="bg-slate-50 hover:bg-slate-100 transition-colors rounded-xl p-3 border border-slate-100/50 cursor-pointer text-center md:text-left">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 line-clamp-1">Berat Ideal</p>
+              <p className="text-xs sm:text-sm font-black text-slate-900 line-clamp-1">62 Kg</p>
+            </div>
+            <div className="bg-slate-50 hover:bg-slate-100 transition-colors rounded-xl p-3 border border-slate-100/50 cursor-pointer text-center md:text-left">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 line-clamp-1">Alergi</p>
+              <p className="text-[11px] font-black text-rose-500 mt-1 line-clamp-1">Seafood</p>
+            </div>
+          </div>
+          
+          <button 
+            onClick={() => setShowDetailNutrisi(true)}
+            className="w-full lg:w-auto shrink-0 px-6 py-4 bg-[#1A453A] hover:bg-[#13352C] text-white rounded-xl flex items-center justify-center gap-3 transition-all cursor-pointer shadow-[0_8px_20px_rgba(26,69,58,0.2)] hover:shadow-[0_12px_25px_rgba(26,69,58,0.3)] active:scale-95 group relative z-10"
+          >
+            <div className="flex flex-col text-left">
+              <span className="text-xs font-black uppercase tracking-widest">Detail Semua Nutrisi</span>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:translate-x-1 group-hover:bg-white/20 transition-all">
+              <IconChevronRight className="w-4 h-4 text-emerald-400" />
+            </div>
+          </button>
+        </div>
+
+        {/* RIWAYAT SCAN MAKANAN TERAKHIR */}
+        <div className={`bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm transition-all duration-300 ${isLoaded ? 'animate-fade-up delay-400' : 'opacity-0'}`}>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Riwayat Scan AI Terakhir</h3>
+            <span className="text-[10px] font-bold text-[#1EAB57] cursor-pointer hover:underline">Lihat Semua</span>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 transition-all duration-300 border border-transparent hover:border-slate-100 hover:shadow-sm cursor-pointer hover:scale-[1.01] group">
+              <div className="w-12 h-12 rounded-full overflow-hidden border border-slate-200 shrink-0">
+                <img src="https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?q=80&w=200&auto=format&fit=crop" alt="Ayam" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-black text-slate-900 truncate">Ayam Goreng Lengkuas</h4>
+                <p className="text-[11px] font-bold text-slate-500">Makan Siang • <span className="text-red-500">800 kcal</span></p>
+              </div>
+              <div className="text-right shrink-0">
+                <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-lg border border-emerald-100">Score 8/10</span>
+                <p className="text-[9px] font-bold text-slate-400 mt-1.5">12:30 PM</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 transition-all duration-300 border border-transparent hover:border-slate-100 hover:shadow-sm cursor-pointer hover:scale-[1.01] group">
+              <div className="w-12 h-12 rounded-full overflow-hidden border border-slate-200 shrink-0">
+                <img src="https://images.unsplash.com/photo-1544025162-8366fd4d3ceb?q=80&w=200&auto=format&fit=crop" alt="Pepes" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-black text-slate-900 truncate">Pepes Ikan Mas</h4>
+                <p className="text-[11px] font-bold text-slate-500">Makan Malam • <span className="text-amber-500">450 kcal</span></p>
+              </div>
+              <div className="text-right shrink-0">
+                <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-lg border border-emerald-100">Score 9/10</span>
+                <p className="text-[9px] font-bold text-slate-400 mt-1.5">Kemarin</p>
+              </div>
             </div>
           </div>
         </div>
 
       </div>
+
+      {/* ======================================= */}
+      {/* BAGIAN KANAN (RIGHT SIDEBAR) */}
+      {/* ======================================= */}
+      <div className="w-full xl:w-[320px] 2xl:w-[360px] flex flex-col gap-6 shrink-0 min-w-0">
+        
+        {/* AI RINGKASAN HARIAN WIDGET */}
+        <div className={`bg-gradient-to-b from-[#1EAB57] to-[#127236] rounded-[2rem] p-6 shadow-[0_15px_30px_rgba(30,171,87,0.3)] text-white relative overflow-hidden transition-all duration-500 hover:shadow-[0_20px_40px_rgba(30,171,87,0.4)] hover:-translate-y-1 ${isLoaded ? 'animate-fade-up delay-200' : 'opacity-0'}`}>
+          <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/20 rounded-full blur-[30px] pointer-events-none animate-spin-slow origin-bottom-left"></div>
+          
+          <div className="flex items-center gap-3 mb-6 relative z-10">
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-md border border-white/30">
+              <IconSparkles className="w-4 h-4 text-white animate-pulse" />
+            </div>
+            <h3 className="text-sm font-black tracking-tight drop-shadow-sm">AI Ringkasan Harian</h3>
+          </div>
+
+          <div className="space-y-4 relative z-10">
+            <div className="flex gap-3 items-start bg-black/10 p-3.5 rounded-xl border border-white/10 backdrop-blur-md transform transition-transform hover:scale-[1.03] cursor-default">
+              <IconCheckCircle className="w-4 h-4 text-emerald-200 shrink-0 mt-0.5 drop-shadow-md" />
+              <div>
+                <p className="text-[11px] font-bold text-emerald-100 mb-0.5">Protein Tercapai</p>
+                <p className="text-[10px] font-medium leading-relaxed text-white/90">Asupan proteinmu hari ini sudah 62%. Sangat bagus untuk menjaga massa otot.</p>
+              </div>
+            </div>
+            <div className="flex gap-3 items-start bg-black/10 p-3.5 rounded-xl border border-white/10 backdrop-blur-md transform transition-transform hover:scale-[1.03] cursor-default">
+              <IconActivity className="w-4 h-4 text-amber-200 shrink-0 mt-0.5 drop-shadow-md animate-[bounce_2s_infinite]" />
+              <div>
+                <p className="text-[11px] font-bold text-amber-200 mb-0.5">Awas Karbohidrat</p>
+                <p className="text-[10px] font-medium leading-relaxed text-white/90">Sisa karbohidrat tinggal 70g. Pilih menu makan malam rendah karbo seperti pepes ikan.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* CALENDAR WIDGET */}
+        <div className={`bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-300 ${isLoaded ? 'animate-fade-up delay-300' : 'opacity-0'}`}>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-sm font-black text-slate-900">Kalender</h3>
+            <div className="flex items-center gap-2 text-slate-500">
+              <IconChevronLeft className="w-4 h-4 cursor-pointer hover:text-slate-900 transition-colors" />
+              <span className="text-[11px] font-bold text-slate-800 uppercase tracking-widest">Mei 2026</span>
+              <IconChevronRight className="w-4 h-4 cursor-pointer hover:text-slate-900 transition-colors" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-7 gap-1 text-center mb-2">
+            <span className="text-[10px] font-bold text-slate-400">M</span>
+            <span className="text-[10px] font-bold text-slate-400">S</span>
+            <span className="text-[10px] font-bold text-slate-400">S</span>
+            <span className="text-[10px] font-bold text-slate-400">R</span>
+            <span className="text-[10px] font-bold text-slate-400">K</span>
+            <span className="text-[10px] font-bold text-slate-400">J</span>
+            <span className="text-[10px] font-bold text-slate-400">S</span>
+          </div>
+
+          <div className="grid grid-cols-7 gap-1 text-center">
+            {[17,18].map(d => <div key={d} className="py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 rounded-full cursor-pointer transition-colors">{d}</div>)}
+            <div className="py-2 text-xs font-black text-white bg-[#1EAB57] rounded-full shadow-[0_4px_10px_rgba(30,171,87,0.4)] cursor-pointer transform hover:scale-110 transition-transform">19</div>
+            {[20,21,22,23].map(d => <div key={d} className="py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 rounded-full cursor-pointer transition-colors">{d}</div>)}
+          </div>
+        </div>
+
+        {/* TIMELINE / TODAY'S SCHEDULE (Dynamic Line Length) */}
+        <div className={`bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col hover:shadow-md transition-shadow duration-300 ${isLoaded ? 'animate-fade-up delay-400' : 'opacity-0'}`}>
+          <div className="flex justify-between items-center mb-8">
+            <h3 className="text-sm font-black text-slate-900">Jadwal Makan</h3>
+            <span className="text-[10px] font-bold text-[#1EAB57] uppercase tracking-widest cursor-pointer hover:underline">Atur</span>
+          </div>
+
+          <div className="flex flex-col">
+            {/* Breakfast */}
+            <div className="flex gap-4 group relative cursor-pointer hover:opacity-80 transition-opacity">
+              <div className="flex flex-col items-center">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-white bg-emerald-100 text-emerald-600 shadow-sm z-10 shrink-0 transform group-hover:scale-110 transition-transform">
+                  <IconCheckCircle className="w-4 h-4" />
+                </div>
+                <div className="w-[2px] h-full bg-slate-200 group-last:hidden my-1"></div>
+              </div>
+              <div className="flex-1 pb-6 min-w-0">
+                <div className="bg-slate-50 hover:bg-slate-100 transition-colors p-3.5 rounded-xl border border-slate-100">
+                  <div className="flex justify-between items-center mb-1">
+                    <h4 className="text-[11px] font-black text-slate-900">Sarapan</h4>
+                    <time className="text-[9px] font-bold text-slate-500">08:00 AM</time>
+                  </div>
+                  <p className="text-[10px] font-medium text-slate-600 line-clamp-1">Oatmeal & Pisang</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Lunch */}
+            <div className="flex gap-4 group relative cursor-pointer">
+              <div className="flex flex-col items-center">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-white bg-[#1EAB57] text-white shadow-[0_4px_10px_rgba(30,171,87,0.3)] z-10 shrink-0 transform group-hover:scale-110 transition-transform">
+                  <IconCutlery className="w-4 h-4 animate-[bounce_2s_infinite]" />
+                </div>
+                <div className="w-[2px] h-full bg-slate-200 group-last:hidden my-1"></div>
+              </div>
+              <div className="flex-1 pb-6 min-w-0">
+                <div className="bg-white hover:bg-emerald-50/30 transition-colors p-3.5 rounded-xl border border-emerald-500 shadow-sm relative">
+                  <span className="absolute -top-2.5 right-3 px-2 py-0.5 bg-emerald-500 text-white text-[8px] font-black rounded uppercase shadow-sm">Sekarang</span>
+                  <div className="flex justify-between items-center mb-1">
+                    <h4 className="text-[11px] font-black text-slate-900">Makan Siang</h4>
+                    <time className="text-[9px] font-bold text-[#1EAB57]">12:30 PM</time>
+                  </div>
+                  <p className="text-[10px] font-medium text-slate-600 line-clamp-1">Ayam Goreng Lengkuas</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Dinner */}
+            <div className="flex gap-4 group relative cursor-pointer hover:opacity-80 transition-opacity">
+              <div className="flex flex-col items-center">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-white bg-slate-100 text-slate-400 shadow-sm z-10 shrink-0 transform group-hover:scale-110 transition-transform">
+                  <IconDots className="w-4 h-4" />
+                </div>
+                <div className="w-[2px] h-full bg-slate-200 group-last:hidden my-1"></div>
+              </div>
+              <div className="flex-1 pb-2 min-w-0">
+                <div className="bg-white hover:bg-slate-50 transition-colors p-3.5 rounded-xl border border-slate-200 border-dashed opacity-70">
+                  <div className="flex justify-between items-center mb-1">
+                    <h4 className="text-[11px] font-black text-slate-900">Makan Malam</h4>
+                    <time className="text-[9px] font-bold text-slate-400">19:00 PM</time>
+                  </div>
+                  <p className="text-[10px] font-medium text-slate-400 italic">Belum dijadwalkan</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* REKOMENDASI INSTAN WIDGET (SaaS AI Magic) */}
+        <div className={`bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[2rem] p-6 shadow-[0_15px_30px_rgba(99,102,241,0.25)] text-white relative overflow-hidden group hover:shadow-[0_20px_40px_rgba(99,102,241,0.35)] hover:-translate-y-1 transition-all duration-500 ${isLoaded ? 'animate-fade-up delay-500' : 'opacity-0'}`}>
+          <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/20 rounded-full blur-[30px] pointer-events-none group-hover:scale-150 transition-transform duration-700"></div>
+          <div className="absolute -left-6 -bottom-6 w-24 h-24 bg-indigo-300/30 rounded-full blur-[20px] pointer-events-none"></div>
+
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-md border border-white/30 shrink-0">
+                <IconSparkles className="w-4 h-4 text-white animate-spin-slow" />
+              </div>
+              <h3 className="text-sm font-black tracking-tight drop-shadow-sm leading-tight">Bingung Mau<br/>Makan Apa?</h3>
+            </div>
+            
+            <p className="text-[11px] font-medium text-indigo-100/90 leading-relaxed mb-5 drop-shadow-sm">
+              Tingkatkan gizimu! GiziBot siap buatkan rekomendasi instan untuk penuhi sisa <strong className="text-white">550 Kkal</strong> hari ini.
+            </p>
+
+            <div className="space-y-3">
+              <button className="w-full py-3 bg-white text-indigo-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-50 active:scale-95 transition-all shadow-[0_4px_15px_rgba(0,0,0,0.1)] flex justify-center items-center gap-2 cursor-pointer">
+                <IconSparkles className="w-4 h-4" /> Generate AI
+              </button>
+              <button className="w-full py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest active:scale-95 transition-all flex justify-center items-center gap-2 backdrop-blur-sm cursor-pointer">
+                <IconCutlery className="w-3.5 h-3.5" /> Atur Rencana Menu
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
     </div>
   );
 }
 
 // ==========================================
-// KUMPULAN SVG ICONS TAMBAHAN
+// KUMPULAN SVG ICONS
 // ==========================================
-const IconWallet = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>;
-const IconCamera = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>;
-const IconBot = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>;
-const IconFire = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>;
+const IconSearch = ({ className = "w-5 h-5" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
+const IconBell = ({ className = "w-5 h-5" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>;
+const IconSparkles = ({ className = "w-5 h-5" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z"></path></svg>;
+const IconChevronRight = ({ className = "w-5 h-5" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>;
+const IconChevronLeft = ({ className = "w-5 h-5" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>;
+const IconActivity = ({ className = "w-5 h-5", style }: { className?: string, style?: React.CSSProperties }) => <svg className={className} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>;
+const IconCutlery = ({ className = "w-5 h-5", style }: { className?: string, style?: React.CSSProperties }) => <svg className={className} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg>;
+const IconCalendar = ({ className = "w-5 h-5" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
+const IconCheckCircle = ({ className = "w-5 h-5" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
+const IconDots = ({ className = "w-5 h-5" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>;
+const IconDumbbell = ({ className = "w-5 h-5" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.4 14.4l-4.8-4.8"></path><path d="M18.6 18.6l-3-3"></path><path d="M5.4 5.4l-3-3"></path><path d="M6.8 3.2l-3.6 3.6"></path><path d="M20.8 17.2l-3.6 3.6"></path><path d="M2 16v6h6"></path><path d="M22 8V2h-6"></path></svg>;
+const IconBread = ({ className = "w-5 h-5" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 0 0-10 10h20a10 10 0 0 0-10-10z"></path><path d="M2 12h20"></path></svg>;
+const IconDrop = ({ className = "w-5 h-5" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>;
+const IconClose = ({ className = "w-5 h-5" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
