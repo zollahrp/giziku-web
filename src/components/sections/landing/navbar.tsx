@@ -133,7 +133,7 @@ export default function Navbar() {
             
             {/* Teks Login Desktop */}
             <Link
-              href="/auth/login"
+              href="/login"
               className="hidden lg:block px-2 text-xs font-extrabold uppercase tracking-wider text-gray-600 hover:text-gray-900 transition-colors"
             >
               Masuk
@@ -141,7 +141,7 @@ export default function Navbar() {
 
             {/* Tombol CTA Desktop dengan Efek Shine (Warna GIZIKU) */}
             <Link
-              href="/auth/register"
+              href="/register"
               className="relative overflow-hidden hidden lg:flex items-center gap-2 px-6 py-2.5 text-xs font-extrabold uppercase tracking-wider text-white transition-all duration-500 bg-[#1A453A] hover:bg-[#123129] rounded-full shadow-[0_8px_20px_rgba(26,69,58,0.25)] hover:shadow-[0_15px_30px_rgba(26,69,58,0.4)] hover:-translate-y-0.5 hover:scale-105 active:scale-95 group/btn"
             >
               {/* Shine Animation */}
@@ -199,7 +199,7 @@ export default function Navbar() {
               <hr className="my-3 border-gray-100" />
               
               <Link
-                href="/auth/login"
+                href="/login"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="w-full text-center py-3.5 text-sm font-bold text-gray-600 hover:bg-gray-50 rounded-2xl transition-colors"
               >
@@ -208,7 +208,7 @@ export default function Navbar() {
 
               {/* Tombol CTA Mobile dengan Warna GIZIKU */}
               <Link
-                href="/auth/register"
+                href="/register"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="relative overflow-hidden mt-1 flex items-center justify-center gap-2 px-5 py-4 text-sm font-bold text-white bg-[#1A453A] hover:bg-[#123129] rounded-2xl shadow-[0_8px_20px_rgba(26,69,58,0.25)] active:scale-95 transition-all duration-500 group/btnMobile"
               >
