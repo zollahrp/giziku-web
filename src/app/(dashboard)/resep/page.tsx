@@ -48,10 +48,10 @@ export default function ResepPage() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
-    // Simulasi loading screen untuk memicu animasi
+    // Animasi masuk global
     const timer = setTimeout(() => {
       setIsLoaded(true);
-    }, 150);
+    }, 100);
     return () => clearTimeout(timer);
   }, []);
 
@@ -105,27 +105,32 @@ export default function ResepPage() {
   return (
     <div className="w-full flex-1 overflow-y-auto px-4 md:px-6 lg:px-8 lg:pr-10 pb-32 md:pb-16 relative min-w-0 overflow-x-hidden bg-[#F8FAFC]">
       
-      {/* DECORATIVE BACKGROUND BLURS - Memperkuat kesan kedalaman SaaS UI */}
-      <div className="fixed top-0 left-1/4 w-[30rem] h-[30rem] bg-[#1EAB57]/5 rounded-full blur-[100px] pointer-events-none z-0"></div>
-      <div className="fixed bottom-0 right-0 w-[40rem] h-[40rem] bg-emerald-400/5 rounded-full blur-[120px] pointer-events-none z-0"></div>
-      <div className="fixed top-1/2 left-0 w-[20rem] h-[20rem] bg-blue-400/5 rounded-full blur-[100px] pointer-events-none z-0"></div>
+      {/* DECORATIVE BACKGROUND BLURS */}
+      <div className={`fixed top-0 left-1/4 w-[30rem] h-[30rem] bg-[#1EAB57]/5 rounded-full blur-[100px] pointer-events-none z-0 transition-opacity duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}></div>
+      <div className={`fixed bottom-0 right-0 w-[40rem] h-[40rem] bg-emerald-400/5 rounded-full blur-[120px] pointer-events-none z-0 transition-opacity duration-1000 delay-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}></div>
+      <div className={`fixed top-1/2 left-0 w-[20rem] h-[20rem] bg-blue-400/5 rounded-full blur-[100px] pointer-events-none z-0 transition-opacity duration-1000 delay-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}></div>
 
       {/* CSS ANIMASI KUSTOM */}
       <style dangerouslySetInnerHTML={{
         __html: `
-          .animate-fade-up { opacity: 0; transform: translateY(20px); animation: fadeUpAnim 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+          .animate-fade-up { opacity: 0; transform: translateY(30px); animation: fadeUpAnim 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
           .animate-fade-in { opacity: 0; animation: fadeInAnim 0.8s ease-out forwards; }
           .animate-scale-in { opacity: 0; transform: scale(0.95); animation: scaleInAnim 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+          .animate-slide-right { opacity: 0; transform: translateX(-30px); animation: slideRightAnim 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+          .animate-slide-left { opacity: 0; transform: translateX(30px); animation: slideLeftAnim 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
           
           @keyframes fadeUpAnim { to { opacity: 1; transform: translateY(0); } }
           @keyframes fadeInAnim { to { opacity: 1; } }
           @keyframes scaleInAnim { to { opacity: 1; transform: scale(1); } }
+          @keyframes slideRightAnim { to { opacity: 1; transform: translateX(0); } }
+          @keyframes slideLeftAnim { to { opacity: 1; transform: translateX(0); } }
           
           .delay-100 { animation-delay: 0.1s; } 
           .delay-200 { animation-delay: 0.2s; } 
           .delay-300 { animation-delay: 0.3s; }
           .delay-400 { animation-delay: 0.4s; }
           .delay-500 { animation-delay: 0.5s; }
+          .delay-600 { animation-delay: 0.6s; }
           
           .no-scrollbar::-webkit-scrollbar { display: none; } 
           .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -142,55 +147,14 @@ export default function ResepPage() {
       }} />
 
       <div className="w-full mt-4 lg:mt-6 relative z-10">
-
-        {/* ======================================= */}
-        {/* TOP NAVBAR GLOBAL */}
-        {/* ======================================= */}
-        <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/90 backdrop-blur-xl p-3 md:p-4 rounded-[1.5rem] md:rounded-full border border-white shadow-[0_8px_30px_rgb(0,0,0,0.03)] mb-8 md:mb-10 ${isLoaded ? 'animate-fade-up' : 'opacity-0'}`}>
-          
-          {/* Global Search Bar */}
-          <div className="relative w-full md:max-w-md lg:max-w-lg group ml-1">
-            <IconSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#1EAB57] transition-colors duration-300" />
-            <input 
-              type="text" 
-              placeholder="Cari menu diet, kalori, bahan makanan..." 
-              className="w-full bg-slate-100/50 hover:bg-slate-100 border border-transparent rounded-full py-3 pl-12 pr-5 text-sm font-medium text-slate-700 focus:bg-white focus:ring-4 focus:ring-[#1EAB57]/10 focus:border-[#1EAB57]/20 focus:outline-none transition-all duration-300 cursor-text shadow-inner"
-            />
-            {/* Quick action mic button */}
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 hover:text-[#1EAB57] shadow-sm cursor-pointer border border-slate-100 transition-colors">
-              <IconMic className="w-3.5 h-3.5" />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-4 self-end sm:self-auto shrink-0 pr-1">
-            <button className="relative w-11 h-11 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 transition-all duration-300 hover:text-[#1EAB57] hover:bg-emerald-50 active:scale-95 cursor-pointer border border-transparent hover:border-emerald-100">
-              <IconBell className="w-5 h-5" />
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-rose-500 border-2 border-white animate-pulse"></span>
-            </button>
-            <div className="w-px h-6 bg-slate-200 hidden sm:block mx-1"></div>
-            
-            <Link href="/profile" className="flex items-center gap-3 cursor-pointer group hover:bg-slate-50 p-1.5 pr-4 rounded-full transition-all duration-300 border border-transparent hover:border-slate-100">
-              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-slate-100 group-hover:border-[#1EAB57] transition-colors shadow-sm shrink-0">
-                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop" alt="Zolla Perdana" className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" />
-              </div>
-              <div className="text-left hidden md:block">
-                <p className="text-xs font-black text-slate-900 leading-none group-hover:text-[#1EAB57] transition-colors tracking-tight">Zolla Perdana</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <IconCrown className="w-3 h-3 text-amber-500" />
-                  <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest leading-none">Pro Member</p>
-                </div>
-              </div>
-            </Link>
-          </div>
-        </div>
-        
+       
         {/* ======================================= */}
         {/* PREMIUM HEADER & TABS SWITCHER */}
         {/* ======================================= */}
         <div className={`flex flex-col lg:flex-row lg:items-center justify-between gap-6 glass-panel p-6 md:p-8 rounded-[2.5rem] shadow-[0_20px_40px_-15px_rgb(0,0,0,0.03)] mb-10 ${isLoaded ? 'animate-fade-up delay-100' : 'opacity-0'}`}>
           <div className="flex items-center gap-5">
-            <div className="relative">
-              <div className="w-14 h-14 md:w-16 md:h-16 rounded-[1.25rem] bg-gradient-to-br from-[#E8F8EE] to-emerald-100/50 text-[#1EAB57] flex items-center justify-center shadow-[inset_0_2px_10px_rgba(255,255,255,1)] border border-emerald-200/50 shrink-0 transform -rotate-3 group-hover:rotate-0 transition-transform duration-500">
+            <div className="relative group cursor-pointer">
+              <div className="w-14 h-14 md:w-16 md:h-16 rounded-[1.25rem] bg-gradient-to-br from-[#E8F8EE] to-emerald-100/50 text-[#1EAB57] flex items-center justify-center shadow-[inset_0_2px_10px_rgba(255,255,255,1)] border border-emerald-200/50 shrink-0 transform -rotate-3 group-hover:rotate-0 group-hover:scale-105 transition-all duration-500">
                 <IconCutlery className="w-7 h-7 md:w-8 md:h-8" />
               </div>
               <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm border border-slate-100">
@@ -205,19 +169,21 @@ export default function ResepPage() {
             </div>
           </div>
 
-          <div className="bg-slate-100/80 p-1.5 rounded-2xl inline-flex items-center w-full lg:w-auto shadow-[inset_0_2px_5px_rgb(0,0,0,0.03)] border border-slate-200/60 shrink-0">
+          <div className="bg-slate-100/80 p-1.5 rounded-2xl inline-flex items-center w-full lg:w-auto shadow-[inset_0_2px_5px_rgb(0,0,0,0.03)] border border-slate-200/60 shrink-0 relative overflow-hidden">
+            <div className={`absolute top-1.5 bottom-1.5 left-1.5 w-[calc(50%-6px)] bg-white rounded-[14px] shadow-[0_4px_12px_rgb(0,0,0,0.05)] border border-white transition-all duration-500 ease-out z-0 ${activeMainTab === "Resep Kamu" ? 'translate-x-full' : 'translate-x-0'}`}></div>
+            
             <button 
               onClick={() => setActiveMainTab("Eksplor")}
-              className={`flex-1 lg:flex-none px-6 md:px-10 py-3.5 rounded-[14px] text-[11px] md:text-xs font-black uppercase tracking-widest transition-all duration-400 cursor-pointer ${
-                activeMainTab === "Eksplor" ? 'bg-white text-[#1EAB57] shadow-[0_4px_12px_rgb(0,0,0,0.05)] border border-white' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/30'
+              className={`flex-1 lg:flex-none px-6 md:px-10 py-3.5 rounded-[14px] text-[11px] md:text-xs font-black uppercase tracking-widest transition-all duration-400 cursor-pointer relative z-10 ${
+                activeMainTab === "Eksplor" ? 'text-[#1EAB57]' : 'text-slate-500 hover:text-slate-800'
               }`}
             >
               Eksplor Global
             </button>
             <button 
               onClick={() => setActiveMainTab("Resep Kamu")}
-              className={`flex-1 lg:flex-none px-6 md:px-10 py-3.5 rounded-[14px] text-[11px] md:text-xs font-black uppercase tracking-widest transition-all duration-400 cursor-pointer ${
-                activeMainTab === "Resep Kamu" ? 'bg-white text-[#1EAB57] shadow-[0_4px_12px_rgb(0,0,0,0.05)] border border-white' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/30'
+              className={`flex-1 lg:flex-none px-6 md:px-10 py-3.5 rounded-[14px] text-[11px] md:text-xs font-black uppercase tracking-widest transition-all duration-400 cursor-pointer relative z-10 ${
+                activeMainTab === "Resep Kamu" ? 'text-[#1EAB57]' : 'text-slate-500 hover:text-slate-800'
               }`}
             >
               Resep Kamu
@@ -229,10 +195,10 @@ export default function ResepPage() {
         {/* KONTEN 1: EKSPLOR GLOBAL */}
         {/* ======================================= */}
         {activeMainTab === "Eksplor" && (
-          <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 flex flex-col gap-6 md:gap-8">
+          <div className="flex flex-col gap-6 md:gap-8">
             
             {/* Search Section */}
-            <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100">
+            <div className={`flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 ${isLoaded ? 'animate-fade-up delay-200' : 'opacity-0'}`}>
               <div className="flex-1 w-full relative group">
                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                   <IconSearch className="w-5 h-5 text-slate-400 group-focus-within:text-[#1EAB57] transition-colors" />
@@ -251,13 +217,13 @@ export default function ResepPage() {
             </div>
 
             {/* Categories Scrollable */}
-            <div className="overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0 pb-4">
+            <div className={`overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0 pb-4 ${isLoaded ? 'animate-slide-left delay-300' : 'opacity-0'}`}>
               <div className="flex items-center gap-3 w-max">
                 {categories.map((cat) => (
                   <button
                     key={cat.name}
                     onClick={() => setActiveCategory(cat.name)}
-                    className={`flex items-center gap-2.5 px-6 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 cursor-pointer border ${
+                    className={`flex items-center gap-2.5 px-6 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 cursor-pointer border hover:-translate-y-1 ${
                       activeCategory === cat.name 
                       ? 'bg-[#1EAB57] text-white border-[#1EAB57] shadow-[0_10px_20px_rgba(30,171,87,0.3)] scale-[1.02]' 
                       : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-800 shadow-sm'
@@ -271,7 +237,7 @@ export default function ResepPage() {
 
             {/* Content Results */}
             {isNoResults ? (
-              <div className="py-24 flex flex-col items-center justify-center text-center w-full bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
+              <div className="py-24 flex flex-col items-center justify-center text-center w-full bg-white rounded-[2.5rem] border border-slate-100 shadow-sm animate-scale-in">
                 <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6 border-4 border-white shadow-sm relative overflow-hidden">
                   <div className="absolute inset-0 bg-slate-100/50 animate-pulse"></div>
                   <IconSearch className="w-10 h-10 text-slate-300 relative z-10" />
@@ -289,19 +255,19 @@ export default function ResepPage() {
               <>
                 {/* Section: Rekomendasi Menu */}
                 {filteredPopular.length > 0 && (
-                  <div className="mb-8">
+                  <div className={`mb-8 ${isLoaded ? 'animate-fade-up delay-400' : 'opacity-0'}`}>
                     <div className="flex items-center justify-between mb-6 px-1">
                       <h2 className="text-2xl font-black text-[#0F172A] tracking-tight">Rekomendasi Menu</h2>
-                      <button className="text-[11px] font-black text-[#1EAB57] uppercase tracking-widest cursor-pointer hover:bg-emerald-50 px-4 py-2 rounded-lg transition-colors flex items-center gap-1">
-                        Lihat Semua <IconArrowRight className="w-3 h-3" />
+                      <button className="text-[11px] font-black text-[#1EAB57] uppercase tracking-widest cursor-pointer hover:bg-emerald-50 px-4 py-2 rounded-lg transition-colors flex items-center gap-1 group">
+                        Lihat Semua <IconArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                       </button>
                     </div>
                     
                     <div className="custom-grid-auto">
-                      {filteredPopular.map((recipe) => {
+                      {filteredPopular.map((recipe, index) => {
                         const isSaved = savedRecipes.includes(recipe.id);
                         return (
-                          <Link href={`/resep/${recipe.id}`} key={recipe.id} className="bg-white rounded-[2rem] p-3 border border-slate-100 shadow-sm card-hover group block relative overflow-hidden">
+                          <Link href={`/resep/${recipe.id}`} key={recipe.id} style={{animationDelay: `${400 + (index * 100)}ms`}} className={`bg-white rounded-[2rem] p-3 border border-slate-100 shadow-sm card-hover group block relative overflow-hidden ${isLoaded ? 'animate-fade-up opacity-0' : 'opacity-0'}`}>
                             {/* Bookmark Button Floating */}
                             <button 
                               onClick={(e) => toggleBookmark(e, recipe.id)} 
@@ -353,11 +319,11 @@ export default function ResepPage() {
 
                 {/* Section: Riwayat Dilihat */}
                 {filteredRecent.length > 0 && (
-                  <div className="mb-4">
+                  <div className={`mb-4 ${isLoaded ? 'animate-fade-up delay-500' : 'opacity-0'}`}>
                     <h2 className="text-2xl font-black text-[#0F172A] tracking-tight mb-6 px-1">Riwayat Dilihat</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                      {filteredRecent.map((recipe) => (
-                        <Link href={`/resep/${recipe.id}`} key={recipe.id} className="bg-white rounded-[1.5rem] p-3 border border-slate-100 shadow-[0_10px_20px_-10px_rgb(0,0,0,0.03)] hover:shadow-[0_15px_30px_-10px_rgb(0,0,0,0.08)] hover:border-[#1EAB57]/30 transition-all duration-300 group flex items-center gap-5 cursor-pointer overflow-hidden relative">
+                      {filteredRecent.map((recipe, index) => (
+                        <Link href={`/resep/${recipe.id}`} key={recipe.id} style={{animationDelay: `${500 + (index * 100)}ms`}} className={`bg-white rounded-[1.5rem] p-3 border border-slate-100 shadow-[0_10px_20px_-10px_rgb(0,0,0,0.03)] hover:shadow-[0_15px_30px_-10px_rgb(0,0,0,0.08)] hover:border-[#1EAB57]/30 transition-all duration-300 group flex items-center gap-5 cursor-pointer overflow-hidden relative ${isLoaded ? 'animate-fade-up opacity-0' : 'opacity-0'}`}>
                           {/* Image Box */}
                           <div className="w-28 h-28 shrink-0 rounded-[1.25rem] overflow-hidden bg-slate-100 relative">
                             <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" loading="lazy" />
@@ -396,10 +362,10 @@ export default function ResepPage() {
         {/* KONTEN 2: RESEP KAMU (MEAL PLAN & BUDGET) */}
         {/* ======================================= */}
         {activeMainTab === "Resep Kamu" && (
-          <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 flex flex-col gap-8 md:gap-10">
+          <div className="flex flex-col gap-8 md:gap-10">
             
             {/* CARD BUDGET VIP (Clean White Ultra Premium) */}
-            <div className="bg-white rounded-[2.5rem] p-6 md:p-10 border border-slate-100 shadow-[0_20px_50px_-15px_rgb(0,0,0,0.05)] relative overflow-hidden flex flex-col xl:flex-row xl:items-center justify-between gap-10">
+            <div className={`bg-white rounded-[2.5rem] p-6 md:p-10 border border-slate-100 shadow-[0_20px_50px_-15px_rgb(0,0,0,0.05)] relative overflow-hidden flex flex-col xl:flex-row xl:items-center justify-between gap-10 ${isLoaded ? 'animate-fade-up delay-200' : 'opacity-0'}`}>
               
               <div className="absolute right-0 top-0 w-[500px] h-[500px] bg-gradient-to-bl from-[#1EAB57]/10 to-transparent rounded-full blur-[80px] pointer-events-none transition-colors duration-700 -translate-y-1/2 translate-x-1/3"></div>
               <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-slate-50 rounded-full blur-[40px] pointer-events-none"></div>
@@ -440,18 +406,18 @@ export default function ResepPage() {
               </div>
 
               {/* Box Budget & Detail Kanan */}
-              <div className="relative z-10 bg-slate-50/80 rounded-[2rem] p-8 border border-slate-100 shadow-[inset_0_2px_4px_rgb(0,0,0,0.02)] w-full xl:min-w-[340px] xl:w-auto shrink-0 hover:bg-emerald-50/30 hover:border-emerald-100/50 transition-colors">
+              <div className="relative z-10 bg-slate-50/80 rounded-[2rem] p-8 border border-slate-100 shadow-[inset_0_2px_4px_rgb(0,0,0,0.02)] w-full xl:min-w-[340px] xl:w-auto shrink-0 hover:bg-emerald-50/30 hover:border-emerald-100/50 transition-colors duration-500">
                 <div className="flex items-center justify-between mb-10">
-                  <div className="w-12 h-12 rounded-[1.25rem] bg-white flex items-center justify-center text-[#1EAB57] shadow-sm border border-slate-100">
-                     <IconWallet className="w-5 h-5" />
+                  <div className="w-14 h-14 rounded-[1.25rem] bg-white flex items-center justify-center text-[#1EAB57] shadow-sm border border-slate-100">
+                     <IconWallet className="w-6 h-6" />
                   </div>
                   <span className="bg-white text-slate-600 px-4 py-2 rounded-xl text-[10px] font-black shadow-sm uppercase tracking-widest border border-slate-100 flex items-center gap-1.5">
                     <IconCalendar className="w-3.5 h-3.5" /> Estimasi 7 Hari
                   </span>
                 </div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Sisa Budget Belanja</p>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Sisa Budget Belanja</p>
                 <div className="flex items-end gap-1.5 mb-10">
-                  <span className="text-[2.5rem] md:text-5xl font-black text-[#0F172A] leading-none tracking-tighter">Rp 215<span className="text-2xl text-slate-400 font-bold tracking-normal">.000</span></span>
+                  <span className="text-[3rem] md:text-5xl font-black text-[#0F172A] leading-none tracking-tighter">Rp 215<span className="text-2xl text-slate-400 font-bold tracking-normal">.000</span></span>
                 </div>
                 <div className="pt-6 border-t border-slate-200 flex justify-between items-center bg-white p-4 rounded-xl shadow-sm">
                   <div>
@@ -468,8 +434,8 @@ export default function ResepPage() {
 
             </div>
 
-            {/* HORIZONTAL CALENDAR (Clean White Expandable - CENTERED FIX) */}
-            <div className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-slate-100 shadow-[0_15px_40px_-10px_rgb(0,0,0,0.04)]">
+            {/* HORIZONTAL CALENDAR (Clean White Expandable - No Gap Issue) */}
+            <div className={`bg-white rounded-[2.5rem] p-6 md:p-8 border border-slate-100 shadow-[0_15px_40px_-10px_rgb(0,0,0,0.04)] ${isLoaded ? 'animate-fade-up delay-300' : 'opacity-0'}`}>
               
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 px-1">
                 <div>
@@ -480,10 +446,10 @@ export default function ResepPage() {
                 <div className="flex items-center gap-3">
                   <button 
                     onClick={() => setIsCalendarExpanded(!isCalendarExpanded)}
-                    className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-100 shadow-sm cursor-pointer active:scale-95"
+                    className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-600 px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-100 shadow-sm cursor-pointer active:scale-95"
                   >
-                    <IconExpand className={`w-3.5 h-3.5 text-[#1EAB57] transition-transform duration-500 ${isCalendarExpanded ? 'rotate-180' : ''}`} /> 
-                    {isCalendarExpanded ? "Tutup" : "Lihat 14 Hari"}
+                    <IconExpand className={`w-4 h-4 text-[#1EAB57] transition-transform duration-500 ${isCalendarExpanded ? 'rotate-180' : ''}`} /> 
+                    {isCalendarExpanded ? "Tutup Kalender" : "Lihat 14 Hari"}
                   </button>
 
                   <div className="flex items-center gap-1 bg-slate-50 rounded-xl p-1.5 border border-slate-100 shadow-sm hidden md:flex">
@@ -516,7 +482,7 @@ export default function ResepPage() {
                         className={`group flex flex-col items-center justify-center w-[4.5rem] md:w-[5.5rem] py-4 rounded-[1.5rem] transition-all cursor-pointer relative overflow-hidden animate-in zoom-in duration-300 shrink-0 ${
                           isActive 
                           ? 'bg-[#1EAB57] text-white shadow-[0_15px_30px_-5px_rgba(30,171,87,0.4)] border border-transparent scale-110' 
-                          : 'bg-white text-slate-600 border border-slate-200 hover:border-[#1EAB57]/50 hover:bg-emerald-50/30 shadow-sm'
+                          : 'bg-white text-slate-600 border border-slate-200 hover:border-[#1EAB57]/50 hover:bg-emerald-50/30 shadow-sm hover:-translate-y-1'
                         }`}
                       >
                         {/* Indikator Atas (Lewat vs Mendatang) */}
@@ -554,7 +520,7 @@ export default function ResepPage() {
             </div>
 
             {/* TIMELINE JADWAL MASAK HARI INI */}
-            <div className="bg-white rounded-[2.5rem] p-6 md:p-10 border border-slate-100 shadow-[0_15px_40px_-10px_rgb(0,0,0,0.03)]">
+            <div className={`bg-white rounded-[2.5rem] p-6 md:p-10 border border-slate-100 shadow-[0_15px_40px_-10px_rgb(0,0,0,0.03)] ${isLoaded ? 'animate-fade-up delay-400' : 'opacity-0'}`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-10 gap-4">
                 <div>
                   <h3 className="text-2xl md:text-3xl font-black text-[#0F172A] tracking-tight">Jadwal Masak</h3>
@@ -580,7 +546,7 @@ export default function ResepPage() {
                 <div className="hidden md:block absolute left-[95px] top-8 bottom-8 w-[2px] bg-slate-100 rounded-full"></div>
 
                 {/* --- ITEM 1: SARAPAN --- */}
-                <div className="flex flex-col md:flex-row gap-5 md:gap-10 mb-10 relative group">
+                <div className={`flex flex-col md:flex-row gap-5 md:gap-10 mb-10 relative group ${isLoaded ? 'animate-slide-left delay-400' : 'opacity-0'}`}>
                   <div className="md:w-[80px] shrink-0 pt-3 flex flex-row md:flex-col items-center md:items-end justify-between md:justify-start relative z-10">
                     <div className="flex flex-col md:items-end">
                       <span className="text-xl font-black text-slate-900 tracking-tight">08:00</span>
@@ -590,11 +556,11 @@ export default function ResepPage() {
                     <div className="hidden md:flex absolute -right-[23px] top-4 w-4 h-4 rounded-full bg-[#1EAB57] border-[3px] border-white shadow-sm ring-1 ring-slate-100"></div>
                   </div>
 
-                  <div className="flex-1 bg-white border border-slate-100 rounded-[2rem] p-4 shadow-sm hover:shadow-[0_15px_35px_-10px_rgba(0,0,0,0.08)] transition-all duration-300 flex flex-col sm:flex-row gap-5 cursor-pointer">
+                  <div className="flex-1 bg-white border border-slate-100 rounded-[2rem] p-4 shadow-sm hover:shadow-[0_15px_35px_-10px_rgba(0,0,0,0.08)] transition-all duration-300 flex flex-col sm:flex-row gap-5 cursor-pointer hover:-translate-y-1">
                     <div className="w-full sm:w-40 h-36 rounded-[1.5rem] overflow-hidden relative shrink-0">
                       <img src="https://images.unsplash.com/photo-1517673132405-a56a62b18caf?q=80&w=600&auto=format&fit=crop" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                      <div className="absolute top-2.5 left-2.5 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-sm text-slate-800">
-                        <span className="text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5"><IconClock className="w-3 h-3 text-amber-500" /> Sarapan</span>
+                      <div className="absolute top-2.5 left-2.5 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-sm">
+                        <span className="text-[9px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5"><IconClock className="w-3 h-3 text-amber-500" /> Sarapan</span>
                       </div>
                     </div>
                     <div className="flex-1 flex flex-col justify-center pb-1 pt-2 sm:pt-0">
@@ -613,7 +579,7 @@ export default function ResepPage() {
                 </div>
 
                 {/* --- ITEM 2: MAKAN SIANG (SEKARANG) --- */}
-                <div className="flex flex-col md:flex-row gap-5 md:gap-10 mb-10 relative group">
+                <div className={`flex flex-col md:flex-row gap-5 md:gap-10 mb-10 relative group ${isLoaded ? 'animate-slide-left delay-500' : 'opacity-0'}`}>
                   <div className="md:w-[80px] shrink-0 pt-3 flex flex-row md:flex-col items-center md:items-end justify-between md:justify-start relative z-10">
                     <div className="flex flex-col md:items-end">
                       <span className="text-xl font-black text-[#1EAB57] tracking-tight">12:30</span>
@@ -649,7 +615,7 @@ export default function ResepPage() {
                 </div>
 
                 {/* --- ITEM 3: MAKAN MALAM --- */}
-                <div className="flex flex-col md:flex-row gap-5 md:gap-10 relative group opacity-60 hover:opacity-100 transition-opacity duration-300">
+                <div className={`flex flex-col md:flex-row gap-5 md:gap-10 relative group opacity-60 hover:opacity-100 transition-opacity duration-300 ${isLoaded ? 'animate-slide-left delay-600' : 'opacity-0'}`}>
                   <div className="md:w-[80px] shrink-0 pt-3 flex flex-row md:flex-col items-center md:items-end justify-between md:justify-start relative z-10">
                     <div className="flex flex-col md:items-end">
                       <span className="text-xl font-black text-slate-400 tracking-tight">19:00</span>
