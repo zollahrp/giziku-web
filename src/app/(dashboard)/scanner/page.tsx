@@ -19,63 +19,97 @@ export default function ScannerPage() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [scanState, setScanState] = useState<"idle" | "scanning" | "success">("idle");
   const [scanText, setScanText] = useState("Arahkan kamera ke makanan...");
-  
-  // STATE: Menyimpan gambar yang diupload atau dijepret
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
-  // REFS: Kamera & Input
+  // REFS
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   
+  // Ref untuk nyimpan jejak stream murni
+  const streamRef = useRef<MediaStream | null>(null);
+
   // Efek Animasi Masuk
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoaded(true);
-    }, 100);
+    const timer = setTimeout(() => setIsLoaded(true), 100);
     return () => clearTimeout(timer);
   }, []);
 
-  // START CAMERA LIVE STREAM
-  const startCamera = async () => {
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
-    } catch (err) {
-      console.error("Camera access denied or not available.", err);
-    }
-  };
-
-  // STOP CAMERA LIVE STREAM (biar hemat baterai pas udah jepret)
+  // FUNGSI GLOBAL MEMATIKAN KAMERA
   const stopCamera = () => {
+    // 1. Matikan dari ref stream
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    // 2. Matikan dari elemen video HTML
     if (videoRef.current && videoRef.current.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
     }
   };
 
-  // Efek: Nyalakan kamera kalau state idle dan gak ada gambar
+  // EFEK UTAMA: CYCLE KAMERA YANG TAHAN BANTING
   useEffect(() => {
-    if (scanState === "idle" && !uploadedImage) {
+    // FLAG KUNCI: Menandakan efek ini masih relevan atau user udah kabur
+    let isActive = true;
+
+    const startCamera = async () => {
+      try {
+        const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: 'environment' } 
+        });
+        
+        // JIKA USER KEBURU PINDAH TAB / HALAMAN SAAT LOADING KAMERA
+        // Langsung bunuh stream yang baru datang ini!
+        if (!isActive || document.hidden) {
+          mediaStream.getTracks().forEach(track => track.stop());
+          return;
+        }
+
+        // Kalau aman, jalankan normal
+        stopCamera(); // Bersihkan sisa kalau ada
+        streamRef.current = mediaStream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+        }
+      } catch (err) {
+        console.error("Camera access denied or not available.", err);
+      }
+    };
+
+    // Handler Tab Visibility
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopCamera();
+      } else if (scanState === "idle" && !uploadedImage) {
+        startCamera();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // Initial load
+    if (scanState === "idle" && !uploadedImage && !document.hidden) {
       startCamera();
     }
+
+    // CLEANUP SAAT PINDAH HALAMAN / COMPONENT UNMOUNT
     return () => {
-      stopCamera();
+      isActive = false; // Memastikan request loading yang telat datang langsung di-kill
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      stopCamera(); // Hancurkan semua stream
     };
   }, [scanState, uploadedImage]);
 
-  // Handler: Jepret dari Video Live
+  // Handler: Jepret
   const captureImage = () => {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       
-      // Samain ukuran canvas sama resolusi video
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       
@@ -84,13 +118,13 @@ export default function ScannerPage() {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageUrl = canvas.toDataURL('image/jpeg');
         setUploadedImage(imageUrl);
-        stopCamera();
+        stopCamera(); // Kamera dimatikan setelah difoto
         handleStartScan();
       }
     }
   };
 
-  // Handler: Upload Gambar dari Galeri
+  // Handler: Upload
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -101,7 +135,6 @@ export default function ScannerPage() {
     }
   };
 
-  // Simulasi Proses Scanning AI
   const handleStartScan = () => {
     setScanState("scanning");
     setScanText("Mendeteksi objek makanan...");
@@ -116,36 +149,22 @@ export default function ScannerPage() {
     }, 4500);
   };
 
-  // Reset semuanya ke awal
   const handleRetake = () => {
     setScanState("idle");
     setScanText("Arahkan kamera ke makanan...");
-    setUploadedImage(null); // Ini bakal trigger useEffect buat nyalain kamera lagi
-    
+    setUploadedImage(null);
     if (cameraInputRef.current) cameraInputRef.current.value = "";
     if (galleryInputRef.current) galleryInputRef.current.value = "";
   };
 
   return (
     <div className="w-full flex-1 overflow-y-auto px-4 md:px-6 lg:px-8 lg:pr-10 pb-32 md:pb-16 relative min-w-0 overflow-x-hidden bg-[#F8FAFC]">
-      
-      {/* KANVAS TERSEMBUNYI UNTUK NANGKAP FRAME KAMERA */}
       <canvas ref={canvasRef} className="hidden"></canvas>
+      <input type="file" accept="image/*" ref={galleryInputRef} onChange={handleImageUpload} className="hidden" />
 
-      {/* INPUT FILE HIDDEN UNTUK GALERI */}
-      <input 
-        type="file" 
-        accept="image/*" 
-        ref={galleryInputRef} 
-        onChange={handleImageUpload} 
-        className="hidden" 
-      />
-
-      {/* DECORATIVE BACKGROUND BLURS */}
       <div className={`fixed top-0 left-1/4 w-[30rem] h-[30rem] bg-[#1EAB57]/5 rounded-full blur-[100px] pointer-events-none z-0 transition-opacity duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}></div>
       <div className={`fixed bottom-0 right-0 w-[40rem] h-[40rem] bg-emerald-400/5 rounded-full blur-[120px] pointer-events-none z-0 transition-opacity duration-1000 delay-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}></div>
 
-      {/* CSS ANIMASI KUSTOM & SCANNER LASER */}
       <style dangerouslySetInnerHTML={{
         __html: `
           .animate-fade-up { opacity: 0; transform: translateY(30px); animation: fadeUpAnim 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -164,7 +183,6 @@ export default function ScannerPage() {
           @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
           .animate-shimmer { animation: shimmer 2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
 
-          /* SCANNER LASER ANIMATION */
           @keyframes scannerLaser {
             0% { top: 5%; opacity: 0; }
             10% { opacity: 1; }
@@ -172,17 +190,11 @@ export default function ScannerPage() {
             100% { top: 95%; opacity: 0; }
           }
           .laser-line {
-            position: absolute;
-            left: 5%;
-            right: 5%;
-            height: 2px;
-            background: #1EAB57;
+            position: absolute; left: 5%; right: 5%; height: 2px; background: #1EAB57;
             box-shadow: 0 0 15px 5px rgba(30,171,87,0.5);
-            animation: scannerLaser 2s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
-            z-index: 20;
+            animation: scannerLaser 2s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate; z-index: 20;
           }
           
-          /* VIEWFINDER CORNERS */
           .viewfinder::before, .viewfinder::after, .viewfinder-inner::before, .viewfinder-inner::after {
             content: ''; position: absolute; width: 40px; height: 40px; border-color: white; border-style: solid; z-index: 10; transition: all 0.3s ease;
           }
@@ -198,10 +210,6 @@ export default function ScannerPage() {
       }} />
 
       <div className="w-full mt-6 lg:mt-8 relative z-10">
-
-        {/* ======================================= */}
-        {/* PREMIUM HEADER */}
-        {/* ======================================= */}
         <div className={`flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white/80 backdrop-blur-xl p-6 md:p-8 rounded-[2.5rem] shadow-[0_20px_40px_-15px_rgb(0,0,0,0.03)] border border-white mb-10 ${isLoaded ? 'animate-fade-up' : 'opacity-0'}`}>
           <div className="flex items-center gap-5">
             <div className="relative group cursor-pointer">
@@ -214,12 +222,9 @@ export default function ScannerPage() {
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-black text-[#0F172A] tracking-tight leading-none mb-2">AI Food Scanner</h1>
-              <p className="text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                Hitung kalori otomatis dari foto makananmu
-              </p>
+              <p className="text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">Hitung kalori otomatis dari foto makananmu</p>
             </div>
           </div>
-          
           <div className="flex items-center gap-3">
             <button className="bg-slate-50 hover:bg-slate-100 text-slate-600 px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-200 shadow-sm cursor-pointer active:scale-95 flex items-center gap-2">
               <IconHistory className="w-4 h-4" /> Log Makanan
@@ -227,43 +232,22 @@ export default function ScannerPage() {
           </div>
         </div>
 
-        {/* ======================================= */}
-        {/* SCANNER WORKSPACE AREA */}
-        {/* ======================================= */}
         <div className="flex flex-col xl:flex-row gap-8 mb-12">
-          
-          {/* CAMERA SECTION (LEFT) */}
           <div className={`flex-1 flex flex-col gap-4 ${isLoaded ? 'animate-fade-up delay-100' : 'opacity-0'}`}>
             <div className={`relative w-full h-[450px] md:h-[550px] rounded-[2.5rem] overflow-hidden bg-slate-900 shadow-[0_20px_50px_-15px_rgb(0,0,0,0.2)] viewfinder ${scanState === 'scanning' ? 'scanning' : ''}`}>
-              
               <div className="viewfinder-inner w-full h-full relative group">
-                
-                {/* RENDER VIDEO LIVE ATAU GAMBAR UPLOAD */}
                 {!uploadedImage && scanState === "idle" ? (
-                  <video 
-                    ref={videoRef} 
-                    autoPlay 
-                    playsInline 
-                    muted 
-                    className="w-full h-full object-cover transform -scale-x-100 md:scale-x-100" 
-                  />
+                  <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover transform -scale-x-100 md:scale-x-100" />
                 ) : (
-                  <img 
-                    src={uploadedImage || "https://images.unsplash.com/photo-1512058564366-18510be2db19?q=80&w=800&auto=format&fit=crop"} 
-                    alt="Captured" 
-                    className={`w-full h-full object-cover transition-all duration-1000 ${scanState === 'scanning' ? 'scale-110 blur-[2px] brightness-75' : scanState === 'success' ? 'brightness-50' : 'scale-100 brightness-90 group-hover:scale-105'}`}
-                  />
+                  <img src={uploadedImage || "https://images.unsplash.com/photo-1512058564366-18510be2db19?q=80&w=800&auto=format&fit=crop"} alt="Captured" className={`w-full h-full object-cover transition-all duration-1000 ${scanState === 'scanning' ? 'scale-110 blur-[2px] brightness-75' : scanState === 'success' ? 'brightness-50' : 'scale-100 brightness-90 group-hover:scale-105'}`} />
                 )}
 
-                {/* Laser Line Overlay saat Scanning */}
                 {scanState === "scanning" && (
                   <>
                     <div className="laser-line"></div>
                     <div className="absolute inset-0 bg-[#1EAB57]/10 animate-pulse mix-blend-overlay"></div>
                   </>
                 )}
-
-                {/* Overlay Sukses */}
                 {scanState === "success" && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in z-20">
                     <div className="w-20 h-20 bg-[#1EAB57] rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(30,171,87,0.5)] animate-scale-in">
@@ -272,40 +256,19 @@ export default function ScannerPage() {
                   </div>
                 )}
 
-                {/* Status Teks Floating (Atas) */}
                 <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md px-6 py-2.5 rounded-full border border-white/10 flex items-center gap-2.5 z-30 shadow-lg">
-                  {scanState === "scanning" ? (
-                    <IconLoader className="w-4 h-4 text-[#1EAB57] animate-spin" />
-                  ) : scanState === "success" ? (
-                    <IconSparkles className="w-4 h-4 text-emerald-400" />
-                  ) : (
-                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                  )}
+                  {scanState === "scanning" ? <IconLoader className="w-4 h-4 text-[#1EAB57] animate-spin" /> : scanState === "success" ? <IconSparkles className="w-4 h-4 text-emerald-400" /> : <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>}
                   <span className="text-xs font-bold text-white tracking-wider">{scanText}</span>
                 </div>
 
-                {/* Controls (Bawah) - Sembunyi kalau sukses */}
                 {scanState !== "success" && (
                   <div className="absolute bottom-8 left-0 right-0 flex items-center justify-center gap-6 z-30">
-                    {/* Tombol Galeri Kiri */}
-                    <button 
-                      onClick={() => galleryInputRef.current?.click()}
-                      className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white border border-white/20 hover:bg-black/70 transition-all hover:scale-105 active:scale-95 cursor-pointer"
-                      title="Upload dari Galeri"
-                    >
+                    <button onClick={() => galleryInputRef.current?.click()} className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white border border-white/20 hover:bg-black/70 transition-all hover:scale-105 active:scale-95 cursor-pointer" title="Upload dari Galeri">
                       <IconImage className="w-5 h-5" />
                     </button>
-                    
-                    {/* Tombol Capture Tengah */}
-                    <button 
-                      onClick={captureImage}
-                      disabled={scanState === "scanning"}
-                      className={`w-20 h-20 rounded-full border-4 border-white/50 flex items-center justify-center p-1.5 transition-transform ${scanState === 'scanning' ? 'scale-95 opacity-50 cursor-not-allowed' : 'hover:scale-105 active:scale-95 cursor-pointer'}`}
-                    >
+                    <button onClick={captureImage} disabled={scanState === "scanning"} className={`w-20 h-20 rounded-full border-4 border-white/50 flex items-center justify-center p-1.5 transition-transform ${scanState === 'scanning' ? 'scale-95 opacity-50 cursor-not-allowed' : 'hover:scale-105 active:scale-95 cursor-pointer'}`}>
                       <div className="w-full h-full bg-white rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.5)]"></div>
                     </button>
-
-                    {/* Tombol Flash / Setting Kanan */}
                     <button className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white border border-white/20 hover:bg-black/70 transition-all hover:scale-105 active:scale-95 cursor-pointer">
                       <IconLightning className="w-5 h-5" />
                     </button>
@@ -313,17 +276,12 @@ export default function ScannerPage() {
                 )}
               </div>
             </div>
-            
-            {/* Hint Teks di bawah kamera */}
             <p className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2 flex items-center justify-center gap-2">
               <IconInfo className="w-3.5 h-3.5" /> Pastikan pencahayaan cukup dan makanan terlihat jelas
             </p>
           </div>
 
-          {/* RESULTS SECTION (RIGHT) */}
           <div className={`w-full xl:w-[450px] shrink-0 flex flex-col gap-6 ${isLoaded ? 'animate-fade-up delay-200' : 'opacity-0'}`}>
-            
-            {/* STATE IDLE */}
             {scanState === "idle" && (
               <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-[0_15px_40px_-10px_rgb(0,0,0,0.03)] h-full flex flex-col items-center justify-center text-center min-h-[400px]">
                 <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mb-6 border border-emerald-100 relative">
@@ -332,9 +290,7 @@ export default function ScannerPage() {
                 </div>
                 <h3 className="text-2xl font-black text-[#0F172A] tracking-tight mb-3">Siap Menganalisa</h3>
                 <p className="text-sm font-medium text-slate-500 leading-relaxed max-w-[250px] mb-10">Arahkan kamera ke makanan Anda lalu tekan tombol jepret untuk mengetahui kalori dan makronutrien.</p>
-                
                 <div className="flex gap-4 w-full px-4">
-                  {/* Di sini klik kamera nggak usah karena udah live di kiri, ini buat visual aja */}
                   <div className="flex-1 flex flex-col items-center gap-3 bg-emerald-50 p-4 rounded-2xl border border-emerald-100 transition-colors cursor-default">
                     <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-[#1EAB57] shadow-sm"><IconCamera className="w-6 h-6"/></div>
                     <span className="text-[10px] font-black uppercase tracking-widest text-[#1EAB57]">Kamera Aktif</span>
@@ -346,21 +302,18 @@ export default function ScannerPage() {
                 </div>
               </div>
             )}
-
-            {/* STATE SCANNING */}
+            
+            {/* Sisa UI untuk Scanning & Success */}
             {scanState === "scanning" && (
               <div className="bg-slate-900 rounded-[2.5rem] p-8 shadow-[0_20px_50px_-15px_rgb(0,0,0,0.3)] h-full flex flex-col items-center justify-center text-center relative overflow-hidden min-h-[400px]">
-                {/* Garis Shimmer loading */}
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-[#1EAB57] to-transparent animate-shimmer"></div>
                 <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-[#1EAB57] to-transparent animate-shimmer" style={{ animationDirection: "reverse" }}></div>
-                
                 <div className="relative mb-8">
                   <div className="w-28 h-28 border-4 border-slate-800 border-t-[#1EAB57] rounded-full animate-spin shadow-[0_0_15px_rgba(30,171,87,0.3)]"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
                     <IconBot className="w-10 h-10 text-emerald-400 animate-pulse" />
                   </div>
                 </div>
-                
                 <h3 className="text-3xl font-black text-white tracking-tight mb-4">AI Bekerja...</h3>
                 <div className="bg-emerald-900/30 px-5 py-2.5 rounded-xl border border-emerald-800/50">
                   <p className="text-xs font-black text-emerald-400 uppercase tracking-widest animate-pulse">{scanText}</p>
@@ -368,23 +321,15 @@ export default function ScannerPage() {
               </div>
             )}
 
-            {/* STATE SUCCESS (Hasil Nutrisi VIP) */}
             {scanState === "success" && (
               <div className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-slate-100 shadow-[0_20px_50px_-10px_rgb(0,0,0,0.05)] h-full flex flex-col relative overflow-hidden animate-scale-in">
-                {/* Glow hiasan */}
                 <div className="absolute right-0 top-0 w-48 h-48 bg-[#1EAB57]/10 rounded-full blur-[40px] pointer-events-none -translate-y-1/2 translate-x-1/4"></div>
-                
-                {/* Badge Identifikasi */}
                 <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50 border border-emerald-100 mb-6 w-max relative z-10 shadow-sm">
                   <IconCheckCircle className="w-4 h-4 text-[#1EAB57]" />
                   <span className="text-[10px] font-black text-[#1EAB57] uppercase tracking-widest">Identifikasi Sukses (98%)</span>
                 </div>
-
-                {/* Nama Makanan dari AI (Statis Nasi Goreng untuk simulasi) */}
                 <h2 className="text-3xl md:text-4xl font-black text-[#0F172A] tracking-tight leading-[1.1] mb-2 relative z-10">Nasi Goreng Spesial</h2>
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-8 relative z-10">Estimasi Porsi: 1 Porsi (± 300g)</p>
-
-                {/* Big Calorie Display */}
                 <div className="flex items-center gap-4 mb-8 bg-slate-50 p-6 rounded-[2rem] border border-slate-100 relative z-10 shadow-inner">
                   <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shrink-0 border border-slate-200 shadow-sm">
                     <IconFlame className="w-8 h-8 text-rose-500" />
@@ -394,33 +339,23 @@ export default function ScannerPage() {
                     <span className="text-5xl font-black text-[#0F172A] leading-none tracking-tighter">450<span className="text-xl text-slate-400 font-bold tracking-normal ml-1">Kkal</span></span>
                   </div>
                 </div>
-
-                {/* Macros Grid */}
                 <div className="grid grid-cols-3 gap-3 mb-10 relative z-10">
                   <div className="bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md hover:border-blue-200 transition-all cursor-default">
-                    <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center mb-2">
-                      <span className="font-black text-sm">P</span>
-                    </div>
+                    <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center mb-2"><span className="font-black text-sm">P</span></div>
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Protein</span>
                     <span className="text-xl font-black text-slate-800">15<span className="text-xs font-bold text-slate-400 ml-0.5">g</span></span>
                   </div>
                   <div className="bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md hover:border-amber-200 transition-all cursor-default">
-                    <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mb-2">
-                      <span className="font-black text-sm">C</span>
-                    </div>
+                    <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mb-2"><span className="font-black text-sm">C</span></div>
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Karbo</span>
                     <span className="text-xl font-black text-slate-800">55<span className="text-xs font-bold text-slate-400 ml-0.5">g</span></span>
                   </div>
                   <div className="bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md hover:border-rose-200 transition-all cursor-default">
-                    <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mb-2">
-                      <span className="font-black text-sm">F</span>
-                    </div>
+                    <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mb-2"><span className="font-black text-sm">F</span></div>
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Lemak</span>
                     <span className="text-xl font-black text-slate-800">12<span className="text-xs font-bold text-slate-400 ml-0.5">g</span></span>
                   </div>
                 </div>
-
-                {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3 mt-auto relative z-10">
                   <button className="flex-1 bg-[#1EAB57] hover:bg-[#168E46] text-white py-4 rounded-xl text-[11px] font-black uppercase tracking-widest shadow-[0_8px_20px_rgba(30,171,87,0.25)] hover:-translate-y-0.5 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer">
                     <IconPlus className="w-4 h-4" /> Simpan Jurnal
@@ -431,13 +366,9 @@ export default function ScannerPage() {
                 </div>
               </div>
             )}
-
           </div>
         </div>
 
-        {/* ======================================= */}
-        {/* RECENT SCANS HISTORY */}
-        {/* ======================================= */}
         <div className={`mt-8 md:mt-12 ${isLoaded ? 'animate-fade-up delay-400' : 'opacity-0'}`}>
           <div className="flex items-center justify-between mb-6 px-1">
             <h2 className="text-2xl font-black text-[#0F172A] tracking-tight">Riwayat Scan Terakhir</h2>
@@ -445,26 +376,19 @@ export default function ScannerPage() {
               Lihat Semua <IconArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
-          
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 md:gap-6">
             {mockRecentScans.map((scan, index) => (
               <div key={scan.id} style={{animationDelay: `${500 + (index * 100)}ms`}} className={`bg-white rounded-[1.5rem] p-3 border border-slate-100 shadow-[0_10px_20px_-10px_rgb(0,0,0,0.03)] hover:shadow-[0_15px_30px_-10px_rgb(0,0,0,0.08)] hover:border-[#1EAB57]/30 transition-all duration-300 group flex items-center gap-4 cursor-pointer overflow-hidden relative ${isLoaded ? 'animate-fade-up opacity-0' : 'opacity-0'}`}>
-                
-                {/* Image Box */}
                 <div className="w-24 h-24 shrink-0 rounded-xl overflow-hidden bg-slate-100 relative">
                   <img src={scan.image} alt={scan.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" loading="lazy" />
                   <div className="absolute inset-0 bg-slate-900/10 group-hover:bg-transparent transition-colors"></div>
                 </div>
-                
-                {/* Info Text */}
                 <div className="flex-1 py-1 pr-2 min-w-0 flex flex-col justify-center h-full">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1"><IconClock className="w-3 h-3" /> {scan.time}</span>
                     <span className="bg-emerald-50 border border-emerald-100/50 text-emerald-600 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest flex items-center gap-0.5 shadow-sm"><IconTarget className="w-2.5 h-2.5"/> {scan.accuracy}</span>
                   </div>
-                  <h3 className="text-[14px] font-black text-slate-900 truncate mb-2 group-hover:text-[#1EAB57] transition-colors leading-snug">
-                    {scan.title}
-                  </h3>
+                  <h3 className="text-[14px] font-black text-slate-900 truncate mb-2 group-hover:text-[#1EAB57] transition-colors leading-snug">{scan.title}</h3>
                   <div className="flex items-center gap-1.5 mt-auto">
                     <span className="flex items-center gap-1 text-rose-500 font-black text-[11px]"><IconFlame className="w-3.5 h-3.5"/> {scan.calories} Kkal</span>
                   </div>
@@ -473,15 +397,12 @@ export default function ScannerPage() {
             ))}
           </div>
         </div>
-
       </div>
     </div>
   );
 }
 
-// ==========================================
-// KUMPULAN SVG ICONS KUSTOM
-// ==========================================
+// ICONS
 const IconSearch = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
 const IconFilter = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>;
 const IconStar = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>;
