@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 
-// Data Paket Pricing (Gaya Copywriting lebih santai dan B2C)
+// Data Paket Pricing
 const pricingPlans = [
   {
     name: "GIZIKU BASIC",
@@ -59,8 +59,28 @@ const formatRupiah = (number: number) => {
 export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 
+  // 1. INJEKSI SCRIPT MIDTRANS SNAP KE DALAM HALAMAN
+  useEffect(() => {
+    const snapScript = "https://app.sandbox.midtrans.com/snap/snap.js";
+    // CLIENT KEY SANDBOX KAMU (Dapatkan dari Dashboard Midtrans)
+    const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || "SB-Mid-client-KODE_RAHASIA_KAMU";
+
+    const script = document.createElement("script");
+    script.src = snapScript;
+    script.setAttribute("data-client-key", clientKey);
+    script.async = true;
+    
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  // Animasi Scroll
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -70,19 +90,73 @@ export default function Pricing() {
       },
       { threshold: 0.1 } 
     );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
+    if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
   }, []);
 
+  // 2. FUNGSI UNTUK MENGIRIM DATA KE API DAN MEMBUKA POPUP
+  const handlePurchase = async (plan: any) => {
+    const price = isAnnual ? plan.price.tahunan : plan.price.bulanan;
+    
+    if (price === 0) {
+      alert(`Paket ${plan.name} berhasil diaktifkan secara gratis!`);
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      // Panggil API Backend
+      const response = await fetch("/api/payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planName: plan.name,
+          price: price,
+          orderId: `GIZIKU-${Date.now()}` // Harus unik setiap transaksi
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.token) {
+        // Panggil Popup Midtrans Snap Asli
+        (window as any).snap.pay(data.token, {
+          onSuccess: function (result: any) {
+            alert("Pembayaran sukses! Akun berhasil di-upgrade.");
+            console.log(result);
+            setIsProcessing(false);
+          },
+          onPending: function (result: any) {
+            alert("Menunggu pembayaran...");
+            console.log(result);
+            setIsProcessing(false);
+          },
+          onError: function (result: any) {
+            alert("Pembayaran gagal atau error!");
+            console.log(result);
+            setIsProcessing(false);
+          },
+          onClose: function () {
+            alert("Popup ditutup tanpa menyelesaikan pembayaran.");
+            setIsProcessing(false);
+          }
+        });
+      } else {
+        alert("Gagal mendapatkan token Midtrans.");
+        setIsProcessing(false);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Terjadi kesalahan jaringan.");
+      setIsProcessing(false);
+    }
+  };
+
   return (
-    // Background ngikutin Hero (#FAFAFA)
     <section ref={sectionRef} className="w-full min-h-screen py-20 bg-[#FAFAFA] relative flex items-center justify-center overflow-hidden" id="pricing">
       
-      {/* Ornamen Background (Nyamain vibe bulatan dashed di Hero) */}
+      {/* Ornamen Background */}
       <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none opacity-[0.05]">
         <div className="h-[900px] w-[900px] rounded-full border-[2px] border-dashed border-gray-800 absolute"></div>
         <div className="absolute top-[10%] left-[10%] text-gray-800"><IconPlus size="32" /></div>
@@ -91,30 +165,13 @@ export default function Pricing() {
 
       <style dangerouslySetInnerHTML={{
         __html: `
-          @keyframes textSlideUp {
-            0% { transform: translateY(40px); opacity: 0; }
-            100% { transform: translateY(0); opacity: 1; }
-          }
-          @keyframes cardFloat {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
-          }
+          @keyframes textSlideUp { 0% { transform: translateY(40px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+          @keyframes cardFloat { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
           .animate-text-enter { animation: textSlideUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
           .animate-float-card { animation: cardFloat 6s ease-in-out infinite; }
-          .delay-0 { animation-delay: 0s; }
-          .delay-100 { animation-delay: 0.15s; }
-          .delay-200 { animation-delay: 0.3s; }
-          .delay-400 { animation-delay: 0.6s; }
-          
-          /* Animasi Harga Pas Ganti Bulanan/Tahunan */
-          .price-fade {
-            animation: priceFadeAnim 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-          }
-          @keyframes priceFadeAnim {
-            0% { opacity: 0; transform: scale(0.95); }
-            100% { opacity: 1; transform: scale(1); }
-          }
+          .delay-0 { animation-delay: 0s; } .delay-100 { animation-delay: 0.15s; } .delay-200 { animation-delay: 0.3s; }
+          .price-fade { animation: priceFadeAnim 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+          @keyframes priceFadeAnim { 0% { opacity: 0; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
         `
       }} />
 
@@ -122,47 +179,34 @@ export default function Pricing() {
         
         {/* --- Header --- */}
         <div className={`text-center flex flex-col items-center mb-14 md:mb-16 ${isVisible ? 'animate-text-enter delay-0' : 'opacity-0'}`}>
-          
-          {/* UPDATED TAG PILL STANDAR (Sama dengan Misi Kami & Pengalaman Pengguna) */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-100/80 mb-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] backdrop-blur-md">
              <span className="w-2 h-2 rounded-full bg-[#1A453A] animate-pulse"></span>
              <span className="text-[9px] md:text-[10px] font-black text-[#1A453A] uppercase tracking-[0.25em]">Pricing Plan</span>
           </div>
-          
           <h2 className="text-4xl md:text-5xl lg:text-[4rem] font-black tracking-tighter text-gray-950 leading-[1.05] mb-8">
             Mulai Dari <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1A453A] via-emerald-600 to-green-500 drop-shadow-sm">Nol</span>.<br />
             Upgrade Kapan Aja.
           </h2>
-
-          {/* Toggle Tab Ala Segmented Control Hero */}
           <div className="relative flex w-[280px] rounded-full bg-white p-1.5 shadow-[0_8px_20px_rgba(0,0,0,0.04)] border border-gray-100">
             <div 
               className="absolute top-1.5 bottom-1.5 rounded-full bg-gray-100/80 shadow-sm transition-all duration-400 ease-out"
-              style={{ 
-                width: 'calc(50% - 6px)', 
-                left: isAnnual ? 'calc(50% + 3px)' : '3px' 
-              }}
+              style={{ width: 'calc(50% - 6px)', left: isAnnual ? 'calc(50% + 3px)' : '3px' }}
             ></div>
-            <button onClick={() => setIsAnnual(false)} className={`relative z-10 flex-1 py-3 text-xs font-black uppercase tracking-wider transition-colors duration-300 ${!isAnnual ? "text-gray-900" : "text-gray-400 hover:text-gray-700"}`}>
-              Bulanan
-            </button>
-            <button onClick={() => setIsAnnual(true)} className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-3 text-xs font-black uppercase tracking-wider transition-colors duration-300 ${isAnnual ? "text-gray-900" : "text-gray-400 hover:text-gray-700"}`}>
+            <button onClick={() => setIsAnnual(false)} className={`relative z-10 flex-1 py-3 text-xs font-black uppercase tracking-wider transition-colors duration-300 ${!isAnnual ? "text-gray-900" : "text-gray-400"}`}>Bulanan</button>
+            <button onClick={() => setIsAnnual(true)} className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-3 text-xs font-black uppercase tracking-wider transition-colors duration-300 ${isAnnual ? "text-gray-900" : "text-gray-400"}`}>
               Tahunan
               {!isAnnual && <span className="flex h-4 w-4 items-center justify-center rounded-full bg-orange-100 text-[8px] text-orange-600 animate-pulse"><IconSparkle size="10"/></span>}
             </button>
           </div>
         </div>
 
-        {/* --- Pricing Cards Grid (Glassmorphism Ala Hero) --- */}
+        {/* --- Pricing Cards Grid --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full items-stretch lg:px-12">
           {pricingPlans.map((plan, index) => {
             const currentPrice = isAnnual ? plan.price.tahunan : plan.price.bulanan;
             
             return (
-              <div 
-                key={index} 
-                className={`relative w-full ${isVisible ? `animate-text-enter ${plan.delay}` : 'opacity-0'} ${plan.primary && isVisible ? 'animate-float-card' : ''}`}
-              >
+              <div key={index} className={`relative w-full ${isVisible ? `animate-text-enter ${plan.delay}` : 'opacity-0'} ${plan.primary && isVisible ? 'animate-float-card' : ''}`}>
                 <div className={`flex flex-col h-full rounded-[2.5rem] bg-white/80 p-8 lg:p-10 shadow-[0_10px_40px_rgba(0,0,0,0.05)] backdrop-blur-xl transition-all duration-300 group
                   hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] hover:-translate-y-1
                   ${plan.primary ? 'border-2 border-[#1A453A]/20 scale-100 lg:scale-105 z-20' : 'border border-gray-100/80 z-10'}`}
@@ -175,13 +219,11 @@ export default function Pricing() {
                     </div>
                   )}
 
-                  {/* Header */}
                   <div className="mb-8">
                     <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">{plan.name}</p>
                     <h3 className="text-lg font-bold text-gray-800 leading-snug">{plan.desc}</h3>
                   </div>
                   
-                  {/* Harga */}
                   <div className="mb-8 flex flex-col justify-end min-h-[90px]">
                     <div className="h-4">
                       {isAnnual && plan.price.bulanan > 0 && (
@@ -205,10 +247,8 @@ export default function Pricing() {
                     </div>
                   </div>
 
-                  {/* Divider garis ala Hero */}
                   <div className="h-[1.5px] w-full bg-gray-100 mb-8"></div>
 
-                  {/* Fitur (Mirip list Bahan Baku di Hero) */}
                   <ul className="space-y-4 mb-10 flex-1">
                     {plan.features.map((feature, fIndex) => (
                       <li key={fIndex} className="flex items-start gap-3 text-sm font-semibold text-gray-600">
@@ -221,15 +261,17 @@ export default function Pricing() {
                     ))}
                   </ul>
 
-                  {/* CTA Button (Style tombol "SCAN MAKANAN") */}
                   <button 
+                    onClick={() => handlePurchase(plan)}
+                    disabled={isProcessing}
                     className={`w-full group flex cursor-pointer items-center justify-center gap-3 rounded-full px-8 py-4 text-sm font-bold transition-all duration-300 hover:-translate-y-1
+                      ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}
                       ${plan.primary 
                         ? 'bg-[#1A453A] text-white shadow-xl hover:bg-[#123129] hover:shadow-[#1A453A]/30' 
                         : 'border-2 border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 bg-white'}`}
                   >
-                    {plan.cta}
-                    {plan.primary && <span className="group-hover:translate-x-1 transition-transform"><IconArrowRight /></span>}
+                    {isProcessing ? "Memproses..." : plan.cta}
+                    {plan.primary && !isProcessing && <span className="group-hover:translate-x-1 transition-transform"><IconArrowRight /></span>}
                   </button>
 
                 </div>
@@ -238,7 +280,6 @@ export default function Pricing() {
           })}
         </div>
         
-        {/* Footer info (Gaya tulisan vertikal di Hero) */}
         <div className={`mt-16 flex items-center justify-center gap-6 opacity-40 select-none ${isVisible ? 'animate-text-enter delay-400' : 'opacity-0'}`}>
           <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-600">CANCEL ANYTIME</p>
           <span className="w-1 h-1 rounded-full bg-gray-600"></span>
