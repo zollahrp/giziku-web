@@ -9,9 +9,9 @@ import Swal from "sweetalert2";
 // FIREBASE IMPORTS
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs, doc, getDoc } from "firebase/firestore";
 
-// TIPE DATA BARU (Lebih Lengkap)
+// TIPE DATA
 type Micronutrients = {
   vitC: string;
   fiber: string;
@@ -21,7 +21,7 @@ type Micronutrients = {
 
 type FoodItem = {
   name: string;
-  box: [number, number, number, number]; // [ymin, xmin, ymax, xmax]
+  box: [number, number, number, number];
   portion: string;
   calories: number;
   protein: number;
@@ -41,6 +41,7 @@ type ScanResult = {
     fat: number;
     score: number;
     micronutrients: Micronutrients;
+    ai_insight: string;
   };
 };
 
@@ -48,6 +49,7 @@ export default function ScannerPage() {
   const router = useRouter();
   const [isLoaded, setIsLoaded] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [userGoal, setUserGoal] = useState<string>("Menjaga Berat Badan");
 
   const [scanState, setScanState] = useState<"idle" | "scanning" | "success" | "error">("idle");
   const [scanText, setScanText] = useState("Arahkan kamera ke makanan...");
@@ -56,8 +58,14 @@ export default function ScannerPage() {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
   
-  // TOGGLE VISIBILITY POINTER
+  // TOGGLES
   const [showPointers, setShowPointers] = useState(true);
+  const [showMicro, setShowMicro] = useState(false); 
+  const [showShareModal, setShowShareModal] = useState(false); 
+
+  // STATE UNTUK FITUR SHARE ALA STRAVA
+  const [shareMode, setShareMode] = useState<"portrait" | "landscape" | "minimalist">("portrait");
+  const [shareColor, setShareColor] = useState<string>("text-white");
 
   const [recentScans, setRecentScans] = useState<any[]>([]);
   const isFoodItem = scanResult ? scanResult.total.calories > 0 : false;
@@ -72,7 +80,7 @@ export default function ScannerPage() {
       const q = query(collection(db, "users", uid, "foodLogs"), orderBy("scannedAt", "desc"), limit(6));
       const querySnapshot = await getDocs(q);
       const logs: any[] = [];
-      querySnapshot.forEach((doc) => logs.push({ id: doc.id, ...doc.data() }));
+      querySnapshot.forEach((d) => logs.push({ id: d.id, ...d.data() }));
       setRecentScans(logs);
     } catch (error) {
       console.error("Gagal menarik riwayat:", error);
@@ -80,10 +88,16 @@ export default function ScannerPage() {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUserId(user.uid);
         fetchRecentScans(user.uid);
+        try {
+           const userDoc = await getDoc(doc(db, "users", user.uid));
+           if(userDoc.exists() && userDoc.data().bodyGoal) {
+              setUserGoal(userDoc.data().bodyGoal);
+           }
+        } catch(e) {}
       } else router.push("/login");
     });
     const timer = setTimeout(() => setIsLoaded(true), 100);
@@ -161,16 +175,18 @@ export default function ScannerPage() {
     setScanState("scanning");
     setSelectedItemIndex(null); 
     setShowPointers(true);
+    setShowMicro(false); 
     
-    setScanText("Menganalisa objek...");
-    setTimeout(() => scanState === "scanning" && setScanText("Memecah komponen makanan..."), 1500);
-    setTimeout(() => scanState === "scanning" && setScanText("Menghitung Gizi Mikro & Makro..."), 3000);
+    setScanText("Mata Gizify Vision lagi melototin makananmu...");
+    setTimeout(() => scanState === "scanning" && setScanText("Tunggu ya, lagi memisahkan gizi lauk dan nasinya..."), 1500);
+    setTimeout(() => scanState === "scanning" && setScanText("Menghitung kalori biar target tubuhmu cepat tercapai..."), 3000);
+    setTimeout(() => scanState === "scanning" && setScanText("Meracik saran gizi terbaik buat kamu..."), 4500);
 
     try {
       const response = await fetch("/api/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: base64Image })
+        body: JSON.stringify({ image: base64Image, bodyGoal: userGoal })
       });
       const data = await response.json();
 
@@ -180,7 +196,7 @@ export default function ScannerPage() {
       } else throw new Error(data.error);
     } catch (error) {
       setScanState("error");
-      Swal.fire("Gagal", "Gagal menganalisa gambar. Coba lagi.", "error");
+      Swal.fire("Gagal", "Kamera nge-blank nih! Coba foto lagi yang lebih jelas ya.", "error");
       handleRetake();
     }
   };
@@ -188,7 +204,7 @@ export default function ScannerPage() {
   const handleSaveLog = async () => {
     if (!userId || !scanResult || !isFoodItem) return;
     const dataToSave = selectedItemIndex !== null ? scanResult.items[selectedItemIndex] : scanResult.total;
-    const saveType = selectedItemIndex !== null ? "Scan AI Item Satuan" : "Scan AI Piring Lengkap";
+    const saveType = selectedItemIndex !== null ? "Gizify Vision - Item Satuan" : "Gizify Vision - Piring Lengkap";
 
     try {
       Swal.fire({ title: "Menyimpan...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -202,7 +218,7 @@ export default function ScannerPage() {
         scannedAt: serverTimestamp(),
         type: saveType
       });
-      Swal.fire({ title: "Berhasil!", text: "Makanan ditambahkan ke jurnal.", icon: "success", timer: 1500, showConfirmButton: false, customClass: { popup: "rounded-3xl" }})
+      Swal.fire({ title: "Masuk Jurnal!", text: "Asupanmu sudah dicatat dengan aman.", icon: "success", timer: 1500, showConfirmButton: false, customClass: { popup: "rounded-3xl" }})
       .then(() => {
         fetchRecentScans(userId);
         handleRetake();
@@ -219,6 +235,8 @@ export default function ScannerPage() {
     setUploadedImage(null);
     setScanResult(null);
     setSelectedItemIndex(null);
+    setShowMicro(false);
+    setShowShareModal(false);
     if (galleryInputRef.current) galleryInputRef.current.value = "";
   };
 
@@ -229,17 +247,126 @@ export default function ScannerPage() {
 
   const currentDisplayData = selectedItemIndex !== null && scanResult ? scanResult.items[selectedItemIndex] : scanResult?.total;
 
+  // KONFIGURASI WARNA SHARE
+  const colorOptions = [
+    { name: "Putih", class: "text-white", bg: "bg-white" },
+    { name: "Hijau", class: "text-emerald-400", bg: "bg-emerald-400" },
+    { name: "Kuning", class: "text-amber-400", bg: "bg-amber-400" },
+    { name: "Merah", class: "text-rose-400", bg: "bg-rose-400" },
+  ];
+
   return (
     <div className="w-full flex-1 overflow-y-auto px-4 md:px-6 lg:px-8 lg:pr-10 pb-32 md:pb-16 relative min-w-0 overflow-x-hidden bg-[#F8FAFC]">
       <canvas ref={canvasRef} className="hidden"></canvas>
       <input type="file" accept="image/*" ref={galleryInputRef} onChange={handleImageUpload} className="hidden" />
 
+      {/* ======================================= */}
+      {/* MODAL SHARE GIZIFY (STRAVA STYLE) */}
+      {/* ======================================= */}
+      {showShareModal && scanResult && uploadedImage && (
+        <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fade-in overflow-y-auto custom-scroll">
+          
+          <button onClick={() => setShowShareModal(false)} className="absolute top-4 right-4 md:top-8 md:right-8 w-10 h-10 bg-white/10 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-all z-[210] cursor-pointer">
+             <IconClose className="w-5 h-5" />
+          </button>
+
+          {/* SHARE CONTROLS PANEL */}
+          <div className="bg-white/10 border border-white/20 backdrop-blur-xl p-4 rounded-[1.5rem] mb-6 flex flex-col sm:flex-row items-center gap-4 md:gap-8 z-10 w-full max-w-3xl mt-12 md:mt-0">
+            {/* Mode Select */}
+            <div className="flex gap-2 bg-black/40 p-1.5 rounded-xl w-full sm:w-auto">
+               <button onClick={() => setShareMode("portrait")} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all ${shareMode === "portrait" ? "bg-white text-slate-900" : "text-white hover:bg-white/20"}`}>Portrait</button>
+               <button onClick={() => setShareMode("landscape")} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all ${shareMode === "landscape" ? "bg-white text-slate-900" : "text-white hover:bg-white/20"}`}>Landscape</button>
+               <button onClick={() => setShareMode("minimalist")} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all ${shareMode === "minimalist" ? "bg-white text-slate-900" : "text-white hover:bg-white/20"}`}>Minimalist</button>
+            </div>
+            
+            {/* Color Picker */}
+            <div className="flex items-center gap-3">
+               <span className="text-xs font-black text-white/60 uppercase tracking-widest">Warna Teks:</span>
+               <div className="flex gap-2">
+                 {colorOptions.map((color) => (
+                    <button key={color.name} onClick={() => setShareColor(color.class)} className={`w-6 h-6 rounded-full border-2 transition-transform ${shareColor === color.class ? 'border-white scale-125' : 'border-transparent hover:scale-110'} ${color.bg}`} title={color.name}></button>
+                 ))}
+               </div>
+            </div>
+          </div>
+          
+          {/* CARD UTAMA YANG AKAN DI-SCREENSHOT */}
+          <div id="gizify-share-card" className={`relative bg-slate-950 rounded-[2rem] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.6)] border border-white/10 flex transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
+            ${shareMode === "portrait" ? "w-full max-w-[360px] aspect-[4/5] flex-col justify-end" : 
+              shareMode === "landscape" ? "w-full max-w-4xl aspect-[16/9] md:aspect-[21/9] flex-row items-center" : 
+              "w-full max-w-[360px] aspect-square flex-col justify-center items-center text-center"}
+          `}>
+             
+             {/* Background Image Layer */}
+             <div className="absolute inset-0 z-0">
+                <img src={uploadedImage} className={`w-full h-full object-cover transition-all duration-500 ${shareMode === "minimalist" ? "opacity-30 blur-md scale-110" : "opacity-70 mix-blend-overlay"}`} />
+                
+                {/* Gradien yang berubah arah berdasarkan mode */}
+                {shareMode === "portrait" && <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent"></div>}
+                {shareMode === "landscape" && <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/80 to-transparent"></div>}
+                {shareMode === "minimalist" && <div className="absolute inset-0 bg-slate-900/40"></div>}
+             </div>
+             
+             {/* Content Area */}
+             <div className={`relative z-10 flex flex-col ${shareMode === "landscape" ? "w-full md:w-2/3 p-8 md:p-12 justify-center h-full" : shareMode === "portrait" ? "w-full p-8 justify-end" : "w-full p-8 items-center"}`}>
+                
+                {/* Logo Gizify */}
+                <div className={`flex items-center gap-2 ${shareMode === "landscape" ? "mb-6" : shareMode === "portrait" ? "mb-4" : "mb-8 absolute top-8"}`}>
+                  <div className="w-6 h-6 rounded-full bg-[#1EAB57] text-white flex items-center justify-center font-black text-[10px] shadow-lg">G</div>
+                  <span className="text-xs font-black tracking-widest text-white drop-shadow-md opacity-90">GIZIFY</span>
+                </div>
+
+                <h2 className={`font-black leading-tight drop-shadow-xl transition-colors duration-300 ${shareColor} ${shareMode === "minimalist" ? "text-2xl mb-1" : "text-3xl md:text-5xl mb-2"}`}>
+                  {scanResult.total.name}
+                </h2>
+                
+                {shareMode !== "minimalist" && (
+                  <p className="text-white/70 font-bold text-[10px] uppercase tracking-[0.2em] mb-6 drop-shadow-md">
+                    {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  </p>
+                )}
+                
+                {/* Highlight Kalori */}
+                <div className={`flex items-baseline gap-2 mb-6 ${shareMode === "minimalist" ? "mb-8" : ""}`}>
+                   <span className={`font-black tracking-tighter drop-shadow-2xl transition-colors duration-300 ${shareColor} ${shareMode === "minimalist" ? "text-7xl" : "text-6xl md:text-8xl"}`}>{scanResult.total.calories}</span>
+                   <span className={`font-bold drop-shadow-md ${shareMode === "minimalist" ? "text-xl text-white/50" : "text-xl md:text-2xl text-white/60"}`}>Kkal</span>
+                </div>
+
+                {/* Makro Data Bar */}
+                <div className={`flex items-center ${shareMode === "minimalist" ? "justify-center gap-6 bg-white/10 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10" : "gap-6 md:gap-10"}`}>
+                   <div className={shareMode === "minimalist" ? "text-center" : ""}>
+                     <p className="text-[9px] font-black text-white/50 uppercase tracking-widest mb-1">Protein</p>
+                     <p className="text-xl md:text-2xl font-black text-white drop-shadow-md">{scanResult.total.protein}g</p>
+                   </div>
+                   <div className="w-px h-8 bg-white/20"></div>
+                   <div className={shareMode === "minimalist" ? "text-center" : ""}>
+                     <p className="text-[9px] font-black text-white/50 uppercase tracking-widest mb-1">Karbo</p>
+                     <p className="text-xl md:text-2xl font-black text-white drop-shadow-md">{scanResult.total.carbs}g</p>
+                   </div>
+                   <div className="w-px h-8 bg-white/20"></div>
+                   <div className={shareMode === "minimalist" ? "text-center" : ""}>
+                     <p className="text-[9px] font-black text-white/50 uppercase tracking-widest mb-1">Lemak</p>
+                     <p className="text-xl md:text-2xl font-black text-white drop-shadow-md">{scanResult.total.fat}g</p>
+                   </div>
+                </div>
+
+             </div>
+          </div>
+          
+          <p className="text-white/50 text-xs mt-6 font-bold animate-pulse">Screenshot kartu ini untuk dibagikan!</p>
+        </div>
+      )}
+
       <style dangerouslySetInnerHTML={{
         __html: `
           .animate-fade-up { opacity: 0; transform: translateY(30px); animation: fadeUpAnim 0.8s forwards; }
           .animate-scale-in { opacity: 0; transform: scale(0.85); animation: scaleInAnim 0.6s forwards; }
+          .animate-fade-in { animation: fadeIn 0.4s ease-out; }
+          .animate-text-change { animation: textChange 0.5s ease-in-out; }
           @keyframes fadeUpAnim { to { opacity: 1; transform: translateY(0); } }
           @keyframes scaleInAnim { to { opacity: 1; transform: scale(1); } }
+          @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+          @keyframes textChange { 0% { opacity: 0; transform: translateY(5px); } 100% { opacity: 1; transform: translateY(0); } }
           @keyframes scannerLaser { 0% { top: 5%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 95%; opacity: 0; } }
           .laser-line { position: absolute; left: 5%; right: 5%; height: 2px; background: #1EAB57; box-shadow: 0 0 15px 5px rgba(30,171,87,0.5); animation: scannerLaser 2s infinite alternate; z-index: 20; }
         `
@@ -250,12 +377,12 @@ export default function ScannerPage() {
         {/* HEADER */}
         <div className={`flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white/80 backdrop-blur-xl p-6 md:p-8 rounded-[2.5rem] shadow-sm border border-white mb-10 ${isLoaded ? 'animate-fade-up' : 'opacity-0'}`}>
           <div className="flex items-center gap-5">
-            <div className="w-14 h-14 rounded-[1.25rem] bg-gradient-to-br from-slate-900 to-slate-800 text-white flex items-center justify-center">
+            <div className="w-14 h-14 rounded-[1.25rem] bg-gradient-to-br from-slate-900 to-slate-800 text-white flex items-center justify-center shadow-lg">
               <IconScan className="w-7 h-7 text-[#1EAB57]" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-black text-[#0F172A] tracking-tight mb-2">Smart Food Scanner</h1>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Sentuh komponen makanan untuk lihat gizi satuannya</p>
+              <h1 className="text-2xl md:text-3xl font-black text-[#0F172A] tracking-tight mb-1">Gizify Vision</h1>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Mata AI untuk membedah gizi piringmu</p>
             </div>
           </div>
         </div>
@@ -274,7 +401,6 @@ export default function ScannerPage() {
                   
                   {/* OVERLAY INTERAKTIF (POINTER DARI AI) */}
                   {scanState === "success" && scanResult && isFoodItem && scanResult.items.map((item, idx) => {
-                    // Cari titik tengah (Center) dari Box AI
                     const yCenter = (item.box[0] + item.box[2]) / 2;
                     const xCenter = (item.box[1] + item.box[3]) / 2;
                     const top = (yCenter / 1000) * 100;
@@ -287,7 +413,6 @@ export default function ScannerPage() {
                         className={`absolute z-30 transition-opacity duration-300 ${showPointers ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                         style={{ top: `${top}%`, left: `${left}%` }}
                       >
-                        {/* THE LINE & LABEL */}
                         <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex flex-col items-center pointer-events-none transition-all duration-300 ${isActive ? 'opacity-100 translate-y-0 scale-100' : 'opacity-70 translate-y-1 scale-95'}`}>
                            <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider whitespace-nowrap shadow-xl border border-white/20 transition-colors ${isActive ? 'bg-[#1EAB57] text-white shadow-[#1EAB57]/30' : 'bg-black/70 text-white backdrop-blur-md'}`}>
                              {item.name}
@@ -295,13 +420,11 @@ export default function ScannerPage() {
                            <div className={`w-0.5 h-3 ${isActive ? 'bg-[#1EAB57]' : 'bg-white/70'}`}></div>
                         </div>
 
-                        {/* THE DOT TARGET */}
                         <div 
                           onClick={() => setSelectedItemIndex(idx)}
                           className={`w-7 h-7 -ml-3.5 -mt-3.5 rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-all duration-300 border-2 ${isActive ? 'bg-[#1EAB57]/20 border-[#1EAB57] scale-125' : 'bg-white/30 border-white hover:bg-white/50 hover:scale-110 backdrop-blur-sm'}`}
                         >
                            <div className={`w-2.5 h-2.5 rounded-full ${isActive ? 'bg-[#1EAB57] animate-ping' : 'bg-white shadow-sm'}`}></div>
-                           {/* Inti titik kalau lagi ping */}
                            {isActive && <div className="absolute w-2.5 h-2.5 rounded-full bg-[#1EAB57]"></div>}
                         </div>
                       </div>
@@ -312,8 +435,8 @@ export default function ScannerPage() {
                   {scanState === "success" && isFoodItem && (
                     <button 
                       onClick={() => setShowPointers(!showPointers)}
-                      className="absolute top-6 right-6 w-10 h-10 bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20 shadow-lg hover:bg-black/70 transition-all z-40"
-                      title={showPointers ? "Sembunyikan Tag" : "Tampilkan Tag"}
+                      className="absolute top-6 right-6 w-10 h-10 bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20 shadow-lg hover:bg-black/80 hover:scale-105 active:scale-95 transition-all z-40 cursor-pointer"
+                      title={showPointers ? "Sembunyikan Titik Fokus" : "Tampilkan Titik Fokus"}
                     >
                       {showPointers ? <IconEye className="w-5 h-5" /> : <IconEyeOff className="w-5 h-5 text-slate-400" />}
                     </button>
@@ -325,9 +448,9 @@ export default function ScannerPage() {
                 <>
                   <div className="laser-line"></div>
                   <div className="absolute inset-0 bg-[#1EAB57]/10 animate-pulse mix-blend-overlay pointer-events-none"></div>
-                  <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md px-6 py-2.5 rounded-full border border-white/10 flex items-center gap-2.5 z-30 shadow-lg">
+                  <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 flex items-center gap-3 z-30 shadow-2xl">
                     <IconLoader className="w-4 h-4 text-[#1EAB57] animate-spin" />
-                    <span className="text-xs font-bold text-white tracking-wider">{scanText}</span>
+                    <span key={scanText} className="text-[11px] font-bold text-white tracking-wider animate-text-change whitespace-nowrap">{scanText}</span>
                   </div>
                 </>
               )}
@@ -335,19 +458,19 @@ export default function ScannerPage() {
               {scanState === "success" && !isFoodItem && (
                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center z-30 animate-fade-in">
                     <IconClose className="w-16 h-16 text-rose-500 mb-4 animate-bounce" />
-                    <h3 className="text-white text-2xl font-black">Bukan Makanan!</h3>
+                    <h3 className="text-white text-2xl font-black">Bukan Makanan Ngab!</h3>
                  </div>
               )}
 
               {scanState !== "success" && scanState !== "scanning" && (
                 <div className="absolute bottom-8 left-0 right-0 flex items-center justify-center gap-6 z-30">
-                  <button onClick={() => galleryInputRef.current?.click()} className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white border border-white/20 hover:scale-105 active:scale-95 transition-all">
+                  <button onClick={() => galleryInputRef.current?.click()} className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white border border-white/20 hover:scale-105 active:scale-95 transition-all cursor-pointer">
                     <IconImage className="w-5 h-5" />
                   </button>
-                  <button onClick={captureImage} className="w-20 h-20 rounded-full border-4 border-white/50 flex items-center justify-center p-1.5 hover:scale-105 active:scale-95 transition-transform">
+                  <button onClick={captureImage} className="w-20 h-20 rounded-full border-4 border-white/50 flex items-center justify-center p-1.5 hover:scale-105 active:scale-95 transition-transform cursor-pointer">
                     <div className="w-full h-full bg-white rounded-full shadow-[0_0_20px_rgba(255,255,255,0.5)]"></div>
                   </button>
-                  <button className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white border border-white/20 hover:scale-105 active:scale-95 transition-all">
+                  <button className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white border border-white/20 hover:scale-105 active:scale-95 transition-all cursor-pointer">
                     <IconLightning className="w-5 h-5" />
                   </button>
                 </div>
@@ -360,7 +483,8 @@ export default function ScannerPage() {
             
             {scanState === "idle" && (
               <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 h-full flex flex-col items-center justify-center text-center">
-                <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mb-6">
+                <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mb-6 border border-emerald-100 relative">
+                  <div className="absolute inset-0 rounded-full border border-[#1EAB57] opacity-20 animate-ping"></div>
                   <IconScan className="w-10 h-10 text-[#1EAB57]" />
                 </div>
                 <h3 className="text-2xl font-black text-[#0F172A] tracking-tight mb-3">Siap Menganalisa</h3>
@@ -377,10 +501,7 @@ export default function ScannerPage() {
                     <IconBot className="w-10 h-10 text-emerald-400 animate-pulse" />
                   </div>
                 </div>
-                <h3 className="text-3xl font-black text-white tracking-tight mb-4">AI Bekerja...</h3>
-                <div className="bg-emerald-900/30 px-5 py-2.5 rounded-xl border border-emerald-800/50">
-                  <p className="text-xs font-black text-emerald-400 uppercase tracking-widest animate-pulse">{scanText}</p>
-                </div>
+                <h3 className="text-3xl font-black text-white tracking-tight mb-4">Gizify Bekerja...</h3>
               </div>
             )}
 
@@ -392,19 +513,19 @@ export default function ScannerPage() {
                       <div className="w-20 h-20 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center mb-6">
                          <IconClose className="w-10 h-10" />
                       </div>
-                      <h2 className="text-2xl font-black text-[#0F172A] mb-3">Objek Tidak Dikenali</h2>
-                      <p className="text-sm text-slate-500 mb-8">AI mendeteksi ini sebagai "{scanResult.total.name}". Kami hanya bisa menghitung gizi makanan.</p>
-                      <button onClick={handleRetake} className="w-full bg-rose-500 text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg">Coba Foto Lagi</button>
+                      <h2 className="text-2xl font-black text-[#0F172A] mb-3">Kocak, Ini Bukan Makanan!</h2>
+                      <p className="text-sm text-slate-500 mb-8">AI ngeliat benda ini sebagai <strong className="text-slate-900">"{scanResult.total.name}"</strong>. Coba foto makanan beneran dong!</p>
+                      <button onClick={handleRetake} className="w-full bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all cursor-pointer">Coba Foto Lagi</button>
                    </div>
                 ) : (
                    <div className="flex-1 flex flex-col h-full overflow-hidden">
                       <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-4 shrink-0">
-                        <div className="flex items-center gap-2">
-                          <IconCheckCircle className="w-5 h-5 text-[#1EAB57]" />
-                          <span className="text-xs font-black text-[#1EAB57] uppercase tracking-widest">Sukses Terbaca</span>
+                        <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
+                          <IconCheckCircle className="w-4 h-4 text-[#1EAB57]" />
+                          <span className="text-[10px] font-black text-[#1EAB57] uppercase tracking-widest">Sukses Di-scan</span>
                         </div>
                         {selectedItemIndex !== null && (
-                          <button onClick={() => setSelectedItemIndex(null)} className="text-[10px] bg-slate-50 text-slate-600 px-3 py-1.5 rounded-lg font-black hover:bg-[#1EAB57] hover:text-white transition-colors border border-slate-200 hover:border-[#1EAB57] active:scale-95 flex items-center gap-1 group">
+                          <button onClick={() => setSelectedItemIndex(null)} className="text-[10px] bg-white text-slate-600 px-3 py-1.5 rounded-lg font-black hover:bg-slate-50 transition-colors border border-slate-200 hover:border-slate-300 active:scale-95 flex items-center gap-1 group cursor-pointer shadow-sm">
                             <IconChevronLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" /> Total Menu
                           </button>
                         )}
@@ -414,8 +535,8 @@ export default function ScannerPage() {
                         <h2 className="text-3xl font-black text-[#0F172A] leading-tight mb-2">
                           {currentDisplayData?.name || "Memuat..."}
                         </h2>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">
-                          Estimasi: <span className="text-[#1EAB57] font-black">{(currentDisplayData as any)?.portion || "Lengkap"}</span>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6 bg-slate-50 w-max px-3 py-1.5 rounded-lg border border-slate-100">
+                          Porsi: <span className="text-[#1EAB57] font-black">{(currentDisplayData as any)?.portion || "Lengkap"}</span>
                         </p>
                         
                         {/* KARTU KALORI */}
@@ -424,7 +545,7 @@ export default function ScannerPage() {
                             <IconFlame className="w-7 h-7 text-rose-500" />
                           </div>
                           <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{selectedItemIndex === null ? "Total Kalori Piring" : "Kalori Item Ini"}</p>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{selectedItemIndex === null ? "Total Kalori Piring" : "Kalori Komponen Ini"}</p>
                             <span className="text-4xl font-black text-[#0F172A] tracking-tighter">{currentDisplayData?.calories}<span className="text-lg text-slate-400 font-bold ml-1">Kkal</span></span>
                           </div>
                         </div>
@@ -448,37 +569,68 @@ export default function ScannerPage() {
                           </div>
                         </div>
 
-                        {/* GIZI MIKRO (Sama kaya di Profile) */}
-                        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
-                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Estimasi Gizi Mikro</h4>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="flex justify-between items-end border-b border-slate-50 pb-2">
-                              <span className="text-xs font-bold text-slate-600">Vitamin C</span>
-                              <span className="text-[11px] font-black text-slate-900">{currentDisplayData?.micronutrients.vitC || "0mg"}</span>
-                            </div>
-                            <div className="flex justify-between items-end border-b border-slate-50 pb-2">
-                              <span className="text-xs font-bold text-slate-600">Serat Pangan</span>
-                              <span className="text-[11px] font-black text-[#1EAB57]">{currentDisplayData?.micronutrients.fiber || "0g"}</span>
-                            </div>
-                            <div className="flex justify-between items-end border-b border-slate-50 pb-2">
-                              <span className="text-xs font-bold text-slate-600">Kalsium</span>
-                              <span className="text-[11px] font-black text-slate-900">{currentDisplayData?.micronutrients.calcium || "0mg"}</span>
-                            </div>
-                            <div className="flex justify-between items-end border-b border-slate-50 pb-2">
-                              <span className="text-xs font-bold text-slate-600">Zat Besi</span>
-                              <span className="text-[11px] font-black text-slate-900">{currentDisplayData?.micronutrients.iron || "0mg"}</span>
+                        {/* TOMBOL EXPAND GIZI MIKRO */}
+                        <div className="mb-6">
+                          <button 
+                            onClick={() => setShowMicro(!showMicro)} 
+                            className="w-full flex items-center justify-between px-5 py-3.5 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors cursor-pointer group"
+                          >
+                            <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest group-hover:text-[#1EAB57] transition-colors">Lihat Detail Gizi Mikro</span>
+                            <IconChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${showMicro ? 'rotate-180 text-[#1EAB57]' : ''}`} />
+                          </button>
+                          
+                          {/* PANEL GIZI MIKRO */}
+                          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showMicro ? 'max-h-48 opacity-100 mt-3' : 'max-h-0 opacity-0'}`}>
+                            <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="flex justify-between items-end border-b border-slate-50 pb-2">
+                                  <span className="text-xs font-bold text-slate-600">Vitamin C</span>
+                                  <span className="text-[11px] font-black text-slate-900">{currentDisplayData?.micronutrients?.vitC || "0mg"}</span>
+                                </div>
+                                <div className="flex justify-between items-end border-b border-slate-50 pb-2">
+                                  <span className="text-xs font-bold text-slate-600">Serat</span>
+                                  <span className="text-[11px] font-black text-[#1EAB57]">{currentDisplayData?.micronutrients?.fiber || "0g"}</span>
+                                </div>
+                                <div className="flex justify-between items-end border-b border-slate-50 pb-2">
+                                  <span className="text-xs font-bold text-slate-600">Kalsium</span>
+                                  <span className="text-[11px] font-black text-slate-900">{currentDisplayData?.micronutrients?.calcium || "0mg"}</span>
+                                </div>
+                                <div className="flex justify-between items-end border-b border-slate-50 pb-2">
+                                  <span className="text-xs font-bold text-slate-600">Zat Besi</span>
+                                  <span className="text-[11px] font-black text-slate-900">{currentDisplayData?.micronutrients?.iron || "0mg"}</span>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
+
+                        {/* AI INSIGHT CARD */}
+                        {selectedItemIndex === null && scanResult.total.ai_insight && (
+                          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-5 relative overflow-hidden">
+                            <IconSparkles className="absolute -right-4 -bottom-4 w-20 h-20 text-indigo-500/10 pointer-events-none" />
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                                <IconBot className="w-3.5 h-3.5" />
+                              </div>
+                              <span className="text-[10px] font-black text-indigo-900 uppercase tracking-widest">Kata Gizify AI:</span>
+                            </div>
+                            <p className="text-xs font-bold text-indigo-800 italic leading-relaxed relative z-10">"{scanResult.total.ai_insight}"</p>
+                          </div>
+                        )}
                       </div>
                       
-                      {/* ACTION BUTTONS NORMAL */}
-                      <div className="flex flex-col sm:flex-row gap-3 mt-4 pt-4 border-t border-slate-100 shrink-0">
-                        <button onClick={handleSaveLog} className="flex-1 bg-[#1EAB57] hover:bg-[#168E46] text-white py-3.5 rounded-xl text-[11px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
+                      {/* ACTION BUTTONS */}
+                      <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-100 shrink-0">
+                        <button onClick={handleSaveLog} className="col-span-2 bg-[#1EAB57] hover:bg-[#168E46] text-white py-3.5 rounded-xl text-[11px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer">
                           <IconPlus className="w-4 h-4" /> Simpan Jurnal
                         </button>
-                        <button onClick={handleRetake} className="sm:w-auto w-full bg-slate-50 text-slate-600 border border-slate-200 px-5 py-3.5 rounded-xl text-[11px] font-black uppercase flex items-center justify-center gap-2 hover:bg-slate-100 active:scale-95 transition-all">
-                          <IconRefresh className="w-4 h-4" /> Ulangi
+                        
+                        <button onClick={() => setShowShareModal(true)} className="bg-indigo-500 hover:bg-indigo-600 text-white py-3.5 rounded-xl text-[11px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer">
+                          <IconShare className="w-4 h-4" /> Bagikan
+                        </button>
+                        
+                        <button onClick={handleRetake} className="bg-slate-50 text-slate-600 border border-slate-200 py-3.5 rounded-xl text-[11px] font-black uppercase flex items-center justify-center gap-2 hover:bg-slate-100 active:scale-95 transition-all cursor-pointer">
+                          <IconRefresh className="w-4 h-4" /> Scan Ulang
                         </button>
                       </div>
                    </div>
@@ -555,5 +707,5 @@ const IconClock = ({ className }: { className: string }) => <svg className={clas
 const IconEye = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>;
 const IconEyeOff = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>;
 const IconBot = ({ className }: { className?: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>;
-const IconTarget = ({ className }: { className?: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>;
-const IconInfo = ({ className }: { className?: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
+const IconChevronDown = ({ className }: { className?: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>;
+const IconShare = ({ className }: { className?: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>;

@@ -4,19 +4,41 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+// FIREBASE IMPORTS
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [hoverStyle, setHoverStyle] = useState({ left: 0, top: 0, width: 0, height: 0, opacity: 0 });
   const pathname = usePathname();
 
+  // STATE AUTHENTICATION
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAuthReady, setIsAuthReady] = useState(false); // Mencegah kedip tombol saat loading
+
   useEffect(() => {
+    // 1. Cek status scroll
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
-
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+
+    // 2. Dengarkan status login dari Firebase (Real-time)
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setIsLoggedIn(true);
+      } else {
+        setIsLoggedIn(false);
+      }
+      setIsAuthReady(true);
+    });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      unsubscribe();
+    };
   }, []);
 
   const navItems = [
@@ -27,7 +49,6 @@ export default function Navbar() {
     { label: "FAQ", href: "#faq" },
   ];
 
-  // Efek hover untuk sliding pill background di desktop
   const handleMouseEnter = (e: React.MouseEvent<HTMLAnchorElement>) => {
     const target = e.currentTarget;
     setHoverStyle({
@@ -39,7 +60,6 @@ export default function Navbar() {
     });
   };
 
-  // Logika smooth scroll antar section
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (href.startsWith("#")) {
       e.preventDefault();
@@ -89,7 +109,7 @@ export default function Navbar() {
               G
             </div>
             <span className={`font-black tracking-tight text-gray-900 transition-all duration-500 ${isScrolled ? "text-lg" : "text-xl"}`}>
-              GIZIKU<span className="text-green-600">.AI</span>
+              GIZIFY<span className="text-green-600">.AI</span>
             </span>
           </Link>
 
@@ -128,30 +148,48 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* KANAN: Login, CTA "Mulai Coba" & Hamburger */}
+          {/* KANAN: Login, CTA & Hamburger */}
           <div className="flex items-center gap-4 z-20">
             
-            {/* Teks Login Desktop */}
-            <Link
-              href="/login"
-              className="hidden lg:block px-2 text-xs font-extrabold uppercase tracking-wider text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              Masuk
-            </Link>
+            {/* Hanya tampilkan tombol jika status Auth sudah dicek */}
+            {isAuthReady && (
+              <>
+                {isLoggedIn ? (
+                  /* JIKA SUDAH LOGIN: Tombol Langsung ke Dashboard */
+                  <Link
+                    href="/home"
+                    className="relative overflow-hidden hidden lg:flex items-center gap-2 px-6 py-2.5 text-xs font-extrabold uppercase tracking-wider text-white transition-all duration-500 bg-gradient-to-r from-[#1A453A] to-[#1EAB57] hover:from-[#123129] hover:to-[#168E46] rounded-full shadow-[0_8px_20px_rgba(30,171,87,0.25)] hover:shadow-[0_15px_30px_rgba(30,171,87,0.4)] hover:-translate-y-0.5 hover:scale-105 active:scale-95 group/btn"
+                  >
+                    <div className="absolute inset-0 -translate-x-[150%] bg-gradient-to-r from-transparent via-white/30 to-transparent group-hover/btn:translate-x-[150%] transition-transform duration-1000 ease-in-out" />
+                    <span className="relative z-10 flex items-center gap-2">
+                      Ke Dashboard
+                      <IconArrowRight />
+                    </span>
+                  </Link>
+                ) : (
+                  /* JIKA BELUM LOGIN: Tombol Normal */
+                  <>
+                    <Link
+                      href="/login"
+                      className="hidden lg:block px-2 text-xs font-extrabold uppercase tracking-wider text-gray-600 hover:text-gray-900 transition-colors"
+                    >
+                      Masuk
+                    </Link>
 
-            {/* Tombol CTA Desktop dengan Efek Shine (Warna GIZIKU) */}
-            <Link
-              href="/register"
-              className="relative overflow-hidden hidden lg:flex items-center gap-2 px-6 py-2.5 text-xs font-extrabold uppercase tracking-wider text-white transition-all duration-500 bg-[#1A453A] hover:bg-[#123129] rounded-full shadow-[0_8px_20px_rgba(26,69,58,0.25)] hover:shadow-[0_15px_30px_rgba(26,69,58,0.4)] hover:-translate-y-0.5 hover:scale-105 active:scale-95 group/btn"
-            >
-              {/* Shine Animation */}
-              <div className="absolute inset-0 -translate-x-[150%] bg-gradient-to-r from-transparent via-white/25 to-transparent group-hover/btn:translate-x-[150%] transition-transform duration-1000 ease-in-out" />
-              
-              <span className="relative z-10 flex items-center gap-2">
-                Mulai Coba
-                <IconArrowRight />
-              </span>
-            </Link>
+                    <Link
+                      href="/register"
+                      className="relative overflow-hidden hidden lg:flex items-center gap-2 px-6 py-2.5 text-xs font-extrabold uppercase tracking-wider text-white transition-all duration-500 bg-[#1A453A] hover:bg-[#123129] rounded-full shadow-[0_8px_20px_rgba(26,69,58,0.25)] hover:shadow-[0_15px_30px_rgba(26,69,58,0.4)] hover:-translate-y-0.5 hover:scale-105 active:scale-95 group/btn"
+                    >
+                      <div className="absolute inset-0 -translate-x-[150%] bg-gradient-to-r from-transparent via-white/25 to-transparent group-hover/btn:translate-x-[150%] transition-transform duration-1000 ease-in-out" />
+                      <span className="relative z-10 flex items-center gap-2">
+                        Mulai Coba
+                        <IconArrowRight />
+                      </span>
+                    </Link>
+                  </>
+                )}
+              </>
+            )}
 
             {/* Tombol Hamburger Mobile */}
             <button
@@ -167,7 +205,7 @@ export default function Navbar() {
         </nav>
 
         {/* ======================================= */}
-        {/* MOBILE NAVIGATION DROPDOWN (Grid Trick) */}
+        {/* MOBILE NAVIGATION DROPDOWN */}
         {/* ======================================= */}
         <div
           className={`lg:hidden grid transition-all duration-500 ease-in-out ${
@@ -198,26 +236,41 @@ export default function Navbar() {
               
               <hr className="my-3 border-gray-100" />
               
-              <Link
-                href="/login"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="w-full text-center py-3.5 text-sm font-bold text-gray-600 hover:bg-gray-50 rounded-2xl transition-colors"
-              >
-                Masuk ke Akun
-              </Link>
-
-              {/* Tombol CTA Mobile dengan Warna GIZIKU */}
-              <Link
-                href="/register"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="relative overflow-hidden mt-1 flex items-center justify-center gap-2 px-5 py-4 text-sm font-bold text-white bg-[#1A453A] hover:bg-[#123129] rounded-2xl shadow-[0_8px_20px_rgba(26,69,58,0.25)] active:scale-95 transition-all duration-500 group/btnMobile"
-              >
-                <div className="absolute inset-0 -translate-x-[150%] bg-gradient-to-r from-transparent via-white/25 to-transparent group-hover/btnMobile:translate-x-[150%] transition-transform duration-1000 ease-in-out" />
-                <span className="relative z-10 flex items-center gap-2">
-                  Mulai Transformasi
-                  <IconArrowRight />
-                </span>
-              </Link>
+              {isAuthReady && (
+                isLoggedIn ? (
+                  <Link
+                    href="/home"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="relative overflow-hidden mt-1 flex items-center justify-center gap-2 px-5 py-4 text-sm font-bold text-white bg-gradient-to-r from-[#1A453A] to-[#1EAB57] rounded-2xl shadow-[0_8px_20px_rgba(26,69,58,0.25)] active:scale-95 transition-all duration-500"
+                  >
+                    <span className="relative z-10 flex items-center gap-2">
+                      Ke Dashboard
+                      <IconArrowRight />
+                    </span>
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="w-full text-center py-3.5 text-sm font-bold text-gray-600 hover:bg-gray-50 rounded-2xl transition-colors"
+                    >
+                      Masuk ke Akun
+                    </Link>
+                    <Link
+                      href="/register"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="relative overflow-hidden mt-1 flex items-center justify-center gap-2 px-5 py-4 text-sm font-bold text-white bg-[#1A453A] hover:bg-[#123129] rounded-2xl shadow-[0_8px_20px_rgba(26,69,58,0.25)] active:scale-95 transition-all duration-500 group/btnMobile"
+                    >
+                      <div className="absolute inset-0 -translate-x-[150%] bg-gradient-to-r from-transparent via-white/25 to-transparent group-hover/btnMobile:translate-x-[150%] transition-transform duration-1000 ease-in-out" />
+                      <span className="relative z-10 flex items-center gap-2">
+                        Mulai Transformasi
+                        <IconArrowRight />
+                      </span>
+                    </Link>
+                  </>
+                )
+              )}
             </div>
           </div>
         </div>

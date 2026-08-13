@@ -1,3 +1,4 @@
+// Path: src/app/login/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,7 +8,14 @@ import Swal from "sweetalert2";
 
 // FIREBASE IMPORTS
 import { auth, db } from "@/lib/firebase"; 
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { 
+  signInWithEmailAndPassword, 
+  signInWithPopup, 
+  GoogleAuthProvider,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence
+} from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
 export default function LoginPage() {
@@ -20,10 +28,30 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  
+  // State Remember Me (Default: dicentang)
+  const [rememberMe, setRememberMe] = useState(true);
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
+
+  // ==========================================
+  // FUNGSI BANTUAN: SET COOKIE & PERSISTENCE
+  // ==========================================
+  const handleSessionAndCookie = async () => {
+    // 1. Atur Ketahanan Sesi Firebase
+    const persistenceType = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+    await setPersistence(auth, persistenceType);
+
+    // 2. Atur Umur Cookie Satpam (PASTIKAN GIZIFY_SESSION)
+    let cookieString = `gizify_session=true; path=/; Secure; SameSite=Strict`;
+    if (rememberMe) {
+      const sixMonths = 60 * 60 * 24 * 180;
+      cookieString += `; max-age=${sixMonths}`;
+    }
+    document.cookie = cookieString;
+  };
 
   // ==========================================
   // 1. FUNGSI LOGIN DENGAN EMAIL & PASSWORD
@@ -35,11 +63,14 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // 1. Autentikasi ke Firebase Auth
+      // Panggil fungsi pengatur sesi sebelum login
+      await handleSessionAndCookie();
+
+      // Autentikasi ke Firebase Auth
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 2. Ambil data profil (termasuk Role/Paket) dari Firestore
+      // Ambil data profil (termasuk Role/Paket) dari Firestore
       const userDocRef = doc(db, "users", user.uid);
       const userDocSnap = await getDoc(userDocRef);
 
@@ -55,15 +86,11 @@ export default function LoginPage() {
         await setDoc(userDocRef, { lastLogin: serverTimestamp() }, { merge: true });
       }
 
-      // 3. Tampilkan Notifikasi Dinamis berdasarkan Paket
+      // Tampilkan Notifikasi Dinamis berdasarkan Paket
       let welcomeText = "Selamat datang kembali!";
       if (userRole === "PRO") welcomeText = "Halo Member PRO! Siap penuhi gizi hari ini?";
       else if (userRole === "FAMILY") welcomeText = "Halo Member FAMILY! Pantau gizi keluargamu sekarang.";
       else welcomeText = "Masuk sebagai akun Gratis. Yuk catat kalorimu!";
-
-      // Rumus 6 bulan = 60 detik * 60 menit * 24 jam * 180 hari
-      const sixMonths = 60 * 60 * 24 * 180;
-      document.cookie = `giziku_session=true; path=/; max-age=${sixMonths}; Secure; SameSite=Strict`;
 
       Swal.fire({
         title: `Welcome back, ${userName.split(' ')[0]}!`,
@@ -104,6 +131,9 @@ export default function LoginPage() {
     setIsGoogleLoading(true);
     
     try {
+      // Panggil fungsi pengatur sesi sebelum login
+      await handleSessionAndCookie();
+
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
       const user = userCredential.user;
@@ -116,13 +146,10 @@ export default function LoginPage() {
       let userName = user.displayName || "User";
 
       if (userDocSnap.exists()) {
-        // User lama, ambil rolenya
         const userData = userDocSnap.data();
         userRole = userData.role || "BASIC";
-        // Update waktu login
         await setDoc(userDocRef, { lastLogin: serverTimestamp() }, { merge: true });
       } else {
-        // Kalau ternyata dia belum pernah register tapi maksa login pake Google (Kasus langka)
         await setDoc(userDocRef, {
           uid: user.uid,
           name: userName,
@@ -133,7 +160,6 @@ export default function LoginPage() {
         });
       }
 
-      // Pesan Dinamis
       let welcomeText = "Autentikasi Google berhasil.";
       if (userRole === "PRO") welcomeText = "Halo Member PRO! Siap penuhi gizi hari ini?";
       else if (userRole === "FAMILY") welcomeText = "Halo Member FAMILY! Pantau gizi keluargamu sekarang.";
@@ -233,7 +259,6 @@ export default function LoginPage() {
           <div className="space-y-2 group">
             <div className="flex justify-between items-center px-1">
               <label className="text-[11px] font-extrabold text-gray-800 uppercase tracking-widest">Password</label>
-              <a href="#" className="text-[11px] font-bold text-green-600 hover:text-[#1A453A] transition-colors cursor-pointer">Lupa sandi?</a>
             </div>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#1A453A] transition-colors duration-300">
@@ -257,6 +282,25 @@ export default function LoginPage() {
                   {showPassword ? <IconEyeOff /> : <IconEye />}
                 </button>
               </div>
+            </div>
+
+            {/* OPSI INGAT SAYA & LUPA SANDI */}
+            <div className="flex items-center justify-between px-1 pt-2">
+              <label className="flex items-center gap-2 cursor-pointer group/check">
+                <div className="relative flex items-center justify-center">
+                  <input 
+                    type="checkbox" 
+                    checked={rememberMe} 
+                    onChange={(e) => setRememberMe(e.target.checked)} 
+                    className="peer sr-only" 
+                  />
+                  <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:border-[#1A453A] peer-checked:bg-[#1A453A] transition-all flex items-center justify-center">
+                     <IconCheckSmall className="w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
+                  </div>
+                </div>
+                <span className="text-[11px] font-bold text-gray-500 group-hover/check:text-gray-900 transition-colors">Ingat Saya</span>
+              </label>
+              <a href="#" className="text-[11px] font-bold text-green-600 hover:text-[#1A453A] transition-colors cursor-pointer">Lupa sandi?</a>
             </div>
           </div>
 
@@ -321,6 +365,11 @@ export default function LoginPage() {
 // ==========================================
 // KUMPULAN SVG ICONS
 // ==========================================
+const IconCheckSmall = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12"></polyline>
+  </svg>
+);
 const IconGoogle = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -329,35 +378,30 @@ const IconGoogle = () => (
     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
   </svg>
 );
-
 const IconMail = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
     <polyline points="22,6 12,13 2,6"></polyline>
   </svg>
 );
-
 const IconLock = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
     <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
   </svg>
 );
-
 const IconEye = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
     <circle cx="12" cy="12" r="3"></circle>
   </svg>
 );
-
 const IconEyeOff = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
     <line x1="1" y1="1" x2="23" y2="23"></line>
   </svg>
 );
-
 const IconSpinner = ({ className }: { className?: string }) => (
   <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
