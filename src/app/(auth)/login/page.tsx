@@ -3,6 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Swal from "sweetalert2";
+
+// FIREBASE IMPORTS
+import { auth, db } from "@/lib/firebase"; 
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -10,60 +16,151 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   
-  // State form & validasi
+  // State form
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [passwordError, setPasswordError] = useState("");
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
-  // Fungsi validasi password ketat
-  const validatePassword = (pass: string) => {
-    if (!pass) return "Password tidak boleh kosong.";
-    if (pass.length < 8) return "Minimal 8 karakter.";
-    if (!/[A-Z]/.test(pass)) return "Harus mengandung huruf besar.";
-    if (!/[a-z]/.test(pass)) return "Harus mengandung huruf kecil.";
-    if (!/[0-9]/.test(pass)) return "Harus mengandung angka.";
-    if (/[^a-zA-Z0-9]/.test(pass)) return "Tidak boleh menggunakan simbol/spesial karakter.";
-    return ""; // Valid
-  };
-
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setPassword(val);
-    if (val.length > 0) {
-      setPasswordError(validatePassword(val));
-    } else {
-      setPasswordError("");
-    }
-  };
-
-  const handleLogin = (e: React.FormEvent) => {
+  // ==========================================
+  // 1. FUNGSI LOGIN DENGAN EMAIL & PASSWORD
+  // ==========================================
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Cek validasi sebelum submit
-    const error = validatePassword(password);
-    if (error) {
-      setPasswordError(error);
-      return;
-    }
+    if (!email || !password) return;
 
     setIsLoading(true);
-    // Simulasi loading Firebase lalu lempar ke dashboard
-    setTimeout(() => {
-      router.push("/home");
-    }, 1500);
+
+    try {
+      // 1. Autentikasi ke Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // 2. Ambil data profil (termasuk Role/Paket) dari Firestore
+      const userDocRef = doc(db, "users", user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      let userRole = "BASIC";
+      let userName = "User";
+
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
+        userRole = userData.role || "BASIC";
+        userName = userData.name || "User";
+        
+        // Update waktu terakhir login
+        await setDoc(userDocRef, { lastLogin: serverTimestamp() }, { merge: true });
+      }
+
+      // 3. Tampilkan Notifikasi Dinamis berdasarkan Paket
+      let welcomeText = "Selamat datang kembali!";
+      if (userRole === "PRO") welcomeText = "Halo Member PRO! Siap penuhi gizi hari ini?";
+      else if (userRole === "FAMILY") welcomeText = "Halo Member FAMILY! Pantau gizi keluargamu sekarang.";
+      else welcomeText = "Masuk sebagai akun Gratis. Yuk catat kalorimu!";
+
+      // Rumus 6 bulan = 60 detik * 60 menit * 24 jam * 180 hari
+      const sixMonths = 60 * 60 * 24 * 180;
+      document.cookie = `giziku_session=true; path=/; max-age=${sixMonths}; Secure; SameSite=Strict`;
+
+      Swal.fire({
+        title: `Welcome back, ${userName.split(' ')[0]}!`,
+        text: welcomeText,
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+        background: "#ffffff",
+        customClass: { popup: "rounded-3xl" }
+      }).then(() => {
+        router.push("/home");
+      });
+
+    } catch (error: any) {
+      console.error("Error Login:", error);
+      let errorMessage = "Email atau password salah.";
+      
+      if (error.code === 'auth/user-not-found') errorMessage = "Akun tidak ditemukan. Silakan daftar dulu.";
+      if (error.code === 'auth/wrong-password') errorMessage = "Password yang kamu masukkan salah.";
+      if (error.code === 'auth/too-many-requests') errorMessage = "Terlalu banyak percobaan. Coba lagi nanti.";
+
+      Swal.fire({
+        title: "Gagal Masuk",
+        text: errorMessage,
+        icon: "error",
+        confirmButtonColor: "#ef4444",
+        customClass: { popup: "rounded-3xl" }
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleGoogleLogin = () => {
+  // ==========================================
+  // 2. FUNGSI LOGIN DENGAN GOOGLE
+  // ==========================================
+  const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
-    // Simulasi loading Google Popup
-    setTimeout(() => {
-      router.push("/home");
-    }, 1500);
+    
+    try {
+      const provider = new GoogleAuthProvider();
+      const userCredential = await signInWithPopup(auth, provider);
+      const user = userCredential.user;
+
+      // Cek apakah data user sudah ada di Firestore
+      const userDocRef = doc(db, "users", user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      let userRole = "BASIC";
+      let userName = user.displayName || "User";
+
+      if (userDocSnap.exists()) {
+        // User lama, ambil rolenya
+        const userData = userDocSnap.data();
+        userRole = userData.role || "BASIC";
+        // Update waktu login
+        await setDoc(userDocRef, { lastLogin: serverTimestamp() }, { merge: true });
+      } else {
+        // Kalau ternyata dia belum pernah register tapi maksa login pake Google (Kasus langka)
+        await setDoc(userDocRef, {
+          uid: user.uid,
+          name: userName,
+          email: user.email,
+          role: "BASIC", 
+          createdAt: serverTimestamp(),
+          lastLogin: serverTimestamp(),
+        });
+      }
+
+      // Pesan Dinamis
+      let welcomeText = "Autentikasi Google berhasil.";
+      if (userRole === "PRO") welcomeText = "Halo Member PRO! Siap penuhi gizi hari ini?";
+      else if (userRole === "FAMILY") welcomeText = "Halo Member FAMILY! Pantau gizi keluargamu sekarang.";
+
+      Swal.fire({
+        title: `Welcome, ${userName.split(' ')[0]}!`,
+        text: welcomeText,
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+        customClass: { popup: "rounded-3xl" }
+      }).then(() => {
+        router.push("/home");
+      });
+
+    } catch (error) {
+      console.error("Error Google Login:", error);
+      Swal.fire({
+        title: "Gagal Autentikasi",
+        text: "Proses login dengan Google dibatalkan atau bermasalah.",
+        icon: "error",
+        confirmButtonColor: "#ef4444",
+        customClass: { popup: "rounded-3xl" }
+      });
+    } finally {
+      setIsGoogleLoading(false);
+    }
   };
 
   return (
@@ -72,34 +169,16 @@ export default function LoginPage() {
       {/* INJEKSI CSS ANIMASI */}
       <style dangerouslySetInnerHTML={{
         __html: `
-          .animate-fade-up {
-            opacity: 0;
-            transform: translateY(40px);
-            animation: fadeUpAnim 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          }
-          @keyframes fadeUpAnim {
-            to { opacity: 1; transform: translateY(0); }
-          }
+          .animate-fade-up { opacity: 0; transform: translateY(40px); animation: fadeUpAnim 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+          @keyframes fadeUpAnim { to { opacity: 1; transform: translateY(0); } }
           .delay-100 { animation-delay: 0.15s; }
           .delay-200 { animation-delay: 0.3s; }
           .delay-300 { animation-delay: 0.45s; }
           
-          /* Ambient floating animations */
-          @keyframes float-slow {
-            0%, 100% { transform: translate(0, 0); }
-            33% { transform: translate(30px, -50px); }
-            66% { transform: translate(-20px, 20px); }
-          }
-          @keyframes float-slower {
-            0%, 100% { transform: translate(0, 0); }
-            50% { transform: translate(-40px, -30px); }
-          }
-          .animate-ambient-1 {
-            animation: float-slow 18s ease-in-out infinite;
-          }
-          .animate-ambient-2 {
-            animation: float-slower 24s ease-in-out infinite;
-          }
+          @keyframes float-slow { 0%, 100% { transform: translate(0, 0); } 33% { transform: translate(30px, -50px); } 66% { transform: translate(-20px, 20px); } }
+          @keyframes float-slower { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-40px, -30px); } }
+          .animate-ambient-1 { animation: float-slow 18s ease-in-out infinite; }
+          .animate-ambient-2 { animation: float-slower 24s ease-in-out infinite; }
         `
       }} />
 
@@ -163,12 +242,11 @@ export default function LoginPage() {
               <input 
                 type={showPassword ? "text" : "password"} 
                 value={password}
-                onChange={handlePasswordChange}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••" 
                 required
-                className={`w-full pl-12 pr-12 py-4 bg-white/50 border rounded-2xl text-sm font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-4 focus:bg-white shadow-sm transition-all duration-300 ${passwordError ? 'border-red-400 focus:ring-red-400/20' : 'border-gray-200/80 focus:ring-[#1A453A]/10 focus:border-[#1A453A]'}`}
+                className="w-full pl-12 pr-12 py-4 bg-white/50 border border-gray-200/80 rounded-2xl text-sm font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-[#1A453A]/10 focus:border-[#1A453A] focus:bg-white shadow-sm transition-all duration-300"
               />
-              {/* Tombol Mata (Show/Hide) */}
               <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center">
                 <button
                   type="button"
@@ -180,25 +258,18 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
-            {/* Teks Error Validasi */}
-            {passwordError && (
-              <p className="text-[10px] font-bold text-red-500 px-1 pt-1 animate-pulse">
-                * {passwordError}
-              </p>
-            )}
           </div>
 
           {/* Tombol Submit Shine */}
           <button 
             type="submit"
-            disabled={isLoading || isGoogleLoading || !!passwordError}
+            disabled={isLoading || isGoogleLoading || password.length === 0}
             className={`relative overflow-hidden w-full mt-6 py-4.5 text-white font-black text-xs uppercase tracking-widest rounded-2xl transition-all duration-300 active:scale-[0.98] group/btn flex justify-center items-center gap-2 cursor-pointer
-              ${(isLoading || isGoogleLoading || !!passwordError) 
+              ${(isLoading || isGoogleLoading || password.length === 0) 
                 ? 'bg-gray-300 text-gray-100 cursor-not-allowed shadow-none' 
                 : 'bg-gradient-to-r from-[#1A453A] to-emerald-700 hover:to-emerald-600 shadow-[0_10px_25px_rgba(26,69,58,0.3)] hover:shadow-[0_15px_35px_rgba(26,69,58,0.4)] hover:-translate-y-1'}`}
           >
-            {/* Shine Animation */}
-            {!(isLoading || isGoogleLoading || !!passwordError) && (
+            {!(isLoading || isGoogleLoading || password.length === 0) && (
               <div className="absolute inset-0 -translate-x-[150%] bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover/btn:translate-x-[150%] transition-transform duration-1000 ease-in-out" />
             )}
             

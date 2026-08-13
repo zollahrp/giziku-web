@@ -1,11 +1,18 @@
+// Path: src/app/(dashboard)/profile/edit/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Swal from "sweetalert2";
+
+// FIREBASE IMPORTS
+import { auth, db } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 // ==========================================
-// CUSTOM COMPONENT: VIP DROPDOWN (Main Form)
+// CUSTOM COMPONENT: VIP DROPDOWN
 // ==========================================
 function CustomSelect({ label, value, options, onChange, icon: Icon }: any) {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,11 +32,11 @@ function CustomSelect({ label, value, options, onChange, icon: Icon }: any) {
           <label className="text-[9px] font-black text-slate-400 mb-0.5 uppercase tracking-widest group-focus-within:text-[#1EAB57] transition-colors cursor-pointer">
             {label}
           </label>
-          <div className="w-full bg-transparent text-sm font-black text-slate-900 focus:outline-none">
+          <div className="w-full bg-transparent text-sm font-black text-slate-900 focus:outline-none truncate">
             {options.find((opt: any) => opt.value === value)?.label || value}
           </div>
         </div>
-        <IconChevronDown className={`w-4 h-4 text-slate-300 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+        <IconChevronDown className={`w-4 h-4 shrink-0 text-slate-300 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
       </div>
 
       {isOpen && (
@@ -93,19 +100,29 @@ export default function EditProfilePage() {
   const router = useRouter();
   const [isLoaded, setIsLoaded] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   // STATE: INFORMASI DASAR
-  const [name, setName] = useState("Zolla Perdana Putra");
-  const [email, setEmail] = useState("zollaperdana2907@gmail.com");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [gender, setGender] = useState("Pria");
-  const [dob, setDob] = useState("2004-07-29");
-  const [location, setLocation] = useState("Jakarta, Indonesia");
+  const [dob, setDob] = useState("");
+  const [location, setLocation] = useState("");
+  const [role, setRole] = useState("BASIC");
+  const [photoURL, setPhotoURL] = useState(""); 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // STATE: FISIK
-  const [height, setHeight] = useState("170");
-  const [weight, setWeight] = useState("65");
+  const [height, setHeight] = useState("0");
+  const [weight, setWeight] = useState("0");
 
-  // STATE: HASIL KALKULASI (Read-Only)
+  // STATE: PREFERENSI DIET & MEDIS
+  const [dietType, setDietType] = useState("Normal / Bebas");
+  const [favoriteFoods, setFavoriteFoods] = useState("");
+  const [dislikedFoods, setDislikedFoods] = useState("");
+  const [medicalHistory, setMedicalHistory] = useState("Tidak Ada");
+
+  // STATE: HASIL KALKULASI
   const [bmi, setBmi] = useState("0");
   const [bmiStatus, setBmiStatus] = useState("Normal");
   const [idealWeight, setIdealWeight] = useState("0");
@@ -117,37 +134,132 @@ export default function EditProfilePage() {
   const [bodyGoal, setBodyGoal] = useState("Menurunkan Berat Badan");
 
   // =====================================
+  // AMBIL DATA DARI FIREBASE SAAT MOUNT
+  // =====================================
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setUserId(user.uid);
+        try {
+          const userDocRef = doc(db, "users", user.uid);
+          const userDocSnap = await getDoc(userDocRef);
+
+          if (userDocSnap.exists()) {
+            const data = userDocSnap.data();
+            setName(data.name || user.displayName || "");
+            setEmail(data.email || user.email || "");
+            setGender(data.gender || "Pria");
+            setDob(data.birthDate || "2000-01-01");
+            setLocation(data.location || "");
+            setRole(data.role || "BASIC");
+            setPhotoURL(data.photoURL || user.photoURL || "");
+            
+            setHeight(data.height || "170");
+            setWeight(data.weight || "65");
+            setActivity(data.activity || "Sedang");
+            setExercise(data.exercise || "1-2x/Minggu");
+            setBodyGoal(data.bodyGoal || "Menurunkan Berat Badan");
+            
+            setDietType(data.dietType || "Normal / Bebas");
+            setFavoriteFoods(data.favoriteFoods || "");
+            setDislikedFoods(data.dislikedFoods || "");
+            setMedicalHistory(data.medicalHistory || "Tidak Ada");
+          }
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        } finally {
+          setIsLoaded(true); // Ganti statenya kalau udah berhasil narik data
+        }
+      } else {
+        router.push("/login");
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
+  // =====================================
+  // FUNGSI UPLOAD FOTO (Maks 1 MB)
+  // =====================================
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 1048576) {
+      Swal.fire({
+        title: "Ukuran Terlalu Besar",
+        text: "Maksimal ukuran foto adalah 1 MB.",
+        icon: "error",
+        customClass: { popup: "rounded-3xl" }
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoURL(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const getInitials = (nama: string) => {
+    if (!nama) return "G";
+    return nama.charAt(0).toUpperCase();
+  };
+
+  // =====================================
+  // FUNGSI TARIK LOKASI REALTIME
+  // =====================================
+  const fetchCurrentLocation = () => {
+    if ("geolocation" in navigator) {
+      setLocation("Sedang mencari lokasi...");
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=id`);
+            const data = await response.json();
+            const city = data.city || data.locality || "Kota";
+            const country = data.countryName || "Indonesia";
+            setLocation(`${city}, ${country}`);
+          } catch (error) {
+            setLocation("Gagal memuat lokasi");
+          }
+        },
+        (error) => {
+          setLocation("Izin lokasi ditolak");
+        }
+      );
+    } else {
+      alert("Browser Anda tidak mendukung fitur Lokasi.");
+    }
+  };
+
+  // =====================================
   // STATE & LOGIC UNTUK CUSTOM CALENDAR
   // =====================================
-  const [calYear, setCalYear] = useState(2004);
-  const [calMonth, setCalMonth] = useState(6); // 0-11
-  const [calDay, setCalDay] = useState(29);
-  
+  const [calYear, setCalYear] = useState(new Date().getFullYear() - 20);
+  const [calMonth, setCalMonth] = useState(0); 
+  const [calDay, setCalDay] = useState(1);
   const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-  
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-  const firstDayOfMonth = new Date(calYear, calMonth, 1).getDay(); // 0 = Minggu
+  const firstDayOfMonth = new Date(calYear, calMonth, 1).getDay();
   const daysArray = Array.from({length: daysInMonth}, (_, i) => i + 1);
   const emptyDaysArray = Array.from({length: firstDayOfMonth}, (_, i) => i);
 
-  // Sync kalender pas dibuka
   useEffect(() => {
     if (showDatePicker && dob) {
       const [y, m, d] = dob.split("-");
-      setCalYear(parseInt(y));
-      setCalMonth(parseInt(m) - 1);
-      setCalDay(parseInt(d));
+      if (y && m && d) {
+        setCalYear(parseInt(y));
+        setCalMonth(parseInt(m) - 1);
+        setCalDay(parseInt(d));
+      }
     }
   }, [showDatePicker, dob]);
 
-  const handlePrevMonth = () => {
-    if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1); } 
-    else { setCalMonth(m => m - 1); }
-  };
-  const handleNextMonth = () => {
-    if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1); } 
-    else { setCalMonth(m => m + 1); }
-  };
+  const handlePrevMonth = () => { if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1); } else { setCalMonth(m => m - 1); } };
+  const handleNextMonth = () => { if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1); } else { setCalMonth(m => m + 1); } };
   const applyCustomDate = () => {
     const m = (calMonth + 1).toString().padStart(2, '0');
     const d = calDay.toString().padStart(2, '0');
@@ -155,13 +267,8 @@ export default function EditProfilePage() {
     setShowDatePicker(false);
   };
 
-  // Trigger Animasi Awal
-  useEffect(() => {
-    setIsLoaded(true);
-  }, []);
-
   // =====================================
-  // ENGINE RUMUS GIZI AI
+  // ENGINE RUMUS GIZI AI (LIVE CALCULATION)
   // =====================================
   useEffect(() => {
     const h = parseFloat(height);
@@ -173,120 +280,168 @@ export default function EditProfilePage() {
 
     if (!h || !w || h === 0) return;
 
-    // 1. Hitung BMI
     const hMeter = h / 100;
     const calcBmi = w / (hMeter * hMeter);
     setBmi(calcBmi.toFixed(1));
 
-    // 2. Status BMI
-    if (a < 18) {
-      setBmiStatus("BMI Anak");
-    } else {
-      if (calcBmi < 18.5) setBmiStatus("Kurus");
-      else if (calcBmi < 25) setBmiStatus("Normal");
-      else if (calcBmi < 30) setBmiStatus("Gemuk");
-      else setBmiStatus("Obesitas");
-    }
+    if (a < 18) setBmiStatus("BMI Anak");
+    else if (calcBmi < 18.5) setBmiStatus("Kurus");
+    else if (calcBmi < 25) setBmiStatus("Normal");
+    else if (calcBmi < 30) setBmiStatus("Gemuk");
+    else setBmiStatus("Obesitas");
 
-    // 3. Berat Ideal (Broca)
-    let ideal = 0;
-    if (gender === "Pria") {
-      ideal = (h - 100) - ((h - 100) * 0.1);
-    } else {
-      ideal = (h - 100) - ((h - 100) * 0.15);
-    }
+    let ideal = gender === "Pria" ? (h - 100) - ((h - 100) * 0.1) : (h - 100) - ((h - 100) * 0.15);
     setIdealWeight(ideal.toFixed(1));
 
-    // 4. Kebutuhan Kalori
-    let bmr = 0;
-    if (gender === "Pria") {
-      bmr = (10 * w) + (6.25 * h) - (5 * a) + 5;
-    } else {
-      bmr = (10 * w) + (6.25 * h) - (5 * a) - 161;
-    }
+    let bmr = gender === "Pria" ? (10 * w) + (6.25 * h) - (5 * a) + 5 : (10 * w) + (6.25 * h) - (5 * a) - 161;
 
-    let activityFactor = 1.2;
-    if (activity === "Sedang") activityFactor = 1.55;
-    else if (activity === "Tinggi") activityFactor = 1.725;
-
-    let exerciseFactor = 1.0;
-    if (exercise === "1-2x/Minggu") exerciseFactor = 1.05;
-    else if (exercise === "3-5x/Minggu") exerciseFactor = 1.10;
-    else if (exercise === "Setiap Hari") exerciseFactor = 1.15;
-
+    let activityFactor = activity === "Sedang" ? 1.55 : activity === "Tinggi" ? 1.725 : 1.2;
+    let exerciseFactor = exercise === "1-2x/Minggu" ? 1.05 : exercise === "3-5x/Minggu" ? 1.10 : exercise === "Setiap Hari" ? 1.15 : 1.0;
     let totalCals = bmr * activityFactor * exerciseFactor;
 
     if (bodyGoal === "Menurunkan Berat Badan") totalCals -= 500;
     if (bodyGoal === "Menambah Massa Otot") totalCals += 300;
 
     setCalories(Math.round(totalCals).toString());
-
   }, [height, weight, dob, gender, activity, exercise, bodyGoal]);
 
-  const handleSave = (e: React.FormEvent) => {
+  // =====================================
+  // FUNGSI SIMPAN KE FIREBASE
+  // =====================================
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert("Profil Berhasil Disimpan!");
-    router.push("/profile");
+    if (!userId) return;
+
+    try {
+      const userDocRef = doc(db, "users", userId);
+      await setDoc(userDocRef, {
+        name,
+        gender,
+        birthDate: dob,
+        location,
+        photoURL, 
+        height,
+        weight,
+        activity,
+        exercise,
+        bodyGoal,
+        dietType,
+        favoriteFoods,
+        dislikedFoods,
+        medicalHistory,
+        bmi,
+        bmiStatus,
+        idealWeight,
+        calories,
+      }, { merge: true });
+
+      Swal.fire({
+        title: "Tersimpan!",
+        text: "Profil & Preferensi Gizi-mu berhasil diperbarui.",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+        customClass: { popup: "rounded-3xl" }
+      }).then(() => {
+        router.push("/profile");
+      });
+
+    } catch (error) {
+      console.error("Gagal simpan profil:", error);
+      Swal.fire("Error!", "Terjadi kesalahan saat menyimpan data.", "error");
+    }
   };
 
   const formatDob = (dateStr: string) => {
     if (!dateStr) return "";
     const [year, month, day] = dateStr.split("-");
+    if(!day || !month || !year) return "";
     return `${day}/${month}/${year}`;
   };
 
+  // =======================================
+  // UI SKELETON LOADER (Mencegah Blank/Popping)
+  // =======================================
+  if (!isLoaded) {
+    return (
+      <div className="w-full pb-24 md:pb-12 flex flex-col gap-6 md:gap-8 relative overflow-x-hidden min-w-0 animate-in fade-in duration-500 mt-2 lg:mt-4 px-2 sm:px-4 md:px-8">
+        {/* Skeleton Header Banner */}
+        <div className="w-full h-[160px] md:h-[180px] bg-slate-200 animate-pulse rounded-[2rem] md:rounded-[2.5rem]"></div>
+        
+        {/* Skeleton Card Profil Atas */}
+        <div className="bg-white rounded-[2rem] p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 shadow-sm border border-slate-100 -mt-16 md:-mt-24 mx-2 md:mx-0 relative z-10">
+           <div className="w-32 h-32 md:w-36 md:h-36 rounded-full bg-slate-200 animate-pulse border-[6px] md:border-[8px] border-white shrink-0 -mt-12 md:-mt-8"></div>
+           <div className="flex-1 space-y-4 w-full md:mt-10">
+              <div className="h-8 bg-slate-200 animate-pulse rounded-xl w-1/2 md:w-1/3 mx-auto md:mx-0"></div>
+              <div className="h-4 bg-slate-200 animate-pulse rounded-lg w-1/3 md:w-1/4 mx-auto md:mx-0"></div>
+              <div className="flex gap-3 justify-center md:justify-start pt-2">
+                 <div className="h-8 bg-slate-200 animate-pulse rounded-xl w-24"></div>
+                 <div className="h-8 bg-slate-200 animate-pulse rounded-xl w-32"></div>
+              </div>
+           </div>
+           <div className="w-full md:w-32 h-12 bg-slate-200 animate-pulse rounded-2xl md:mt-10"></div>
+        </div>
+
+        {/* Skeleton Form Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 md:gap-8 mt-2">
+           <div className="xl:col-span-7 space-y-6 md:space-y-8">
+              {/* Form Box 1 */}
+              <div className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-slate-100 h-[300px] flex flex-col">
+                 <div className="flex gap-4 mb-6">
+                    <div className="w-12 h-12 bg-slate-200 animate-pulse rounded-xl shrink-0"></div>
+                    <div className="space-y-2 flex-1 pt-1">
+                       <div className="h-5 bg-slate-200 animate-pulse rounded-md w-1/3"></div>
+                       <div className="h-3 bg-slate-200 animate-pulse rounded-md w-1/4"></div>
+                    </div>
+                 </div>
+                 <div className="space-y-4 flex-1">
+                    <div className="h-12 bg-slate-100 animate-pulse rounded-2xl w-full"></div>
+                    <div className="h-12 bg-slate-100 animate-pulse rounded-2xl w-full"></div>
+                    <div className="h-12 bg-slate-100 animate-pulse rounded-2xl w-full"></div>
+                 </div>
+              </div>
+           </div>
+           <div className="xl:col-span-5 space-y-6 md:space-y-8">
+              {/* AI Result Box */}
+              <div className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-slate-100 h-[300px]">
+                 <div className="h-8 bg-slate-200 animate-pulse rounded-xl w-32 mb-6"></div>
+                 <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="h-24 bg-slate-100 animate-pulse rounded-2xl w-full"></div>
+                    <div className="h-24 bg-slate-100 animate-pulse rounded-2xl w-full"></div>
+                 </div>
+                 <div className="h-28 bg-slate-200 animate-pulse rounded-2xl w-full"></div>
+              </div>
+           </div>
+        </div>
+      </div>
+    )
+  }
+
+  // =======================================
+  // UI UTAMA (Tampil kalau data udah siap)
+  // =======================================
   return (
     <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 md:pb-12 flex flex-col gap-6 md:gap-8 relative overflow-x-hidden min-w-0">
       
       {/* CSS Animasi & Scrollbar Kustom */}
       <style dangerouslySetInnerHTML={{
         __html: `
-          .animate-fade-up {
-            opacity: 0;
-            transform: translateY(30px);
-            animation: fadeUpAnim 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          }
-          @keyframes fadeUpAnim {
-            to { opacity: 1; transform: translateY(0); }
-          }
-          .delay-100 { animation-delay: 0.1s; }
-          .delay-200 { animation-delay: 0.2s; }
-          .delay-300 { animation-delay: 0.3s; }
-          
-          .input-vip-group {
-            transition: all 0.3s ease;
-          }
-          .input-vip-group:focus-within {
-            transform: translateY(-2px);
-            background-color: #ffffff;
-            box-shadow: 0 10px 25px -5px rgba(30,171,87,0.15);
-            border-color: #A7F3D0;
-          }
-
-          /* Kustom Scrollbar untuk Modal Dropdown */
-          .custom-scroll::-webkit-scrollbar {
-            width: 4px;
-          }
-          .custom-scroll::-webkit-scrollbar-track {
-            background: transparent;
-          }
-          .custom-scroll::-webkit-scrollbar-thumb {
-            background: #E2E8F0;
-            border-radius: 10px;
-          }
-          .custom-scroll::-webkit-scrollbar-thumb:hover {
-            background: #CBD5E1;
-          }
+          .animate-fade-up { opacity: 0; transform: translateY(30px); animation: fadeUpAnim 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+          @keyframes fadeUpAnim { to { opacity: 1; transform: translateY(0); } }
+          .delay-100 { animation-delay: 0.1s; } .delay-200 { animation-delay: 0.2s; } .delay-300 { animation-delay: 0.3s; }
+          .input-vip-group { transition: all 0.3s ease; }
+          .input-vip-group:focus-within { transform: translateY(-2px); background-color: #ffffff; box-shadow: 0 10px 25px -5px rgba(30,171,87,0.15); border-color: #A7F3D0; }
+          .custom-scroll::-webkit-scrollbar { width: 4px; }
+          .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+          .custom-scroll::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; }
+          .custom-scroll::-webkit-scrollbar-thumb:hover { background: #CBD5E1; }
         `
       }} />
 
-      {/* ======================================= */}
-      {/* MODAL CUSTOM DATE PICKER (VIP GIZIKU STYLE) */}
-      {/* ======================================= */}
+      {/* MODAL DATE PICKER */}
       {showDatePicker && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300">
           <div className="bg-white w-full max-w-[360px] rounded-[2rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 border border-slate-100">
-            
             <div className="p-6 border-b border-slate-50 flex justify-between items-start bg-white">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-[14px] bg-[#E8F8EE] text-[#1EAB57] flex items-center justify-center border border-emerald-100/50">
@@ -297,66 +452,45 @@ export default function EditProfilePage() {
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Pilih Tanggal</p>
                 </div>
               </div>
-              <button onClick={() => setShowDatePicker(false)} className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-rose-100 hover:text-rose-500 flex items-center justify-center transition-colors cursor-pointer shrink-0">
+              <button type="button" onClick={() => setShowDatePicker(false)} className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-rose-100 hover:text-rose-500 flex items-center justify-center transition-colors cursor-pointer shrink-0">
                 <IconClose className="w-4 h-4" />
               </button>
             </div>
             
             <div className="p-6 bg-white">
-              
-              {/* HEADER KALENDER DENGAN QUICK SELECTOR TAHUN/BULAN */}
               <div className="flex items-center justify-between mb-8 px-1 relative">
                 <div onClick={handlePrevMonth} className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors active:scale-95">
                   <IconChevronLeft className="w-5 h-5 text-slate-600" />
                 </div>
-
-                {/* Pill Bulan & Tahun VIP */}
                 <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 px-4 py-2 rounded-2xl shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
-                  <MiniDropdown 
-                    value={calMonth} 
-                    onChange={setCalMonth} 
-                    options={monthNames.map((m, i) => ({ label: m, value: i }))} 
-                  />
+                  <MiniDropdown value={calMonth} onChange={setCalMonth} options={monthNames.map((m, i) => ({ label: m, value: i }))} />
                   <div className="w-[1.5px] h-4 bg-slate-200 rounded-full mx-1"></div>
-                  <MiniDropdown 
-                    value={calYear} 
-                    onChange={setCalYear} 
-                    options={Array.from({length: 100}, (_, i) => new Date().getFullYear() - i).map(y => ({ label: y.toString(), value: y }))} 
-                  />
+                  <MiniDropdown value={calYear} onChange={setCalYear} options={Array.from({length: 100}, (_, i) => new Date().getFullYear() - i).map(y => ({ label: y.toString(), value: y }))} />
                 </div>
-
                 <div onClick={handleNextMonth} className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors active:scale-95">
                   <IconChevronRight className="w-5 h-5 text-slate-600" />
                 </div>
               </div>
 
-              {/* Grid Hari */}
               <div className="grid grid-cols-7 gap-2 text-center mb-5">
                 {['M', 'S', 'S', 'R', 'K', 'J', 'S'].map((day, i) => (
                   <span key={i} className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{day}</span>
                 ))}
               </div>
 
-              {/* Grid Tanggal Aktif (Makin Besar & Bold) */}
               <div className="grid grid-cols-7 gap-y-4 gap-x-2 text-center items-center">
                 {emptyDaysArray.map(i => <div key={`empty-${i}`}></div>)}
                 {daysArray.map(d => (
                   <div 
-                    key={d} 
-                    onClick={() => setCalDay(d)}
-                    className={`w-10 h-10 mx-auto flex items-center justify-center text-sm rounded-full cursor-pointer transition-all ${
-                      d === calDay 
-                      ? 'text-white bg-[#1EAB57] shadow-[0_6px_15px_rgba(30,171,87,0.4)] scale-110 font-black' 
-                      : 'text-slate-700 font-black hover:bg-slate-100 hover:text-slate-900'
-                    }`}
+                    key={d} onClick={() => setCalDay(d)}
+                    className={`w-10 h-10 mx-auto flex items-center justify-center text-sm rounded-full cursor-pointer transition-all ${d === calDay ? 'text-white bg-[#1EAB57] shadow-[0_6px_15px_rgba(30,171,87,0.4)] scale-110 font-black' : 'text-slate-700 font-black hover:bg-slate-100 hover:text-slate-900'}`}
                   >
                     {d}
                   </div>
                 ))}
               </div>
 
-              {/* Tombol Terapkan */}
-              <button onClick={applyCustomDate} className="mt-8 w-full py-4 bg-[#0F172A] hover:bg-slate-800 text-white rounded-[1.25rem] text-xs font-black uppercase tracking-widest shadow-[0_8px_20px_rgba(15,23,42,0.2)] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2">
+              <button type="button" onClick={applyCustomDate} className="mt-8 w-full py-4 bg-[#0F172A] hover:bg-slate-800 text-white rounded-[1.25rem] text-xs font-black uppercase tracking-widest shadow-[0_8px_20px_rgba(15,23,42,0.2)] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2">
                 <IconCheck className="w-4 h-4" /> Terapkan Tanggal
               </button>
             </div>
@@ -365,14 +499,13 @@ export default function EditProfilePage() {
       )}
 
       {/* ======================================= */}
-      {/* VIP HEADER BANNER (PREMIUM OVERLAP SAAS) */}
+      {/* VIP HEADER BANNER (MODE EDIT + FOTO) */}
       {/* ======================================= */}
-      <div className={`relative w-full mt-2 lg:mt-4 transition-all duration-500 ${isLoaded ? 'animate-fade-up' : 'opacity-0'}`}>
+      <div className="relative w-full mt-2 lg:mt-4 transition-all duration-500 animate-fade-up">
         
         {/* Lapis 1: Background Hijau */}
-        <div className="absolute top-0 left-0 right-0 h-[160px] md:h-[180px] bg-gradient-to-r from-[#1EAB57] via-[#24C667] to-[#127236] rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-[0_15px_30px_-10px_rgba(30,171,87,0.3)]">
-          <div className="absolute right-0 top-0 w-[400px] h-[400px] bg-white/20 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/4 pointer-events-none animate-pulse"></div>
-          <div className="absolute left-0 bottom-0 w-[300px] h-[300px] bg-emerald-900/20 rounded-full blur-[50px] translate-y-1/3 -translate-x-1/4 pointer-events-none"></div>
+        <div className="absolute top-0 left-0 right-0 h-[160px] md:h-[180px] bg-gradient-to-r from-slate-800 via-slate-700 to-slate-900 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-lg">
+          <div className="absolute right-0 top-0 w-[400px] h-[400px] bg-white/10 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/4 pointer-events-none animate-pulse"></div>
         </div>
 
         {/* Lapis 2: White Info Card & Avatar Float */}
@@ -380,12 +513,33 @@ export default function EditProfilePage() {
           
           <div className="bg-white/95 backdrop-blur-xl rounded-[2rem] p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start justify-between gap-6 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] border border-white/60 relative">
             
-            {/* Avatar Melayang */}
+            {/* Avatar Melayang (Klik untuk Ganti Foto) */}
             <div className="md:absolute md:left-8 md:-top-[4.5rem] flex justify-center -mt-20 md:mt-0 z-20">
-              <div className="w-32 h-32 md:w-36 md:h-36 rounded-full border-[6px] md:border-[8px] border-white shadow-[0_10px_25px_-5px_rgba(0,0,0,0.15)] overflow-hidden bg-slate-100 group relative">
-                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop" alt="Profile" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer backdrop-blur-[2px]">
+              <div 
+                className="w-32 h-32 md:w-36 md:h-36 rounded-full border-[6px] md:border-[8px] border-white shadow-[0_10px_25px_-5px_rgba(0,0,0,0.15)] overflow-hidden bg-slate-100 group relative flex items-center justify-center cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {/* Input File Tersembunyi */}
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  ref={fileInputRef} 
+                  onChange={handleImageChange} 
+                  className="hidden" 
+                />
+
+                {photoURL ? (
+                  <img src={photoURL} alt="Profile" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-[#1A453A] flex items-center justify-center text-white text-5xl font-black transition-transform duration-700 group-hover:scale-110">
+                    {getInitials(name)}
+                  </div>
+                )}
+                
+                {/* Overlay Hitam saat di-hover */}
+                <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-[2px]">
                   <IconCamera className="w-8 h-8 text-white scale-75 group-hover:scale-100 transition-transform duration-300" />
+                  <span className="text-[9px] font-black text-white uppercase tracking-widest mt-2 scale-75 group-hover:scale-100 transition-transform duration-300">Ubah Foto</span>
                 </div>
               </div>
             </div>
@@ -394,29 +548,30 @@ export default function EditProfilePage() {
 
             <div className="flex-1 text-center md:text-left flex flex-col justify-center min-w-0">
               <div className="flex items-center justify-center md:justify-start gap-2 mb-1.5">
-                <h1 className="text-2xl md:text-[2rem] font-black text-slate-900 tracking-tight leading-none truncate max-w-[200px] md:max-w-full">{name || "Nama Lengkap"}</h1>
-                <IconVerify className="w-6 h-6 text-[#1EAB57] shrink-0" />
+                <h1 className="text-2xl md:text-[2rem] font-black text-slate-900 tracking-tight leading-none truncate max-w-[200px] md:max-w-full">{name.split(" ")[0] || "Nama Lengkap"}</h1>
+                {role !== "BASIC" && <IconVerify className="w-6 h-6 text-[#1EAB57] shrink-0" />}
               </div>
               
-              <p className="text-sm font-bold text-slate-500 mb-5 truncate max-w-[250px] md:max-w-full">{email || "email@giziku.ai"}</p>
+              <p className="text-sm font-bold text-slate-500 mb-5 truncate max-w-[250px] md:max-w-full">{email || "email@gizify.ai"}</p>
 
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                <div className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-100 cursor-default max-w-[200px]">
-                  <IconMapPin className="w-4 h-4 text-rose-500 shrink-0" />
-                  <span className="text-[11px] font-bold text-slate-600 uppercase tracking-widest truncate">{location || "Lokasi Anda"}</span>
+                <div className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-50 border border-amber-100 cursor-default">
+                  <IconEdit className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span className="text-[11px] font-bold text-amber-600 uppercase tracking-widest">Mode Edit Aktif</span>
                 </div>
-                <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-white shadow-sm cursor-default">
-                  <span className="text-[11px] font-black uppercase tracking-widest">Edit Mode</span>
+                <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-50 text-[#1EAB57] border border-emerald-100 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8)] cursor-default">
+                  <IconSparkles className="w-4 h-4" />
+                  <span className="text-[11px] font-black uppercase tracking-widest">{role} Member</span>
                 </div>
               </div>
             </div>
 
-            {/* Action Buttons */}
+            {/* Action Buttons Top */}
             <div className="w-full md:w-auto shrink-0 flex flex-col sm:flex-row items-center justify-center gap-3 md:h-full md:pt-3 mt-4 md:mt-0">
                <Link href="/profile" className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-slate-50 hover:bg-rose-50 text-slate-500 hover:text-rose-500 px-6 py-3.5 md:py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-colors cursor-pointer border border-slate-100">
                   Batal
                </Link>
-               <button onClick={handleSave} className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-gradient-to-b from-[#24C667] to-[#1EAB57] hover:from-[#1EAB57] hover:to-[#168E46] text-white px-8 py-3.5 md:py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-[0_8px_20px_rgba(30,171,87,0.3)] cursor-pointer group">
+               <button onClick={handleSave} type="button" className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-gradient-to-b from-[#24C667] to-[#1EAB57] hover:from-[#1EAB57] hover:to-[#168E46] text-white px-8 py-3.5 md:py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-[0_8px_20px_rgba(30,171,87,0.3)] cursor-pointer group">
                   <IconSave className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" /> Simpan
                </button>
             </div>
@@ -428,27 +583,27 @@ export default function EditProfilePage() {
       {/* ======================================= */}
       {/* FORM AREA SPLIT (KIRI FORM, KANAN AI RESULT) */}
       {/* ======================================= */}
-      <form onSubmit={handleSave} className="grid grid-cols-1 xl:grid-cols-12 gap-6 md:gap-8 items-start px-2 sm:px-4 md:px-8 mt-2 relative z-10">
+      <form onSubmit={handleSave} className="grid grid-cols-1 xl:grid-cols-12 gap-6 md:gap-8 items-start relative z-10 px-2 sm:px-4 md:px-8 mt-2">
         
         {/* KOLOM KIRI (7 Col) - FORM DATA VIP */}
-        <div className={`xl:col-span-7 space-y-6 md:space-y-8 min-w-0 ${isLoaded ? 'animate-fade-up delay-100' : 'opacity-0'}`}>
+        <div className="xl:col-span-7 space-y-6 md:space-y-8 min-w-0 animate-fade-up delay-100">
           
           {/* INFORMASI DASAR */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] p-6 md:p-8 border border-slate-100 shadow-[0_15px_40px_-10px_rgba(0,0,0,0.03)] relative z-20">
+          <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] p-6 md:p-8 border border-slate-100 shadow-[0_15px_40px_-10px_rgba(0,0,0,0.03)] relative z-30">
             
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 rounded-xl bg-[#E8F8EE] flex items-center justify-center text-[#1EAB57] shadow-[inset_0_2px_5px_rgba(255,255,255,0.8)] border border-emerald-100/50">
-                <IconUser className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-slate-900 drop-shadow-sm">Data Diri Pribadi</h3>
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Identitas & Kontak</p>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-[#E8F8EE] flex items-center justify-center text-[#1EAB57] shadow-[inset_0_2px_5px_rgba(255,255,255,0.8)] border border-emerald-100/50">
+                  <IconUser className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 drop-shadow-sm">Data Diri Pribadi</h3>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Identitas & Kontak</p>
+                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 gap-5">
-              
-              {/* Row 1: Nama & Email */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="input-vip-group bg-slate-50 rounded-2xl p-2 border border-slate-100/80 group">
                   <div className="flex items-center gap-3 px-3 py-1">
@@ -457,46 +612,31 @@ export default function EditProfilePage() {
                     </div>
                     <div className="flex-1 flex flex-col justify-center">
                       <label className="text-[9px] font-black text-slate-400 mb-0.5 uppercase tracking-widest group-focus-within:text-[#1EAB57] transition-colors">Nama Lengkap</label>
-                      <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-transparent text-sm font-black text-slate-900 focus:outline-none placeholder:text-slate-300 placeholder:font-medium" placeholder="Nama..." />
+                      <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-transparent text-sm font-black text-slate-900 focus:outline-none placeholder:text-slate-300 placeholder:font-medium" placeholder="Nama..." required />
                     </div>
                   </div>
                 </div>
 
-                <div className="input-vip-group bg-slate-50 rounded-2xl p-2 border border-slate-100/80 group">
+                <div className="input-vip-group bg-slate-100/50 rounded-2xl p-2 border border-slate-100/80 group opacity-70 cursor-not-allowed">
                   <div className="flex items-center gap-3 px-3 py-1">
-                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 group-focus-within:text-[#1EAB57] shadow-sm transition-colors">
+                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 shadow-sm">
                       <IconMail className="w-4 h-4" />
                     </div>
-                    <div className="flex-1 flex flex-col justify-center">
-                      <label className="text-[9px] font-black text-slate-400 mb-0.5 uppercase tracking-widest group-focus-within:text-[#1EAB57] transition-colors">Alamat Email</label>
-                      <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-transparent text-sm font-black text-slate-900 focus:outline-none placeholder:text-slate-300 placeholder:font-medium" placeholder="Email..." />
+                    <div className="flex-1 flex flex-col justify-center overflow-hidden">
+                      <label className="text-[9px] font-black text-slate-400 mb-0.5 uppercase tracking-widest">Alamat Email (Terkunci)</label>
+                      <input type="email" value={email} disabled className="w-full bg-transparent text-sm font-black text-slate-600 focus:outline-none truncate cursor-not-allowed" />
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Row 2: Gender & DOB */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative">
-                
-                {/* Z-Index Dropdown Custom - Paling Depan */}
-                <div className="relative z-50">
-                  <CustomSelect 
-                    label="Jenis Kelamin"
-                    value={gender}
-                    onChange={setGender}
-                    icon={IconGender}
-                    options={[
-                      { label: "Pria", value: "Pria" },
-                      { label: "Wanita", value: "Wanita" }
-                    ]}
-                  />
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-20">
+                <CustomSelect 
+                  label="Jenis Kelamin" value={gender} onChange={setGender} icon={IconGender}
+                  options={[ { label: "Pria", value: "Pria" }, { label: "Wanita", value: "Wanita" } ]}
+                />
 
-                {/* TANGGAL LAHIR (CUSTOM TRIGGER) */}
-                <div 
-                  onClick={() => setShowDatePicker(true)}
-                  className="input-vip-group bg-slate-50 rounded-2xl p-2 border border-slate-100/80 group cursor-pointer relative z-10"
-                >
+                <div onClick={() => setShowDatePicker(true)} className="input-vip-group bg-slate-50 rounded-2xl p-2 border border-slate-100/80 group cursor-pointer relative z-10">
                   <div className="flex items-center gap-3 px-3 py-1">
                     <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 group-hover:text-[#1EAB57] shadow-sm transition-colors">
                       <IconCake className="w-4 h-4" />
@@ -511,44 +651,42 @@ export default function EditProfilePage() {
                 </div>
               </div>
 
-              {/* Row 3: Location */}
-              <div className="input-vip-group bg-slate-50 rounded-2xl p-2 border border-slate-100/80 group relative z-0">
-                <div className="flex items-center gap-3 px-3 py-1">
-                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 group-focus-within:text-[#1EAB57] shadow-sm transition-colors">
+              <div className="input-vip-group bg-slate-50 rounded-2xl p-2 border border-slate-100/80 group relative z-0 flex items-center">
+                <div className="flex items-center gap-3 px-3 py-1 flex-1">
+                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 group-focus-within:text-rose-500 shadow-sm transition-colors">
                     <IconMapPin className="w-4 h-4" />
                   </div>
                   <div className="flex-1 flex flex-col justify-center">
-                    <label className="text-[9px] font-black text-slate-400 mb-0.5 uppercase tracking-widest group-focus-within:text-[#1EAB57] transition-colors">Lokasi Tinggal</label>
+                    <label className="text-[9px] font-black text-slate-400 mb-0.5 uppercase tracking-widest group-focus-within:text-rose-500 transition-colors">Lokasi Tinggal</label>
                     <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Contoh: Jakarta, Indonesia" className="w-full bg-transparent text-sm font-black text-slate-900 focus:outline-none placeholder:text-slate-300 placeholder:font-medium" />
                   </div>
                 </div>
+                <button type="button" onClick={fetchCurrentLocation} className="mr-3 p-2 bg-slate-100 hover:bg-rose-100 text-slate-400 hover:text-rose-500 rounded-xl transition-colors tooltip" title="Ambil Lokasi Saat Ini">
+                   <IconTarget className="w-5 h-5" />
+                </button>
               </div>
-
             </div>
           </div>
 
           {/* FISIK, TARGET & AKTIVITAS */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] p-6 md:p-8 border border-slate-100 shadow-[0_15px_40px_-10px_rgba(0,0,0,0.05)] relative z-10">
-            
+          <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] p-6 md:p-8 border border-slate-100 shadow-[0_15px_40px_-10px_rgba(0,0,0,0.05)] relative z-20">
             <div className="flex items-center gap-4 mb-8">
               <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 shadow-[inset_0_2px_5px_rgba(255,255,255,0.8)] border border-amber-100/50">
                 <IconActivity className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="text-lg font-black text-slate-900 drop-shadow-sm">Fisik & Aktivitas</h3>
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Penentu Kalori AI</p>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Penentu Kalori Harian</p>
               </div>
             </div>
 
             <div className="flex flex-col gap-5">
-              
-              {/* Row 1: Tinggi & Berat Badan */}
               <div className="grid grid-cols-2 gap-5 z-0">
                 <div className="input-vip-group bg-slate-50 rounded-2xl p-2 border border-slate-100/80 group">
                   <div className="flex items-center gap-3 px-3 py-1">
                     <div className="flex-1 flex flex-col justify-center text-center">
                       <label className="text-[9px] font-black text-slate-400 mb-1 uppercase tracking-widest group-focus-within:text-[#1EAB57] transition-colors">Tinggi (cm)</label>
-                      <input type="number" value={height} onChange={(e) => setHeight(e.target.value)} className="w-full bg-transparent text-2xl font-black text-slate-900 text-center focus:outline-none" />
+                      <input type="number" value={height} onChange={(e) => setHeight(e.target.value)} className="w-full bg-transparent text-2xl font-black text-slate-900 text-center focus:outline-none" required />
                     </div>
                   </div>
                 </div>
@@ -557,19 +695,15 @@ export default function EditProfilePage() {
                   <div className="flex items-center gap-3 px-3 py-1">
                     <div className="flex-1 flex flex-col justify-center text-center">
                       <label className="text-[9px] font-black text-slate-400 mb-1 uppercase tracking-widest group-focus-within:text-amber-500 transition-colors">Berat (kg)</label>
-                      <input type="number" value={weight} onChange={(e) => setWeight(e.target.value)} className="w-full bg-transparent text-2xl font-black text-slate-900 text-center focus:outline-none" />
+                      <input type="number" value={weight} onChange={(e) => setWeight(e.target.value)} className="w-full bg-transparent text-2xl font-black text-slate-900 text-center focus:outline-none" required />
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Z-Index Dropdown Kaskade (Biar Gak Ketiban Bawahnya) */}
               <div className="relative z-30">
                 <CustomSelect 
-                  label="Target Perubahan Tubuh"
-                  value={bodyGoal}
-                  onChange={setBodyGoal}
-                  icon={IconTarget}
+                  label="Target Perubahan Tubuh" value={bodyGoal} onChange={setBodyGoal} icon={IconTarget}
                   options={[
                     { label: "Menurunkan Berat (Defisit Kalori)", value: "Menurunkan Berat Badan" },
                     { label: "Menjaga Berat (Maintenance)", value: "Menjaga Berat Badan" },
@@ -580,10 +714,7 @@ export default function EditProfilePage() {
 
               <div className="relative z-20">
                 <CustomSelect 
-                  label="Aktivitas Harian"
-                  value={activity}
-                  onChange={setActivity}
-                  icon={IconActivity}
+                  label="Aktivitas Harian" value={activity} onChange={setActivity} icon={IconActivity}
                   options={[
                     { label: "Rendah (Banyak Duduk / Rebahan)", value: "Rendah" },
                     { label: "Sedang (Aktif Bergerak)", value: "Sedang" },
@@ -594,10 +725,7 @@ export default function EditProfilePage() {
 
               <div className="relative z-10">
                 <CustomSelect 
-                  label="Rutinitas Olahraga"
-                  value={exercise}
-                  onChange={setExercise}
-                  icon={IconDumbbell}
+                  label="Rutinitas Olahraga" value={exercise} onChange={setExercise} icon={IconDumbbell}
                   options={[
                     { label: "Jarang / Tidak Pernah", value: "Jarang" },
                     { label: "1-2x Seminggu (Ringan)", value: "1-2x/Minggu" },
@@ -606,18 +734,93 @@ export default function EditProfilePage() {
                   ]}
                 />
               </div>
+            </div>
+          </div>
+
+          {/* PREFERENSI DIET & MEDIS */}
+          <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] p-6 md:p-8 border border-slate-100 shadow-[0_15px_40px_-10px_rgba(0,0,0,0.05)] relative z-10">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 shadow-[inset_0_2px_5px_rgba(255,255,255,0.8)] border border-orange-100/50">
+                <IconCutlery className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-900 drop-shadow-sm">Preferensi Diet & Medis</h3>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Personalisasi Meal Plan AI</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-5">
+              <div className="relative z-40">
+                <CustomSelect 
+                  label="Tipe Diet" value={dietType} onChange={setDietType} icon={IconSparkles}
+                  options={[
+                    { label: "Normal / Bebas", value: "Normal / Bebas" },
+                    { label: "Halal (No Pork, No Alcohol)", value: "Halal" },
+                    { label: "Vegetarian", value: "Vegetarian" },
+                    { label: "Vegan", value: "Vegan" },
+                    { label: "Keto (Rendah Karbo)", value: "Keto" },
+                    { label: "Rendah Gula", value: "Rendah Gula" }
+                  ]}
+                />
+              </div>
+
+              <div className="input-vip-group bg-slate-50 rounded-2xl p-2 border border-slate-100/80 group">
+                <div className="flex items-start gap-3 px-3 py-2">
+                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 group-focus-within:text-orange-500 shadow-sm transition-colors mt-1 shrink-0">
+                    <IconHeart className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 flex flex-col justify-center">
+                    <label className="text-[9px] font-black text-slate-400 mb-1 uppercase tracking-widest group-focus-within:text-orange-500 transition-colors">Menu Favorit</label>
+                    <textarea 
+                      value={favoriteFoods} onChange={(e) => setFavoriteFoods(e.target.value)} 
+                      className="w-full bg-transparent text-sm font-bold text-slate-900 focus:outline-none placeholder:text-slate-300 resize-none h-12 custom-scroll" 
+                      placeholder="Contoh: Ayam bakar, Telur rebus, Sayur bayam..." 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="input-vip-group bg-slate-50 rounded-2xl p-2 border border-slate-100/80 group">
+                <div className="flex items-start gap-3 px-3 py-2">
+                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 group-focus-within:text-rose-500 shadow-sm transition-colors mt-1 shrink-0">
+                    <IconClose className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 flex flex-col justify-center">
+                    <label className="text-[9px] font-black text-slate-400 mb-1 uppercase tracking-widest group-focus-within:text-rose-500 transition-colors">Alergi & Tidak Disukai</label>
+                    <textarea 
+                      value={dislikedFoods} onChange={(e) => setDislikedFoods(e.target.value)} 
+                      className="w-full bg-transparent text-sm font-bold text-slate-900 focus:outline-none placeholder:text-slate-300 resize-none h-12 custom-scroll" 
+                      placeholder="Contoh: Seafood, Brokoli, Kacang..." 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="input-vip-group bg-slate-50 rounded-2xl p-2 border border-slate-100/80 group">
+                <div className="flex items-start gap-3 px-3 py-2">
+                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 group-focus-within:text-blue-500 shadow-sm transition-colors mt-1 shrink-0">
+                    <IconStethoscope className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 flex flex-col justify-center">
+                    <label className="text-[9px] font-black text-slate-400 mb-1 uppercase tracking-widest group-focus-within:text-blue-500 transition-colors">Riwayat Penyakit Khusus</label>
+                    <input 
+                      type="text" value={medicalHistory} onChange={(e) => setMedicalHistory(e.target.value)} 
+                      className="w-full bg-transparent text-sm font-bold text-slate-900 focus:outline-none placeholder:text-slate-300" 
+                      placeholder="Contoh: Asam lambung, Diabetes (kosongkan jika Tidak Ada)" 
+                    />
+                  </div>
+                </div>
+              </div>
 
             </div>
           </div>
+
         </div>
 
-        {/* ========================================== */}
-        {/* KOLOM KANAN (5 Col) - AI RESULTS (WHITE CLEAN) */}
-        {/* ========================================== */}
-        <div className="xl:col-span-5 relative min-w-0 z-0">
-          <div className={`sticky top-8 space-y-6 md:space-y-8 ${isLoaded ? 'animate-fade-up delay-300' : 'opacity-0'}`}>
+        {/* KOLOM KANAN (5 Col) - AI RESULTS */}
+        <div className="xl:col-span-5 relative min-w-0 z-0 animate-fade-up delay-300">
+          <div className="sticky top-8 space-y-6 md:space-y-8">
             
-            {/* HASIL KALKULASI AI */}
             <div className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-slate-100 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.05)] relative overflow-hidden">
               <div className="absolute right-0 top-0 w-64 h-64 bg-emerald-50 rounded-full blur-[50px] pointer-events-none -translate-y-1/2 translate-x-1/4"></div>
               
@@ -659,14 +862,13 @@ export default function EditProfilePage() {
               </div>
             </div>
 
-            {/* Info Box */}
             <div className="bg-blue-50 border border-blue-100 rounded-[1.5rem] p-5 md:p-6 flex items-start gap-4 shadow-sm hover:shadow-md transition-shadow">
               <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
                 <IconInfo className="w-5 h-5" />
               </div>
               <div>
                 <h4 className="text-[11px] font-black text-blue-900 uppercase tracking-widest mb-1.5">Panduan GiziBot</h4>
-                <p className="text-[11px] md:text-xs font-medium text-blue-700/80 leading-relaxed">Ubah angka <strong className="text-blue-800">Berat</strong> & <strong className="text-blue-800">Tinggi Badan</strong> di form kiri, lalu perhatikan kotak Kalkulasi AI Live di atas. Sistem otomatis merespon perubahan datamu.</p>
+                <p className="text-[11px] md:text-xs font-medium text-blue-700/80 leading-relaxed">Ubah data <strong className="text-blue-800">Fisik</strong> dan isi <strong className="text-blue-800">Preferensi Menu</strong>. Semakin lengkap, semakin pintar AI menyusun menu untukmu!</p>
               </div>
             </div>
 
@@ -703,7 +905,10 @@ const IconCheck = ({ className }: any) => <svg className={className} viewBox="0 
 const IconInfo = ({ className }: any) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
 const IconSave = ({ className }: any) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>;
 const IconDumbbell = ({ className }: any) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.4 14.4l-4.8-4.8"></path><path d="M18.6 18.6l-3-3"></path><path d="M5.4 5.4l-3-3"></path><path d="M6.8 3.2l-3.6 3.6"></path><path d="M20.8 17.2l-3.6 3.6"></path><path d="M2 16v6h6"></path><path d="M22 8V2h-6"></path></svg>;
+const IconCutlery = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg>;
+const IconStethoscope = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 20H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4"></path><path d="M8 2v4"></path><path d="M16 2v4"></path><circle cx="16" cy="16" r="3"></circle><path d="M18.1 18.1L22 22"></path></svg>;
+const IconHeart = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>;
+const IconClose = ({ className }: any) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
 const IconCamera = ({ className }: any) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>;
 const IconVerify = ({ className }: any) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
-const IconClose = ({ className }: any) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
-const IconCalendar = ({ className }: any) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
+const IconEdit = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;

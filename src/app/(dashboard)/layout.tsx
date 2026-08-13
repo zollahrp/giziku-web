@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+// 1. TAMBAHKAN IMPORT FIREBASE DI SINI
+import { auth } from "@/lib/firebase";
+import { signOut, onAuthStateChanged } from "firebase/auth";
 
 export default function DashboardLayout({
   children,
@@ -12,8 +16,20 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   
-  // Data statis untuk prototype
-  const userName = "Zolla Perdana Putra Harahap";
+  // 2. BIKIN NAMA USER JADI DINAMIS DARI FIREBASE (Bukan statis lagi)
+  const [userName, setUserName] = useState("Memuat...");
+
+  useEffect(() => {
+    // Dengarkan perubahan status login dari Firebase
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUserName(user.displayName || "User Giziku");
+      } else {
+        setUserName("Tamu");
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   // --- STRUKTUR MENU GIZIKU YANG DIPERBARUI ---
   const menuGroups = [
@@ -40,9 +56,21 @@ export default function DashboardLayout({
     }
   ];
 
-  const handleLogout = () => {
-    // Simulasi logout
-    router.push("/login");
+  // 3. FUNGSI LOGOUT YANG SAKTI
+  const handleLogout = async () => {
+    try {
+      // a. Putuskan sesi dari Firebase
+      await signOut(auth);
+      
+      // b. Hancurkan Cookie (Kartu Akses) biar Middleware nggak ngasih masuk lagi
+      document.cookie = "giziku_session=; path=/; max-age=0; Secure; SameSite=Strict";
+      
+      // c. Lempar balik ke halaman login
+      router.push("/login");
+    } catch (error) {
+      console.error("Gagal logout:", error);
+      alert("Terjadi kesalahan saat logout.");
+    }
   };
 
   return (
@@ -124,11 +152,12 @@ export default function DashboardLayout({
             
             <div className="flex items-center gap-3 px-3 py-2.5">
               <div className="w-10 h-10 shrink-0 rounded-full bg-gradient-to-br from-emerald-500 to-[#1A453A] flex items-center justify-center font-bold text-white text-sm shadow-md border-2 border-white">
-                {userName.charAt(0)}
+                {/* Ambil huruf pertama dari nama user Firebase */}
+                {userName.charAt(0).toUpperCase()}
               </div>
               <div className="overflow-hidden">
                 <p className="text-sm font-extrabold text-gray-900 truncate leading-tight">{userName}</p>
-                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Pro Member</p>
+                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Member Aktif</p>
               </div>
             </div>
 
@@ -147,7 +176,6 @@ export default function DashboardLayout({
       {/* ======================================= */}
       {/* AREA KONTEN UTAMA (Desktop & Mobile) */}
       {/* ======================================= */}
-      {/* KUNCI RESPONSIVITAS: Gunakan lg:pl-[320px] w-full, BUKAN margin-left */}
       <main className="flex-1 flex flex-col h-screen w-full overflow-hidden relative lg:pl-[320px] transition-all duration-300">
         
         {/* Header Mobile (Hanya muncul di layar kecil) */}
@@ -160,8 +188,9 @@ export default function DashboardLayout({
               GIZIKU
             </span>
           </Link>
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-[#1A453A] text-white flex items-center justify-center font-bold text-sm shadow-sm">
-            Z
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-[#1A453A] text-white flex items-center justify-center font-bold text-sm shadow-sm cursor-pointer" onClick={handleLogout}>
+             {/* Tombol Profile Mobile (Klik untuk Logout Sementara) */}
+            {userName.charAt(0).toUpperCase()}
           </div>
         </header>
 
