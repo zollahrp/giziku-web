@@ -64,7 +64,7 @@ export default function ScannerPage() {
   const [showShareModal, setShowShareModal] = useState(false); 
 
   // STATE UNTUK FITUR SHARE ALA STRAVA
-  const [shareMode, setShareMode] = useState<"portrait" | "landscape" | "minimalist">("portrait");
+  const [shareMode, setShareMode] = useState<"portrait" | "story" | "landscape" | "minimalist">("story");
   const [shareColor, setShareColor] = useState<string>("text-white");
 
   const [recentScans, setRecentScans] = useState<any[]>([]);
@@ -177,10 +177,10 @@ export default function ScannerPage() {
     setShowPointers(true);
     setShowMicro(false); 
     
-    setScanText("Mata Gizify Vision lagi melototin makananmu...");
-    setTimeout(() => scanState === "scanning" && setScanText("Tunggu ya, lagi memisahkan gizi lauk dan nasinya..."), 1500);
-    setTimeout(() => scanState === "scanning" && setScanText("Menghitung kalori biar target tubuhmu cepat tercapai..."), 3000);
-    setTimeout(() => scanState === "scanning" && setScanText("Meracik saran gizi terbaik buat kamu..."), 4500);
+    setScanText("Mata Gizify lagi melototin makananmu...");
+    setTimeout(() => scanState === "scanning" && setScanText("Tunggu ya, lagi misahin gizi lauk dan nasinya..."), 1500);
+    setTimeout(() => scanState === "scanning" && setScanText("Ngitung kalori biar targetmu aman terkendali..."), 3000);
+    setTimeout(() => scanState === "scanning" && setScanText("Mencetak angka..."), 4500);
 
     try {
       const response = await fetch("/api/scan", {
@@ -247,12 +247,20 @@ export default function ScannerPage() {
 
   const currentDisplayData = selectedItemIndex !== null && scanResult ? scanResult.items[selectedItemIndex] : scanResult?.total;
 
-  // KONFIGURASI WARNA SHARE
+  // KONFIGURASI WARNA & RASIO SHARE (Aesthetic UI)
   const colorOptions = [
     { name: "Putih", class: "text-white", bg: "bg-white" },
-    { name: "Hijau", class: "text-emerald-400", bg: "bg-emerald-400" },
+    { name: "Hitam", class: "text-slate-900", bg: "bg-slate-900" },
+    { name: "Hijau", class: "text-[#1EAB57]", bg: "bg-[#1EAB57]" },
     { name: "Kuning", class: "text-amber-400", bg: "bg-amber-400" },
-    { name: "Merah", class: "text-rose-400", bg: "bg-rose-400" },
+    { name: "Merah", class: "text-rose-500", bg: "bg-rose-500" },
+  ];
+
+  const shareModes = [
+    { id: "story", label: "Story (9:16)", aspect: "aspect-[9/16]" },
+    { id: "portrait", label: "Portrait (4:5)", aspect: "aspect-[4/5]" },
+    { id: "landscape", label: "Landscape", aspect: "aspect-[16/9] md:aspect-[21/9]" },
+    { id: "minimalist", label: "Minimalis", aspect: "aspect-square" }
   ];
 
   return (
@@ -261,99 +269,118 @@ export default function ScannerPage() {
       <input type="file" accept="image/*" ref={galleryInputRef} onChange={handleImageUpload} className="hidden" />
 
       {/* ======================================= */}
-      {/* MODAL SHARE GIZIFY (STRAVA STYLE) */}
+      {/* MODAL SHARE GIZIFY (STRAVA AESTHETIC STYLE) */}
       {/* ======================================= */}
       {showShareModal && scanResult && uploadedImage && (
-        <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fade-in overflow-y-auto custom-scroll">
+        <div className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-4 animate-fade-in overflow-y-auto custom-scroll">
           
           <button onClick={() => setShowShareModal(false)} className="absolute top-4 right-4 md:top-8 md:right-8 w-10 h-10 bg-white/10 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-all z-[210] cursor-pointer">
              <IconClose className="w-5 h-5" />
           </button>
 
           {/* SHARE CONTROLS PANEL */}
-          <div className="bg-white/10 border border-white/20 backdrop-blur-xl p-4 rounded-[1.5rem] mb-6 flex flex-col sm:flex-row items-center gap-4 md:gap-8 z-10 w-full max-w-3xl mt-12 md:mt-0">
+          <div className="bg-white/10 border border-white/20 backdrop-blur-xl p-4 rounded-[1.5rem] mb-6 flex flex-col lg:flex-row items-center justify-center gap-4 md:gap-8 z-10 w-full max-w-4xl mt-12 md:mt-0">
             {/* Mode Select */}
-            <div className="flex gap-2 bg-black/40 p-1.5 rounded-xl w-full sm:w-auto">
-               <button onClick={() => setShareMode("portrait")} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all ${shareMode === "portrait" ? "bg-white text-slate-900" : "text-white hover:bg-white/20"}`}>Portrait</button>
-               <button onClick={() => setShareMode("landscape")} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all ${shareMode === "landscape" ? "bg-white text-slate-900" : "text-white hover:bg-white/20"}`}>Landscape</button>
-               <button onClick={() => setShareMode("minimalist")} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all ${shareMode === "minimalist" ? "bg-white text-slate-900" : "text-white hover:bg-white/20"}`}>Minimalist</button>
+            <div className="flex flex-wrap justify-center gap-2 bg-black/40 p-1.5 rounded-xl w-full lg:w-auto">
+               {shareModes.map(mode => (
+                 <button 
+                   key={mode.id} 
+                   onClick={() => setShareMode(mode.id as any)} 
+                   className={`flex-1 lg:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${shareMode === mode.id ? "bg-white text-slate-900" : "text-white hover:bg-white/20"}`}
+                 >
+                   {mode.label}
+                 </button>
+               ))}
             </div>
             
             {/* Color Picker */}
-            <div className="flex items-center gap-3">
-               <span className="text-xs font-black text-white/60 uppercase tracking-widest">Warna Teks:</span>
+            <div className="flex items-center justify-center gap-3 w-full lg:w-auto mt-2 lg:mt-0">
+               <span className="text-xs font-black text-white/60 uppercase tracking-widest">Teks:</span>
                <div className="flex gap-2">
                  {colorOptions.map((color) => (
-                    <button key={color.name} onClick={() => setShareColor(color.class)} className={`w-6 h-6 rounded-full border-2 transition-transform ${shareColor === color.class ? 'border-white scale-125' : 'border-transparent hover:scale-110'} ${color.bg}`} title={color.name}></button>
+                    <button 
+                      key={color.name} 
+                      onClick={() => setShareColor(color.class)} 
+                      className={`w-7 h-7 rounded-full border-[3px] transition-transform cursor-pointer shadow-sm ${shareColor === color.class ? 'border-white scale-125' : 'border-transparent hover:scale-110'} ${color.bg}`} 
+                      title={color.name}
+                    ></button>
                  ))}
                </div>
             </div>
           </div>
           
           {/* CARD UTAMA YANG AKAN DI-SCREENSHOT */}
-          <div id="gizify-share-card" className={`relative bg-slate-950 rounded-[2rem] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.6)] border border-white/10 flex transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
-            ${shareMode === "portrait" ? "w-full max-w-[360px] aspect-[4/5] flex-col justify-end" : 
-              shareMode === "landscape" ? "w-full max-w-4xl aspect-[16/9] md:aspect-[21/9] flex-row items-center" : 
-              "w-full max-w-[360px] aspect-square flex-col justify-center items-center text-center"}
+          <div id="gizify-share-card" className={`relative bg-slate-900 rounded-[2.5rem] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.8)] border border-white/20 flex transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
+            ${shareModes.find(m => m.id === shareMode)?.aspect} 
+            ${shareMode === "story" || shareMode === "portrait" ? "w-full max-w-[380px]" : "w-full max-w-4xl"}
           `}>
              
              {/* Background Image Layer */}
              <div className="absolute inset-0 z-0">
-                <img src={uploadedImage} className={`w-full h-full object-cover transition-all duration-500 ${shareMode === "minimalist" ? "opacity-30 blur-md scale-110" : "opacity-70 mix-blend-overlay"}`} />
+                <img src={uploadedImage} className={`w-full h-full object-cover transition-all duration-700 ${shareMode === "minimalist" ? "opacity-30 blur-xl scale-125" : "opacity-80"}`} />
                 
-                {/* Gradien yang berubah arah berdasarkan mode */}
-                {shareMode === "portrait" && <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent"></div>}
-                {shareMode === "landscape" && <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/80 to-transparent"></div>}
-                {shareMode === "minimalist" && <div className="absolute inset-0 bg-slate-900/40"></div>}
+                {/* Gradien gelap untuk memastikan teks terbaca, apapun warna gambarnya */}
+                <div className={`absolute inset-0 transition-opacity duration-500 ${shareMode === "minimalist" ? "bg-slate-950/40" : shareMode === "landscape" ? "bg-gradient-to-r from-slate-950/90 via-slate-900/50 to-transparent" : "bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent"}`}></div>
              </div>
              
-             {/* Content Area */}
-             <div className={`relative z-10 flex flex-col ${shareMode === "landscape" ? "w-full md:w-2/3 p-8 md:p-12 justify-center h-full" : shareMode === "portrait" ? "w-full p-8 justify-end" : "w-full p-8 items-center"}`}>
+             {/* Content Overlay (Aesthetic Strava Style) */}
+             <div className={`relative z-10 flex flex-col justify-between w-full h-full ${shareMode === "minimalist" ? "p-8 items-center justify-center text-center" : "p-8 md:p-10"}`}>
                 
-                {/* Logo Gizify */}
-                <div className={`flex items-center gap-2 ${shareMode === "landscape" ? "mb-6" : shareMode === "portrait" ? "mb-4" : "mb-8 absolute top-8"}`}>
-                  <div className="w-6 h-6 rounded-full bg-[#1EAB57] text-white flex items-center justify-center font-black text-[10px] shadow-lg">G</div>
-                  <span className="text-xs font-black tracking-widest text-white drop-shadow-md opacity-90">GIZIFY</span>
+                {/* Header: Logo & Tanggal */}
+                <div className={`flex justify-between items-start w-full ${shareMode === "minimalist" ? "absolute top-8 left-0 px-8" : ""}`}>
+                  <img src="/images/logo.png" alt="GIZIFY" className="h-6 md:h-7 object-contain drop-shadow-lg" />
+                  
+                  {shareMode !== "minimalist" && (
+                    <div className="text-right">
+                      <p className={`font-black text-[10px] uppercase tracking-widest drop-shadow-md ${shareColor === 'text-slate-900' ? 'text-slate-800' : 'text-white/80'}`}>
+                        {new Date().toLocaleDateString('id-ID', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
-                <h2 className={`font-black leading-tight drop-shadow-xl transition-colors duration-300 ${shareColor} ${shareMode === "minimalist" ? "text-2xl mb-1" : "text-3xl md:text-5xl mb-2"}`}>
-                  {scanResult.total.name}
-                </h2>
-                
-                {shareMode !== "minimalist" && (
-                  <p className="text-white/70 font-bold text-[10px] uppercase tracking-[0.2em] mb-6 drop-shadow-md">
-                    {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                  </p>
-                )}
-                
-                {/* Highlight Kalori */}
-                <div className={`flex items-baseline gap-2 mb-6 ${shareMode === "minimalist" ? "mb-8" : ""}`}>
-                   <span className={`font-black tracking-tighter drop-shadow-2xl transition-colors duration-300 ${shareColor} ${shareMode === "minimalist" ? "text-7xl" : "text-6xl md:text-8xl"}`}>{scanResult.total.calories}</span>
-                   <span className={`font-bold drop-shadow-md ${shareMode === "minimalist" ? "text-xl text-white/50" : "text-xl md:text-2xl text-white/60"}`}>Kkal</span>
-                </div>
+                {/* Bottom/Middle: Gizi Info */}
+                <div className={`flex flex-col gap-4 ${shareMode === "landscape" ? "max-w-md my-auto" : "mt-auto"}`}>
+                  
+                  {/* Judul & Kalori Utama */}
+                  <div>
+                    <h2 className={`font-black leading-tight drop-shadow-xl transition-colors duration-300 ${shareColor} ${shareMode === "minimalist" ? "text-3xl" : "text-4xl md:text-5xl"}`}>
+                      {scanResult.total.name}
+                    </h2>
+                    
+                    <div className={`flex items-baseline gap-2 mt-1 ${shareMode === "minimalist" ? "justify-center" : ""}`}>
+                      <span className={`font-black tracking-tighter drop-shadow-2xl transition-colors duration-300 ${shareColor} ${shareMode === "minimalist" ? "text-7xl" : "text-7xl md:text-8xl"}`}>
+                        {scanResult.total.calories}
+                      </span>
+                      <span className={`font-bold drop-shadow-md text-xl md:text-2xl ${shareColor === 'text-slate-900' ? 'text-slate-700' : 'text-white/70'}`}>
+                        Kkal
+                      </span>
+                    </div>
+                  </div>
 
-                {/* Makro Data Bar */}
-                <div className={`flex items-center ${shareMode === "minimalist" ? "justify-center gap-6 bg-white/10 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10" : "gap-6 md:gap-10"}`}>
-                   <div className={shareMode === "minimalist" ? "text-center" : ""}>
-                     <p className="text-[9px] font-black text-white/50 uppercase tracking-widest mb-1">Protein</p>
-                     <p className="text-xl md:text-2xl font-black text-white drop-shadow-md">{scanResult.total.protein}g</p>
-                   </div>
-                   <div className="w-px h-8 bg-white/20"></div>
-                   <div className={shareMode === "minimalist" ? "text-center" : ""}>
-                     <p className="text-[9px] font-black text-white/50 uppercase tracking-widest mb-1">Karbo</p>
-                     <p className="text-xl md:text-2xl font-black text-white drop-shadow-md">{scanResult.total.carbs}g</p>
-                   </div>
-                   <div className="w-px h-8 bg-white/20"></div>
-                   <div className={shareMode === "minimalist" ? "text-center" : ""}>
-                     <p className="text-[9px] font-black text-white/50 uppercase tracking-widest mb-1">Lemak</p>
-                     <p className="text-xl md:text-2xl font-black text-white drop-shadow-md">{scanResult.total.fat}g</p>
-                   </div>
-                </div>
+                  {/* Glassmorphism Bar (Protein, Karbo, Lemak) */}
+                  <div className={`flex items-center justify-between bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl shadow-xl mt-2 ${shareMode === "minimalist" ? "mx-auto w-max gap-8" : ""}`}>
+                     <div className="text-center flex-1">
+                       <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${shareColor === 'text-slate-900' ? 'text-slate-600' : 'text-white/70'}`}>Protein</p>
+                       <p className={`text-xl font-black drop-shadow-md ${shareColor}`}>{scanResult.total.protein}g</p>
+                     </div>
+                     <div className="w-px h-8 bg-white/20"></div>
+                     <div className="text-center flex-1">
+                       <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${shareColor === 'text-slate-900' ? 'text-slate-600' : 'text-white/70'}`}>Karbo</p>
+                       <p className={`text-xl font-black drop-shadow-md ${shareColor}`}>{scanResult.total.carbs}g</p>
+                     </div>
+                     <div className="w-px h-8 bg-white/20"></div>
+                     <div className="text-center flex-1">
+                       <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${shareColor === 'text-slate-900' ? 'text-slate-600' : 'text-white/70'}`}>Lemak</p>
+                       <p className={`text-xl font-black drop-shadow-md ${shareColor}`}>{scanResult.total.fat}g</p>
+                     </div>
+                  </div>
 
+                </div>
              </div>
           </div>
           
-          <p className="text-white/50 text-xs mt-6 font-bold animate-pulse">Screenshot kartu ini untuk dibagikan!</p>
+          <p className="text-white/50 text-xs mt-6 font-bold animate-pulse">Screenshot kartu estetik ini untuk dibagikan! 📸</p>
         </div>
       )}
 
@@ -361,7 +388,7 @@ export default function ScannerPage() {
         __html: `
           .animate-fade-up { opacity: 0; transform: translateY(30px); animation: fadeUpAnim 0.8s forwards; }
           .animate-scale-in { opacity: 0; transform: scale(0.85); animation: scaleInAnim 0.6s forwards; }
-          .animate-fade-in { animation: fadeIn 0.4s ease-out; }
+          .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
           .animate-text-change { animation: textChange 0.5s ease-in-out; }
           @keyframes fadeUpAnim { to { opacity: 1; transform: translateY(0); } }
           @keyframes scaleInAnim { to { opacity: 1; transform: scale(1); } }
@@ -375,23 +402,25 @@ export default function ScannerPage() {
       <div className="w-full mt-6 lg:mt-8 relative z-10">
         
         {/* HEADER */}
-        <div className={`flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white/80 backdrop-blur-xl p-6 md:p-8 rounded-[2.5rem] shadow-sm border border-white mb-10 ${isLoaded ? 'animate-fade-up' : 'opacity-0'}`}>
+        <div className={`flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white/80 backdrop-blur-xl p-6 md:p-8 rounded-[2.5rem] shadow-sm border border-white mb-8 md:mb-10 ${isLoaded ? 'animate-fade-up' : 'opacity-0'}`}>
           <div className="flex items-center gap-5">
-            <div className="w-14 h-14 rounded-[1.25rem] bg-gradient-to-br from-slate-900 to-slate-800 text-white flex items-center justify-center shadow-lg">
-              <IconScan className="w-7 h-7 text-[#1EAB57]" />
+            <div className="w-14 h-14 rounded-[1.25rem] bg-gradient-to-br from-slate-900 to-slate-800 text-white flex items-center justify-center shadow-lg p-2.5">
+              {/* Logo di Header juga sudah diganti gambar */}
+              <img src="/images/logo.png" alt="G" className="w-full h-full object-contain" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-black text-[#0F172A] tracking-tight mb-1">Gizify Vision</h1>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Mata AI untuk membedah gizi piringmu</p>
+              <img src="/images/logo.png" alt="Gizify Vision" className="h-6 md:h-7 object-contain mb-1" />
+              <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">Mata AI untuk membedah gizi piringmu</p>
             </div>
           </div>
         </div>
 
         <div className="flex flex-col xl:flex-row gap-8 mb-12">
           
-          {/* CAMERA / IMAGE VIEW */}
+          {/* CAMERA / IMAGE VIEW (FULL SCREEN MOBILE EFFECT) */}
+          {/* h-[80vh] untuk HP bikin kameranya besar memanjang ke bawah */}
           <div className={`flex-1 flex flex-col gap-4 animate-fade-up`} style={{ animationDelay: '0.1s' }}>
-            <div className="relative w-full h-[450px] md:h-[550px] rounded-[2.5rem] overflow-hidden bg-slate-900 shadow-lg">
+            <div className="relative w-full h-[80vh] min-h-[500px] lg:h-[550px] rounded-[2.5rem] overflow-hidden bg-slate-900 shadow-lg">
               
               {!uploadedImage && scanState === "idle" ? (
                 <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover transform -scale-x-100 md:scale-x-100" />
@@ -458,7 +487,7 @@ export default function ScannerPage() {
               {scanState === "success" && !isFoodItem && (
                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center z-30 animate-fade-in">
                     <IconClose className="w-16 h-16 text-rose-500 mb-4 animate-bounce" />
-                    <h3 className="text-white text-2xl font-black">Bukan Makanan Ngab!</h3>
+                    <h3 className="text-white text-2xl font-black">Bukan Makanan!</h3>
                  </div>
               )}
 
@@ -476,6 +505,14 @@ export default function ScannerPage() {
                 </div>
               )}
             </div>
+            
+            {/* Scroll Indikator untuk Mobile (Biar user tau hasil ada di bawah) */}
+            {scanState === "success" && (
+              <div className="lg:hidden flex flex-col items-center justify-center mt-2 animate-bounce text-slate-400">
+                 <p className="text-[10px] font-black uppercase tracking-widest mb-1">Scroll Hasil</p>
+                 <IconChevronDown className="w-4 h-4" />
+              </div>
+            )}
           </div>
 
           {/* HASIL ANALISA AI (KOLOM KANAN) */}
@@ -513,8 +550,8 @@ export default function ScannerPage() {
                       <div className="w-20 h-20 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center mb-6">
                          <IconClose className="w-10 h-10" />
                       </div>
-                      <h2 className="text-2xl font-black text-[#0F172A] mb-3">Kocak, Ini Bukan Makanan!</h2>
-                      <p className="text-sm text-slate-500 mb-8">AI ngeliat benda ini sebagai <strong className="text-slate-900">"{scanResult.total.name}"</strong>. Coba foto makanan beneran dong!</p>
+                      <h2 className="text-2xl font-black text-[#0F172A] mb-3">Objek Tidak Dikenali</h2>
+                      <p className="text-sm text-slate-500 mb-8">AI mengidentifikasi benda ini sebagai <strong className="text-slate-900">"{scanResult.total.name}"</strong>. Kami hanya bisa menghitung gizi makanan/minuman.</p>
                       <button onClick={handleRetake} className="w-full bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all cursor-pointer">Coba Foto Lagi</button>
                    </div>
                 ) : (
@@ -579,7 +616,6 @@ export default function ScannerPage() {
                             <IconChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${showMicro ? 'rotate-180 text-[#1EAB57]' : ''}`} />
                           </button>
                           
-                          {/* PANEL GIZI MIKRO */}
                           <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showMicro ? 'max-h-48 opacity-100 mt-3' : 'max-h-0 opacity-0'}`}>
                             <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
                               <div className="grid grid-cols-2 gap-4">
@@ -625,6 +661,7 @@ export default function ScannerPage() {
                           <IconPlus className="w-4 h-4" /> Simpan Jurnal
                         </button>
                         
+                        {/* TOMBOL SHARE BUKA MODAL */}
                         <button onClick={() => setShowShareModal(true)} className="bg-indigo-500 hover:bg-indigo-600 text-white py-3.5 rounded-xl text-[11px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer">
                           <IconShare className="w-4 h-4" /> Bagikan
                         </button>
@@ -640,7 +677,7 @@ export default function ScannerPage() {
           </div>
         </div>
 
-        {/* RIWAYAT SCAN TERAKHIR (DINAMIS FIREBASE) */}
+        {/* RIWAYAT SCAN TERAKHIR */}
         <div id="riwayat-scan" className={`mt-8 md:mt-12 ${isLoaded ? 'animate-fade-up' : 'opacity-0'}`} style={{ animationDelay: '0.3s' }}>
           <div className="flex items-center justify-between mb-6 px-1">
             <h2 className="text-2xl font-black text-[#0F172A] tracking-tight">Riwayat Scan Terakhir</h2>
