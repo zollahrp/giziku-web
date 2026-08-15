@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
-// --- DATA MENU (Diupdate sesuai 5 Kategori Wajib GIZIKU) ---
+// --- DATA MENU (Diupdate sesuai 5 Kategori Wajib Gizify) ---
 const menuData = [
   {
     id: 1,

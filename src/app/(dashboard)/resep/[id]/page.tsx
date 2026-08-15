@@ -1,56 +1,84 @@
+// Path: src/app/(dashboard)/resep/[id]/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-
-// ==========================================
-// MOCK API DATA: Detail Resep (Dummy Data)
-// ==========================================
-const recipeDetail = {
-  id: "1",
-  title: "Ayam Bakar Taliwang Diet Rendah Kalori",
-  author: "Chef GiziBot",
-  date: "Kemarin",
-  rating: 4.8,
-  reviews: 124,
-  matchScore: 95, // AI Match Score
-  description: "Satu hal yang saya pelajari dari diet adalah kita tetap bisa makan enak. Resep Ayam Taliwang ini dimodifikasi dengan dada ayam tanpa kulit dan penggunaan minyak yang sangat minim. Rasanya tetap otentik pedas gurih, namun ramah kalori!",
-  image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?q=80&w=1200&auto=format&fit=crop",
-  prepTime: "15 MIN",
-  cookTime: "30 MIN",
-  servings: "2 ORANG",
-  ingredients: [
-    { section: "Bahan Utama", items: ["500g Dada ayam fillet (tanpa kulit)", "1 buah jeruk nipis (ambil airnya)", "1 sdt garam diet (low sodium)"] },
-    { section: "Bumbu Halus", items: ["7 butir bawang merah", "4 siung bawang putih", "5 buah cabai merah keriting (sesuai selera)", "3 buah cabai rawit merah", "1 ruas kencur", "1 sdt terasi bakar", "1 sdt gula aren (bisa ganti stevia)"] }
-  ],
-  instructions: [
-    "Cuci bersih dada ayam, lumuri dengan air jeruk nipis dan garam. Diamkan selama 15 menit agar bau amis hilang dan daging lebih empuk.",
-    "Haluskan semua bahan bumbu halus menggunakan blender atau ulekan. Jika menggunakan blender, tambahkan sedikit air, bukan minyak.",
-    "Siapkan wajan anti lengket (teflon). Tumis bumbu halus tanpa minyak (atau gunakan 1 spray olive oil) hingga harum dan matang sempurna. Tambahkan sedikit air jika terlalu kering.",
-    "Masukkan dada ayam ke dalam tumisan bumbu. Tambahkan air secukupnya hingga ayam setengah tenggelam. Masak dengan api kecil-sedang hingga air menyusut dan bumbu meresap ke dalam ayam.",
-    "Panaskan alat pemanggang atau teflon bersih. Panggang ayam yang sudah diungkep sambil sesekali diolesi sisa bumbu. Panggang hingga muncul aroma bakaran yang khas. Sajikan hangat."
-  ],
-  nutrition: {
-    calories: 320,
-    protein: "35g",
-    fat: "12g",
-    carbs: "8g",
-    fiber: "3g",
-    sugar: "2g",
-    sodium: "450mg"
-  }
-};
+import { dummyRecipes } from "@/data/dummyRecipes";
 
 export default function DetailResepPage() {
   const params = useParams();
   const [isLoaded, setIsLoaded] = useState(false);
   const [checkedIngredients, setCheckedIngredients] = useState<number[]>([]);
+  const [recipeDetail, setRecipeDetail] = useState<any>(null);
+
+  const fallbackImg = "https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=800&auto=format&fit=crop";
+  const getImageUrl = (title: string) => `https://image.pollinations.ai/prompt/delicious%20food%20plating%20${encodeURIComponent(title)}?width=800&height=600&nologo=true`;
 
   useEffect(() => {
-    setIsLoaded(true);
-    // Di aplikasi beneran, lu bakal fetch data resep berdasarkan params.id di sini
+    const fetchRecipe = async () => {
+      // 1. Cek di local storage (AI Plan)
+      const saved = localStorage.getItem("gizify_saved_plan");
+      let foundMeal = null;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.plan) {
+          for (const day of parsed.plan) {
+            for (const meal of day.meals) {
+              if (String(meal.id) === String(params.id)) {
+                foundMeal = meal;
+                break;
+              }
+            }
+            if (foundMeal) break;
+          }
+        }
+      }
+      
+      if (foundMeal) {
+        setRecipeDetail({
+          ...foundMeal,
+          author: "Gizify", 
+          date: "Hari Ini",
+          rating: 5.0,
+          reviews: 1,
+          matchScore: 98,
+          image: foundMeal.image || getImageUrl(foundMeal.title)
+        });
+        setIsLoaded(true);
+        return;
+      }
+
+      // 2. Jika tidak ada di lokal, cari di dummyRecipes statis
+      const dummyMatch = dummyRecipes.find(r => String(r.id) === String(params.id));
+      if (dummyMatch) {
+        setRecipeDetail({
+          ...dummyMatch,
+          author: "Gizify",
+          image: dummyMatch.image || getImageUrl(dummyMatch.title),
+        });
+      }
+      setIsLoaded(true);
+    };
+
+    fetchRecipe();
   }, [params.id]);
+
+  if (!recipeDetail && isLoaded) {
+    return (
+      <div className="w-full h-screen flex flex-col items-center justify-center bg-white">
+        <h1 className="text-2xl font-black text-slate-800 mb-2">Resep Tidak Ditemukan</h1>
+        <p className="text-slate-500 mb-6">Mungkin sesi AI sudah berakhir atau ID tidak valid.</p>
+        <Link href="/resep" className="bg-[#1EAB57] text-white px-6 py-3 rounded-xl font-bold">
+          Kembali ke Resep
+        </Link>
+      </div>
+    );
+  }
+
+  if (!recipeDetail) {
+    return <div className="w-full h-screen bg-white"></div>;
+  }
 
   const toggleIngredient = (index: number) => {
     if (checkedIngredients.includes(index)) {
@@ -60,7 +88,7 @@ export default function DetailResepPage() {
     }
   };
 
-  let ingredientGlobalIndex = 0; // Untuk tracking index checkbox global
+  let ingredientGlobalIndex = 0; 
 
   return (
     <div className="w-full pb-24 md:pb-12 relative min-w-0 overflow-x-hidden bg-white">
@@ -150,7 +178,7 @@ export default function DetailResepPage() {
         {/* HERO IMAGE & VIDEO PLAY */}
         {/* ======================================= */}
         <div className={`relative w-full h-[250px] md:h-[400px] lg:h-[500px] rounded-[2rem] overflow-hidden mb-10 md:mb-12 group cursor-pointer shadow-[0_20px_50px_-10px_rgba(0,0,0,0.1)] ${isLoaded ? 'animate-fade-up delay-200' : 'opacity-0'}`}>
-          <img src={recipeDetail.image} alt={recipeDetail.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+          <img src={recipeDetail.image} onError={(e) => { e.currentTarget.src = fallbackImg; }} alt={recipeDetail.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 bg-slate-200" />
           <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors flex items-center justify-center">
             <div className="w-20 h-20 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/50 group-hover:scale-110 transition-transform shadow-lg">
               <IconPlay className="w-8 h-8 ml-1" />
@@ -159,21 +187,43 @@ export default function DetailResepPage() {
         </div>
 
         {/* ======================================= */}
-        {/* META STATS ROW */}
+        {/* META STATS ROW (DENGAN BUDGET & LOKASI) */}
         {/* ======================================= */}
-        <div className={`flex flex-wrap items-center gap-8 md:gap-16 border-y border-slate-100 py-6 mb-12 ${isLoaded ? 'animate-fade-up delay-300' : 'opacity-0'}`}>
+        <div className={`flex flex-wrap items-center gap-6 md:gap-12 border-y border-slate-100 py-6 mb-12 ${isLoaded ? 'animate-fade-up delay-300' : 'opacity-0'}`}>
           <div>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Waktu Persiapan</p>
-            <p className="text-lg font-black text-slate-900">{recipeDetail.prepTime}</p>
+            <p className="text-lg font-black text-slate-900">{recipeDetail.prepTime || "10 Menit"}</p>
           </div>
+          <div className="hidden md:block w-px h-8 bg-slate-200"></div>
           <div>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Waktu Masak</p>
-            <p className="text-lg font-black text-slate-900">{recipeDetail.cookTime}</p>
+            <p className="text-lg font-black text-slate-900">{recipeDetail.cookTime || "15 Menit"}</p>
           </div>
+          <div className="hidden md:block w-px h-8 bg-slate-200"></div>
           <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Porsi</p>
-            <p className="text-lg font-black text-slate-900">{recipeDetail.servings}</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Porsi Sajian</p>
+            <p className="text-lg font-black text-slate-900">{recipeDetail.servings || "1 Porsi"}</p>
           </div>
+          
+          {recipeDetail.totalBudget && (
+            <>
+              <div className="hidden md:block w-px h-8 bg-slate-200"></div>
+              <div>
+                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1 flex items-center gap-1"><IconWallet className="w-3 h-3" /> Total Budget</p>
+                <p className="text-lg font-black text-emerald-600">{recipeDetail.totalBudget}</p>
+              </div>
+            </>
+          )}
+
+          {recipeDetail.location && (
+            <>
+              <div className="hidden md:block w-px h-8 bg-slate-200"></div>
+              <div>
+                <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1 flex items-center gap-1"><IconMapPin className="w-3 h-3" /> Lokasi Harga</p>
+                <p className="text-sm font-bold text-slate-700 pt-1">{recipeDetail.location}</p>
+              </div>
+            </>
+          )}
         </div>
 
         {/* ======================================= */}
@@ -181,18 +231,18 @@ export default function DetailResepPage() {
         {/* ======================================= */}
         <div className={`grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 ${isLoaded ? 'animate-fade-up delay-300' : 'opacity-0'}`}>
           
-          {/* KIRI: INGREDIENTS & NUTRITION */}
-          <div className="lg:col-span-4 space-y-12">
+          {/* KIRI: INGREDIENTS, EQUIPMENTS, & NUTRITION */}
+          <div className="lg:col-span-4 space-y-10">
             
             {/* Ingredients */}
             <div>
-              <h2 className="text-2xl font-black text-slate-900 mb-8 font-serif">Bahan-bahan</h2>
+              <h2 className="text-2xl font-black text-slate-900 mb-6 font-serif">Bahan-bahan</h2>
               
-              {recipeDetail.ingredients.map((section, idx) => (
-                <div key={idx} className="mb-8 last:mb-0">
+              {recipeDetail.ingredients && recipeDetail.ingredients.map((section: any, idx: number) => (
+                <div key={idx} className="mb-6 last:mb-0">
                   <h4 className="text-sm font-black text-slate-900 mb-4 bg-slate-50 inline-block px-3 py-1 rounded-md">{section.section}</h4>
                   <div className="space-y-4">
-                    {section.items.map((item, itemIdx) => {
+                    {section.items && section.items.map((item: string, itemIdx: number) => {
                       const currentIndex = ingredientGlobalIndex++;
                       const isChecked = checkedIngredients.includes(currentIndex);
                       
@@ -216,55 +266,85 @@ export default function DetailResepPage() {
               ))}
             </div>
 
-            {/* Nutrition Facts Table */}
-            <div className="bg-slate-50 border border-slate-100 rounded-[2rem] p-6 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
-              <h3 className="text-lg font-black text-slate-900 mb-6 font-serif">Nutrition Facts</h3>
-              
-              <div className="space-y-3">
-                <div className="flex justify-between items-center pb-3 border-b border-slate-200">
-                  <span className="text-sm font-black text-slate-800">Calories</span>
-                  <span className="text-sm font-black text-[#1EAB57]">{recipeDetail.nutrition.calories}</span>
-                </div>
-                <div className="flex justify-between items-center pb-3 border-b border-slate-200/60">
-                  <span className="text-sm font-medium text-slate-600">Total Protein</span>
-                  <span className="text-sm font-bold text-slate-900">{recipeDetail.nutrition.protein}</span>
-                </div>
-                <div className="flex justify-between items-center pb-3 border-b border-slate-200/60">
-                  <span className="text-sm font-medium text-slate-600">Total Fat</span>
-                  <span className="text-sm font-bold text-slate-900">{recipeDetail.nutrition.fat}</span>
-                </div>
-                <div className="flex justify-between items-center pb-3 border-b border-slate-200/60">
-                  <span className="text-sm font-medium text-slate-600">Total Carbohydrate</span>
-                  <span className="text-sm font-bold text-slate-900">{recipeDetail.nutrition.carbs}</span>
-                </div>
-                <div className="flex justify-between items-center pb-3 border-b border-slate-200/60">
-                  <span className="text-sm font-medium text-slate-600 pl-4">Dietary Fiber</span>
-                  <span className="text-sm font-bold text-slate-900">{recipeDetail.nutrition.fiber}</span>
-                </div>
-                <div className="flex justify-between items-center pb-3 border-b border-slate-200/60">
-                  <span className="text-sm font-medium text-slate-600 pl-4">Sugars</span>
-                  <span className="text-sm font-bold text-slate-900">{recipeDetail.nutrition.sugar}</span>
-                </div>
-                <div className="flex justify-between items-center pt-1">
-                  <span className="text-sm font-medium text-slate-600">Sodium</span>
-                  <span className="text-sm font-bold text-slate-900">{recipeDetail.nutrition.sodium}</span>
+            {/* PERSIAPAN ALAT - SEKARANG GAYANYA SAMA KAYAK BAHAN */}
+            {recipeDetail.equipments && (
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 mb-6 font-serif border-t border-slate-100 pt-8">Persiapan Alat</h2>
+                <div className="space-y-4">
+                  {recipeDetail.equipments.map((eq: string, idx: number) => {
+                    const currentIndex = ingredientGlobalIndex++;
+                    const isChecked = checkedIngredients.includes(currentIndex);
+                    
+                    return (
+                      <div 
+                        key={currentIndex} 
+                        onClick={() => toggleIngredient(currentIndex)}
+                        className="flex items-start gap-3 cursor-pointer group"
+                      >
+                        <div className={`w-5 h-5 rounded-full mt-0.5 shrink-0 flex items-center justify-center transition-colors border-2 ${isChecked ? 'bg-[#1EAB57] border-[#1EAB57]' : 'border-slate-300 group-hover:border-[#1EAB57]'}`}>
+                          {isChecked && <IconCheck className="w-3 h-3 text-white" />}
+                        </div>
+                        <p className={`text-sm md:text-base transition-all ${isChecked ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-700 font-medium'}`}>
+                          {eq}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
+            )}
+
+            {/* Informasi Gizi Table (Bahasa Indonesia) */}
+            <div className="bg-slate-50 border border-slate-100 rounded-[2rem] p-6 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] mt-8">
+              <h3 className="text-lg font-black text-slate-900 mb-6 font-serif">Informasi Gizi</h3>
+              
+              {recipeDetail.nutrition && (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center pb-3 border-b border-slate-200">
+                    <span className="text-sm font-black text-slate-800">Kalori</span>
+                    <span className="text-sm font-black text-[#1EAB57]">{recipeDetail.nutrition.kalori || recipeDetail.nutrition.calories} Kkal</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-3 border-b border-slate-200/60">
+                    <span className="text-sm font-medium text-slate-600">Total Protein</span>
+                    <span className="text-sm font-bold text-slate-900">{recipeDetail.nutrition.protein}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-3 border-b border-slate-200/60">
+                    <span className="text-sm font-medium text-slate-600">Total Lemak</span>
+                    <span className="text-sm font-bold text-slate-900">{recipeDetail.nutrition.lemak || recipeDetail.nutrition.fat}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-3 border-b border-slate-200/60">
+                    <span className="text-sm font-medium text-slate-600">Total Karbohidrat</span>
+                    <span className="text-sm font-bold text-slate-900">{recipeDetail.nutrition.karbohidrat || recipeDetail.nutrition.carbs}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-3 border-b border-slate-200/60">
+                    <span className="text-sm font-medium text-slate-600 pl-4">Serat Pangan</span>
+                    <span className="text-sm font-bold text-slate-900">{recipeDetail.nutrition.serat || recipeDetail.nutrition.fiber}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-3 border-b border-slate-200/60">
+                    <span className="text-sm font-medium text-slate-600 pl-4">Gula</span>
+                    <span className="text-sm font-bold text-slate-900">{recipeDetail.nutrition.gula || recipeDetail.nutrition.sugar}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1">
+                    <span className="text-sm font-medium text-slate-600">Natrium (Garam)</span>
+                    <span className="text-sm font-bold text-slate-900">{recipeDetail.nutrition.natrium || recipeDetail.nutrition.sodium}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
           </div>
 
-          {/* KANAN: INSTRUCTIONS */}
+          {/* KANAN: INSTRUCTIONS (SANGAT DETAIL) */}
           <div className="lg:col-span-8">
-            <h2 className="text-2xl font-black text-slate-900 mb-8 font-serif">Cara Memasak</h2>
+            <h2 className="text-2xl font-black text-slate-900 mb-8 font-serif">Instruksi Memasak</h2>
             
             <div className="space-y-8 md:space-y-10">
-              {recipeDetail.instructions.map((step, index) => (
+              {recipeDetail.instructions && recipeDetail.instructions.map((step: string, index: number) => (
                 <div key={index} className="flex gap-4 md:gap-6 group">
                   <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-emerald-50 text-[#1EAB57] flex items-center justify-center font-black text-sm md:text-base shrink-0 group-hover:bg-[#1EAB57] group-hover:text-white transition-colors shadow-[inset_0_2px_4px_rgba(255,255,255,0.8)] border border-emerald-100">
                     {index + 1}
                   </div>
-                  <p className="text-base md:text-lg font-medium text-slate-700 leading-relaxed pt-1 md:pt-1.5">
+                  <p className="text-base md:text-lg font-medium text-slate-700 leading-relaxed pt-1 md:pt-1.5 text-justify">
                     {step}
                   </p>
                 </div>
@@ -299,3 +379,7 @@ const IconStar = ({ className, filled }: { className: string, filled?: boolean }
 const IconBot = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>;
 const IconPlay = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"></path></svg>;
 const IconCheck = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>;
+const IconWallet = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>;
+const IconMapPin = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>;
+const IconChefHat = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"></path><line x1="6" y1="17" x2="18" y2="17"></line></svg>;
+const IconCheckCircle = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;

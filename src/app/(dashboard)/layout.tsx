@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import Swal from "sweetalert2";
 
 // FIREBASE IMPORTS
 import { auth, db } from "@/lib/firebase";
@@ -22,6 +23,42 @@ export default function DashboardLayout({
   const [userName, setUserName] = useState("Memuat...");
   const [userRole, setUserRole] = useState("BASIC");
   const [photoURL, setPhotoURL] = useState("");
+
+  useEffect(() => {
+    // Listener untuk notifikasi koneksi internet (Offline/Online)
+    const handleOffline = () => {
+      Swal.fire({
+        title: "Koneksi Terputus!",
+        text: "GiziBot tidak dapat terhubung ke server. Periksa koneksi internet kamu.",
+        icon: "warning",
+        confirmButtonColor: "#1EAB57",
+        toast: true,
+        position: 'top-end',
+        timer: 5000,
+        showConfirmButton: false
+      });
+    };
+
+    const handleOnline = () => {
+      Swal.fire({
+        title: "Kembali Online!",
+        text: "Koneksi internet sudah kembali stabil.",
+        icon: "success",
+        toast: true,
+        position: 'top-end',
+        timer: 3000,
+        showConfirmButton: false
+      });
+    };
+
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
+
+    return () => {
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
+    };
+  }, []);
 
   useEffect(() => {
     // Dengarkan perubahan status login dari Firebase
