@@ -17,7 +17,6 @@ export default function DetailResepPage() {
 
   useEffect(() => {
     const fetchRecipe = async () => {
-      // 1. Cek di local storage (AI Plan)
       const saved = localStorage.getItem("gizify_saved_plan");
       let foundMeal = null;
       if (saved) {
@@ -49,7 +48,6 @@ export default function DetailResepPage() {
         return;
       }
 
-      // 2. Jika tidak ada di lokal, cari di dummyRecipes statis
       const dummyMatch = dummyRecipes.find(r => String(r.id) === String(params.id));
       if (dummyMatch) {
         setRecipeDetail({
@@ -88,12 +86,34 @@ export default function DetailResepPage() {
     }
   };
 
+  // ALGORITMA PEMBERSIH TEKS (SMART EXTRACTOR)
+  const extractCoreIngredient = (text: string) => {
+    // 1. Buang teks di dalam kurung
+    let cleaned = text.replace(/\(.*\)/g, '').trim();
+    
+    // 2. Buang angka dan satuan pengukur
+    const units = ['sdm', 'sdt', 'gram', 'gr', 'g', 'ml', 'liter', 'kg', 'buah', 'lembar', 'siung', 'genggam', 'ruas', 'ekor', 'kaleng', 'batang', 'potong', 'papan', 'bungkus', 'butir'];
+    const regex = new RegExp(`^([0-9.,\\/\\-]+)\\s*(${units.join('|')})?\\s*`, 'i');
+    cleaned = cleaned.replace(regex, '').trim();
+    
+    // 3. Ambil maksimal 2 kata pertama aja biar search map-nya gampang
+    const words = cleaned.split(' ');
+    if (words.length > 2) {
+       return words.slice(0, 2).join(' '); 
+    }
+    return cleaned;
+  };
+
   let ingredientGlobalIndex = 0; 
+
+  // Menggabungkan 3 bahan utama untuk dilempar ke tombol raksasa di bawah
+  const mainIngredientsList = recipeDetail.ingredients && recipeDetail.ingredients[0] && recipeDetail.ingredients[0].items 
+    ? recipeDetail.ingredients[0].items.slice(0, 3).map((item: string) => extractCoreIngredient(item)).join(", ") 
+    : "Bahan segar";
 
   return (
     <div className="w-full pb-24 md:pb-12 relative min-w-0 overflow-x-hidden bg-white">
       
-      {/* INJEKSI CSS ANIMASI */}
       <style dangerouslySetInnerHTML={{
         __html: `
           .animate-fade-up {
@@ -112,9 +132,7 @@ export default function DetailResepPage() {
 
       <div className="max-w-[1000px] mx-auto px-4 md:px-8 mt-4 lg:mt-8">
         
-        {/* ======================================= */}
         {/* TOP NAVIGATION */}
-        {/* ======================================= */}
         <div className={`flex items-center justify-between mb-8 ${isLoaded ? 'animate-fade-up' : 'opacity-0'}`}>
           <Link href="/resep" className="flex items-center gap-2 text-slate-500 hover:text-[#1EAB57] transition-colors group">
             <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:bg-emerald-50 group-hover:border-emerald-100 transition-colors">
@@ -133,9 +151,7 @@ export default function DetailResepPage() {
           </div>
         </div>
 
-        {/* ======================================= */}
         {/* RECIPE HEADER INFO */}
-        {/* ======================================= */}
         <div className={`mb-8 ${isLoaded ? 'animate-fade-up delay-100' : 'opacity-0'}`}>
           <div className="flex items-center gap-2 text-[#1EAB57] mb-4">
             <IconSparkles className="w-4 h-4" />
@@ -169,14 +185,11 @@ export default function DetailResepPage() {
           </div>
         </div>
 
-        {/* Deskripsi */}
         <p className={`text-slate-600 font-medium leading-relaxed mb-8 md:mb-12 max-w-3xl ${isLoaded ? 'animate-fade-up delay-100' : 'opacity-0'}`}>
           {recipeDetail.description}
         </p>
 
-        {/* ======================================= */}
-        {/* HERO IMAGE & VIDEO PLAY */}
-        {/* ======================================= */}
+        {/* HERO IMAGE */}
         <div className={`relative w-full h-[250px] md:h-[400px] lg:h-[500px] rounded-[2rem] overflow-hidden mb-10 md:mb-12 group cursor-pointer shadow-[0_20px_50px_-10px_rgba(0,0,0,0.1)] ${isLoaded ? 'animate-fade-up delay-200' : 'opacity-0'}`}>
           <img src={recipeDetail.image} onError={(e) => { e.currentTarget.src = fallbackImg; }} alt={recipeDetail.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 bg-slate-200" />
           <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors flex items-center justify-center">
@@ -186,9 +199,7 @@ export default function DetailResepPage() {
           </div>
         </div>
 
-        {/* ======================================= */}
-        {/* META STATS ROW (DENGAN BUDGET & LOKASI) */}
-        {/* ======================================= */}
+        {/* META STATS ROW */}
         <div className={`flex flex-wrap items-center gap-6 md:gap-12 border-y border-slate-100 py-6 mb-12 ${isLoaded ? 'animate-fade-up delay-300' : 'opacity-0'}`}>
           <div>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Waktu Persiapan</p>
@@ -226,47 +237,64 @@ export default function DetailResepPage() {
           )}
         </div>
 
-        {/* ======================================= */}
-        {/* MAIN CONTENT: INGREDIENTS & INSTRUCTIONS */}
-        {/* ======================================= */}
+        {/* MAIN CONTENT */}
         <div className={`grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 ${isLoaded ? 'animate-fade-up delay-300' : 'opacity-0'}`}>
           
-          {/* KIRI: INGREDIENTS, EQUIPMENTS, & NUTRITION */}
+          {/* KIRI: INGREDIENTS */}
           <div className="lg:col-span-4 space-y-10">
             
-            {/* Ingredients */}
             <div>
               <h2 className="text-2xl font-black text-slate-900 mb-6 font-serif">Bahan-bahan</h2>
               
               {recipeDetail.ingredients && recipeDetail.ingredients.map((section: any, idx: number) => (
                 <div key={idx} className="mb-6 last:mb-0">
                   <h4 className="text-sm font-black text-slate-900 mb-4 bg-slate-50 inline-block px-3 py-1 rounded-md">{section.section}</h4>
-                  <div className="space-y-4">
+                  <div className="space-y-2">
                     {section.items && section.items.map((item: string, itemIdx: number) => {
                       const currentIndex = ingredientGlobalIndex++;
                       const isChecked = checkedIngredients.includes(currentIndex);
+                      const cleanName = extractCoreIngredient(item);
                       
                       return (
                         <div 
                           key={currentIndex} 
                           onClick={() => toggleIngredient(currentIndex)}
-                          className="flex items-start gap-3 cursor-pointer group"
+                          className="flex items-center justify-between gap-3 cursor-pointer group p-2 -mx-2 rounded-xl hover:bg-slate-50 transition-colors"
                         >
-                          <div className={`w-5 h-5 rounded-full mt-0.5 shrink-0 flex items-center justify-center transition-colors border-2 ${isChecked ? 'bg-[#1EAB57] border-[#1EAB57]' : 'border-slate-300 group-hover:border-[#1EAB57]'}`}>
-                            {isChecked && <IconCheck className="w-3 h-3 text-white" />}
+                          <div className="flex items-start gap-3 pr-2">
+                            <div className={`w-5 h-5 rounded-full mt-0.5 shrink-0 flex items-center justify-center transition-colors border-2 ${isChecked ? 'bg-[#1EAB57] border-[#1EAB57]' : 'border-slate-300 group-hover:border-[#1EAB57]'}`}>
+                              {isChecked && <IconCheck className="w-3 h-3 text-white" />}
+                            </div>
+                            <p className={`text-sm md:text-base transition-all ${isChecked ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-700 font-medium'}`}>
+                              {item}
+                            </p>
                           </div>
-                          <p className={`text-sm md:text-base transition-all ${isChecked ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-700 font-medium'}`}>
-                            {item}
-                          </p>
+                          
+                          <Link 
+                            href={`/maps?q=${encodeURIComponent(cleanName)}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-8 h-8 rounded-full bg-emerald-50 text-[#1EAB57] flex items-center justify-center shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:bg-[#1EAB57] hover:text-white transition-all shadow-sm"
+                            title={`Cari di Peta: ${cleanName}`}
+                          >
+                            <IconMapPin className="w-4 h-4" />
+                          </Link>
                         </div>
                       );
                     })}
                   </div>
                 </div>
               ))}
+
+              <div className="mt-8">
+                <Link href={`/maps?q=${encodeURIComponent(mainIngredientsList)}`} className="flex items-center justify-center gap-2.5 w-full bg-[#1A453A] hover:bg-[#1EAB57] text-white px-6 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-[0_10px_20px_-5px_rgba(26,69,58,0.3)] hover:shadow-[0_15px_30px_-5px_rgba(30,171,87,0.4)] active:scale-95 group">
+                  <IconMapPin className="w-5 h-5 group-hover:animate-bounce" />
+                  Cari Semua Bahan di Peta
+                </Link>
+              </div>
+
             </div>
 
-            {/* PERSIAPAN ALAT - SEKARANG GAYANYA SAMA KAYAK BAHAN */}
+            {/* PERSIAPAN ALAT */}
             {recipeDetail.equipments && (
               <div>
                 <h2 className="text-2xl font-black text-slate-900 mb-6 font-serif border-t border-slate-100 pt-8">Persiapan Alat</h2>
@@ -294,7 +322,7 @@ export default function DetailResepPage() {
               </div>
             )}
 
-            {/* Informasi Gizi Table (Bahasa Indonesia) */}
+            {/* Informasi Gizi Table */}
             <div className="bg-slate-50 border border-slate-100 rounded-[2rem] p-6 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] mt-8">
               <h3 className="text-lg font-black text-slate-900 mb-6 font-serif">Informasi Gizi</h3>
               
@@ -334,7 +362,7 @@ export default function DetailResepPage() {
 
           </div>
 
-          {/* KANAN: INSTRUCTIONS (SANGAT DETAIL) */}
+          {/* KANAN: INSTRUCTIONS */}
           <div className="lg:col-span-8">
             <h2 className="text-2xl font-black text-slate-900 mb-8 font-serif">Instruksi Memasak</h2>
             
@@ -381,5 +409,3 @@ const IconPlay = ({ className }: { className: string }) => <svg className={class
 const IconCheck = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>;
 const IconWallet = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>;
 const IconMapPin = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>;
-const IconChefHat = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"></path><line x1="6" y1="17" x2="18" y2="17"></line></svg>;
-const IconCheckCircle = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
