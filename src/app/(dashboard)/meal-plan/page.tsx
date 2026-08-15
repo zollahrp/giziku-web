@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Swal from "sweetalert2";
 
 // FIREBASE IMPORTS
 import { auth, db } from "@/lib/firebase";
@@ -73,10 +74,9 @@ export default function MealPlanGeneratorPage() {
     };
   }, []);
 
-  // FUNGSI WIZARD
-  const nextStep = () => setStep((prev) => Math.min(prev + 1, 4));
-  const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
-
+  // ==========================================
+  // REAL-TIME INPUT VALIDATOR (ANTI-JEBOL)
+  // ==========================================
   const handleBudgetChange = (e: React.ChangeEvent<HTMLInputElement> | string) => {
     const rawValue = typeof e === 'string' ? e : e.target.value.replace(/[^0-9]/g, "");
     if (rawValue) {
@@ -87,21 +87,224 @@ export default function MealPlanGeneratorPage() {
     }
   };
 
-  // FALLBACK JIKA API ERROR
+  const handleDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valStr = e.target.value;
+    if (valStr === "") {
+      setDays("");
+      return;
+    }
+    const val = parseInt(valStr);
+    if (val > 7) {
+      Swal.fire({
+        title: "Maksimal 7 Hari",
+        text: "Untuk menjaga variasi menu, maksimal plan adalah 7 hari.",
+        icon: "info",
+        toast: true,
+        position: "top-end",
+        timer: 3000,
+        showConfirmButton: false
+      });
+      setDays("7");
+    } else if (val < 1) {
+      setDays("1");
+    } else {
+      setDays(valStr);
+    }
+  };
+
+  const handlePeopleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valStr = e.target.value;
+    if (valStr === "") {
+      setPeople("");
+      return;
+    }
+    const val = parseInt(valStr);
+    if (val > 10) {
+      Swal.fire({
+        title: "Maksimal 10 Orang",
+        text: "Batas maksimal porsi rumahan adalah 10 orang.",
+        icon: "info",
+        toast: true,
+        position: "top-end",
+        timer: 3000,
+        showConfirmButton: false
+      });
+      setPeople("10");
+    } else if (val < 1) {
+      setPeople("1");
+    } else {
+      setPeople(valStr);
+    }
+  };
+
+  // FUNGSI WIZARD (Pintu Gerbang Lanjutan)
+  const nextStep = () => {
+    // Pengaman ekstra kalau user kosongin inputan ("") terus maksa klik lanjut
+    if (step === 2 && (!days || parseInt(days) < 1)) setDays("1");
+    if (step === 3 && (!people || parseInt(people) < 1)) setPeople("1");
+    
+    setStep((prev) => Math.min(prev + 1, 4));
+  };
+  const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
+
+  // FALLBACK JIKA API ERROR (SUDAH 100% SINKRON DENGAN DUMMY RECIPES)
   const fallbackMeals = [
     {
       day: 1,
       meals: [
-        { id: "fall_1", type: "Sarapan", time: "07:00", title: "Oatmeal Buah Naga", kal: 320, pro: 12, car: 45, fat: 8, price: "15.000", description: "Oatmeal sehat...", prepTime: "5 MIN", cookTime: "10 MIN", servings: "1 ORANG", ingredients: [{ section: "Utama", items: ["Oatmeal", "Buah Naga"] }], instructions: ["Seduh oatmeal..."], nutrition: { calories: 320, protein: "12g", fat: "8g", carbs: "45g", fiber: "5g", sugar: "2g", sodium: "100mg" } },
-        { id: "fall_2", type: "Makan Siang", time: "12:30", title: "Dada Ayam Bakar Rosemary", kal: 550, pro: 45, car: 50, fat: 15, price: "25.000", description: "Dada ayam bakar...", prepTime: "10 MIN", cookTime: "20 MIN", servings: "1 ORANG", ingredients: [{ section: "Utama", items: ["Dada Ayam"] }], instructions: ["Bakar ayam..."], nutrition: { calories: 550, protein: "45g", fat: "15g", carbs: "50g", fiber: "5g", sugar: "2g", sodium: "100mg" } },
-        { id: "fall_3", type: "Makan Malam", time: "19:00", title: "Salad Salmon Premium", kal: 400, pro: 35, car: 10, fat: 22, price: "35.000", description: "Salad salmon...", prepTime: "5 MIN", cookTime: "15 MIN", servings: "1 ORANG", ingredients: [{ section: "Utama", items: ["Salmon", "Salad"] }], instructions: ["Siapkan salad..."], nutrition: { calories: 400, protein: "35g", fat: "22g", carbs: "10g", fiber: "5g", sugar: "2g", sodium: "100mg" } }
+        { 
+          id: "fall_1", 
+          type: "Sarapan", time: "07:00", kal: 320, pro: 12, car: 45, fat: 8,
+          title: "Oatmeal Buah Naga", 
+          category: "Sarapan", 
+          calories: 320, 
+          rating: 4.9, 
+          reviews: 124, 
+          author: "Gizify AI", 
+          date: "Hari Ini", 
+          matchScore: 98, 
+          description: "Oatmeal sehat yang kaya akan serat dan antioksidan dari buah naga. Sangat cocok untuk memulai pagi dengan energi penuh tanpa rasa begah.", 
+          prepTime: "5 Menit", 
+          cookTime: "10 Menit", 
+          servings: "1 Porsi", 
+          totalBudget: "Rp 15.000",
+          location: "Jakarta, Indonesia",
+          equipments: ["Stove", "Saucepan", "Bowl", "Spoon"],
+          nutrition: { kalori: 320, protein: "12g", lemak: "8g", karbohidrat: "45g", serat: "5g", gula: "2g", natrium: "100mg" }, 
+          ingredients: [
+            { section: "Bahan Utama", items: ["40g Oatmeal instan", "1/2 Buah naga merah (potong dadu)", "150ml Susu almond tanpa gula"] }
+          ], 
+          instructions: [
+            "Panaskan susu almond dalam panci kecil (Saucepan) menggunakan kompor (Stove) dengan api sedang.",
+            "Masukkan oatmeal, aduk perlahan secara konstan hingga teksturnya mengental, sekitar 5 menit.",
+            "Pindahkan ke dalam mangkuk saji (Bowl). Tata rapi potongan buah naga di atasnya. Sajikan selagi hangat."
+          ], 
+          image: "https://images.unsplash.com/photo-1517673132405-a56a62b18caf?q=80&w=800&auto=format&fit=crop"
+        },
+        { 
+          id: "fall_2", 
+          type: "Makan Siang", time: "12:30", kal: 550, pro: 45, car: 50, fat: 15,
+          title: "Dada Ayam Bakar Rosemary", 
+          category: "Makan Siang", 
+          calories: 550, 
+          rating: 4.8, 
+          reviews: 89, 
+          author: "Gizify AI", 
+          date: "Hari Ini", 
+          matchScore: 95, 
+          description: "Menu makan siang tinggi protein dengan aroma rosemary yang membangkitkan selera. Menggunakan dada ayam fillet bebas lemak yang dipanggang sempurna.", 
+          prepTime: "10 Menit", 
+          cookTime: "20 Menit", 
+          servings: "1 Porsi", 
+          totalBudget: "Rp 25.000",
+          location: "Jakarta, Indonesia",
+          equipments: ["Stove", "Non-stick Pan", "Tongs", "Knife", "Cutting Board"],
+          nutrition: { kalori: 550, protein: "45g", lemak: "15g", karbohidrat: "50g", serat: "5g", gula: "2g", natrium: "250mg" }, 
+          ingredients: [
+            { section: "Bahan Utama", items: ["200g Dada ayam fillet", "1 sdt Minyak zaitun", "1 sdt Rosemary kering", "Garam dan lada hitam secukupnya"] }
+          ], 
+          instructions: [
+            "Keringkan dada ayam menggunakan tisu dapur. Baluri dengan minyak zaitun, rosemary, garam, dan lada hitam secara merata.",
+            "Panaskan wajan anti lengket (Non-stick Pan) di atas kompor dengan api sedang-tinggi.",
+            "Panggang dada ayam selama 6-8 menit di setiap sisinya hingga matang sempurna dan berwarna kecoklatan. Gunakan capitan (Tongs) untuk membalik.",
+            "Angkat dan diamkan (rest) selama 3 menit sebelum dipotong agar sari dagingnya tidak keluar."
+          ], 
+          image: "https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?q=80&w=800&auto=format&fit=crop"
+        },
+        { 
+          id: "fall_3", 
+          type: "Makan Malam", time: "19:00", kal: 400, pro: 35, car: 10, fat: 22,
+          title: "Salad Tuna Alpukat Zesty", 
+          category: "Makan Malam", 
+          calories: 400, 
+          rating: 4.9, 
+          reviews: 210, 
+          author: "Gizify AI", 
+          date: "Hari Ini", 
+          matchScore: 99, 
+          description: "Makan malam rendah karbohidrat yang sangat praktis. Tuna kaya omega-3 dipadukan dengan alpukat yang creamy tanpa perlu proses memasak yang rumit.", 
+          prepTime: "10 Menit", 
+          cookTime: "0 Menit", 
+          servings: "1 Porsi", 
+          totalBudget: "Rp 35.000",
+          location: "Jakarta, Indonesia",
+          equipments: ["Large Bowl", "Fork", "Knife", "Cutting Board"],
+          nutrition: { kalori: 400, protein: "35g", lemak: "22g", karbohidrat: "10g", serat: "5g", gula: "2g", natrium: "300mg" }, 
+          ingredients: [
+            { section: "Bahan Utama", items: ["1 kaleng Tuna in water (tiriskan)", "1/2 buah Alpukat (potong dadu)", "1 genggam Selada romaine", "1 sdm Perasan lemon", "Lada hitam secukupnya"] }
+          ], 
+          instructions: [
+            "Tiriskan air dari kaleng tuna secara maksimal. Pindahkan daging tuna ke mangkuk besar (Large Bowl).",
+            "Hancurkan perlahan daging tuna menggunakan garpu (Fork) agar tidak terlalu menggumpal.",
+            "Masukkan selada romaine dan potongan dadu alpukat ke dalam mangkuk.",
+            "Siram dengan perasan air lemon segar dan taburi lada hitam. Aduk perlahan agar tekstur alpukat tidak hancur. Sajikan segera."
+          ], 
+          image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=800&auto=format&fit=crop"
+        }
       ]
     },
     {
       day: 2,
       meals: [
-        { id: "fall_4", type: "Sarapan", time: "07:00", title: "Roti Gandum Telur Dada", kal: 300, pro: 15, car: 30, fat: 10, price: "12.000", description: "Roti gandum...", prepTime: "5 MIN", cookTime: "5 MIN", servings: "1 ORANG", ingredients: [{ section: "Utama", items: ["Roti Gandum", "Telur"] }], instructions: ["Panggang roti..."], nutrition: { calories: 300, protein: "15g", fat: "10g", carbs: "30g", fiber: "5g", sugar: "2g", sodium: "100mg" } },
-        { id: "fall_5", type: "Makan Siang", time: "12:30", title: "Nasi Merah Ikan Dori", kal: 500, pro: 40, car: 45, fat: 12, price: "30.000", description: "Ikan dori...", prepTime: "10 MIN", cookTime: "15 MIN", servings: "1 ORANG", ingredients: [{ section: "Utama", items: ["Ikan Dori", "Nasi Merah"] }], instructions: ["Panggang ikan..."], nutrition: { calories: 500, protein: "40g", fat: "12g", carbs: "45g", fiber: "5g", sugar: "2g", sodium: "100mg" } }
+        { 
+          id: "fall_4", 
+          type: "Sarapan", time: "07:00", kal: 300, pro: 15, car: 30, fat: 10,
+          title: "Roti Gandum Telur Dadar", 
+          category: "Sarapan", 
+          calories: 300, 
+          rating: 4.7, 
+          reviews: 65, 
+          author: "Gizify AI", 
+          date: "Hari Ini", 
+          matchScore: 92, 
+          description: "Menu sarapan klasik yang tak pernah salah. Karbohidrat kompleks dari gandum utuh dan protein berkualitas dari telur ayam.", 
+          prepTime: "5 Menit", 
+          cookTime: "5 Menit", 
+          servings: "1 Porsi", 
+          totalBudget: "Rp 12.000",
+          location: "Jakarta, Indonesia",
+          equipments: ["Stove", "Non-stick Pan", "Spatula"],
+          nutrition: { kalori: 300, protein: "15g", lemak: "10g", karbohidrat: "30g", serat: "5g", gula: "2g", natrium: "200mg" }, 
+          ingredients: [
+            { section: "Bahan Utama", items: ["2 lembar Roti gandum utuh", "2 butir Telur ayam", "1 sdt Mentega", "Sejumput garam"] }
+          ], 
+          instructions: [
+            "Kocok lepas dua butir telur dengan sejumput garam.",
+            "Panaskan wajan anti lengket dan lelehkan mentega dengan api sedang.",
+            "Panggang roti gandum sebentar hingga sedikit kecoklatan, lalu sisihkan.",
+            "Tuang kocokan telur ke wajan, masak hingga matang sesuai selera (bisa dadar atau orak-arik). Sajikan bersama roti."
+          ], 
+          image: "https://images.unsplash.com/photo-1525385133512-2f3bdd039054?q=80&w=800&auto=format&fit=crop"
+        },
+        { 
+          id: "fall_5", 
+          type: "Makan Siang", time: "12:30", kal: 500, pro: 40, car: 45, fat: 12,
+          title: "Nasi Merah Ikan Dori", 
+          category: "Makan Siang", 
+          calories: 500, 
+          rating: 4.8, 
+          reviews: 110, 
+          author: "Gizify AI", 
+          date: "Hari Ini", 
+          matchScore: 96, 
+          description: "Makan siang mengenyangkan dengan ikan dori yang lembut dan kaya protein. Disajikan bersama nasi merah yang memiliki indeks glikemik rendah.", 
+          prepTime: "10 Menit", 
+          cookTime: "15 Menit", 
+          servings: "1 Porsi", 
+          totalBudget: "Rp 30.000",
+          location: "Jakarta, Indonesia",
+          equipments: ["Stove", "Non-stick Pan", "Spatula", "Rice Cooker"],
+          nutrition: { kalori: 500, protein: "40g", lemak: "12g", karbohidrat: "45g", serat: "5g", gula: "2g", natrium: "300mg" }, 
+          ingredients: [
+            { section: "Bahan Utama", items: ["150g Ikan Dori fillet", "100g Nasi merah matang", "Bawang putih bubuk secukupnya", "1 sdt Minyak zaitun"] }
+          ], 
+          instructions: [
+            "Keringkan fillet ikan dori, lalu taburi dengan bawang putih bubuk dan sedikit garam.",
+            "Panaskan wajan dengan minyak zaitun. Panggang ikan dori selama 4-5 menit per sisi hingga matang dan berwarna putih solid.",
+            "Sajikan ikan dori hangat berdampingan dengan nasi merah yang sudah dimasak menggunakan Rice Cooker."
+          ], 
+          image: "https://images.unsplash.com/photo-1580476262798-bddd9f4b7369?q=80&w=800&auto=format&fit=crop"
+        }
       ]
     }
   ];
@@ -128,16 +331,82 @@ export default function MealPlanGeneratorPage() {
 
           const data = await res.json();
           let resultText = data.result || "";
-
-          // Ekstrak Array JSON dari respons AI
-          const jsonMatch = resultText.match(/\[\s*\{[\s\S]*\}\s*\]/);
           let parsedMeals = fallbackMeals;
 
-          if (jsonMatch) {
+          if (resultText) {
             try {
-              parsedMeals = JSON.parse(jsonMatch[0]);
+              let cleanedText = resultText.replace(/```json/gi, "").replace(/```/g, "").trim();
+              
+              try {
+                // Coba parse secara utuh
+                parsedMeals = JSON.parse(cleanedText);
+              } catch (err1) {
+                // Jika gagal, gunakan parser untuk mengekstrak array pertama yang valid (menghindari teks ekstra/error multiple array)
+                const extractValidArray = (text: string) => {
+                  const start = text.indexOf('[');
+                  if (start === -1) return null;
+                  let count = 0;
+                  let inStr = false;
+                  let esc = false;
+                  for (let i = start; i < text.length; i++) {
+                    const char = text[i];
+                    if (!esc && char === '"') inStr = !inStr;
+                    if (!inStr) {
+                      if (char === '[') count++;
+                      else if (char === ']') count--;
+                    }
+                    esc = (inStr && char === '\\' && !esc);
+                    if (count === 0 && char === ']') return text.substring(start, i + 1);
+                  }
+                  return null;
+                };
+
+                const firstValidArray = extractValidArray(cleanedText);
+                if (firstValidArray) {
+                  parsedMeals = JSON.parse(firstValidArray);
+                } else {
+                  // Fallback: coba ekstrak object {...} pertama
+                  const extractValidObject = (text: string) => {
+                    const start = text.indexOf('{');
+                    if (start === -1) return null;
+                    let count = 0;
+                    let inStr = false;
+                    let esc = false;
+                    for (let i = start; i < text.length; i++) {
+                      const char = text[i];
+                      if (!esc && char === '"') inStr = !inStr;
+                      if (!inStr) {
+                        if (char === '{') count++;
+                        else if (char === '}') count--;
+                      }
+                      esc = (inStr && char === '\\' && !esc);
+                      if (count === 0 && char === '}') return text.substring(start, i + 1);
+                    }
+                    return null;
+                  };
+
+                  const firstValidObj = extractValidObject(cleanedText);
+                  if (firstValidObj) {
+                    parsedMeals = JSON.parse(firstValidObj);
+                  } else {
+                    throw err1;
+                  }
+                }
+              }
+
+              // Normalisasi hasil menjadi Array
+              if (!Array.isArray(parsedMeals)) {
+                const possibleArray = Object.values(parsedMeals).find(val => Array.isArray(val));
+                if (possibleArray) {
+                  parsedMeals = possibleArray as any[];
+                } else {
+                  parsedMeals = [parsedMeals];
+                }
+              }
+
             } catch (e) {
               console.error("Gagal parsing JSON dari AI", e);
+              console.log("Raw Response dari AI (sebagian):", resultText.substring(0, 500));
             }
           }
 
@@ -351,10 +620,12 @@ export default function MealPlanGeneratorPage() {
                         {step === 2 && (
                           <div className="relative flex items-center bg-white border-2 border-slate-100 rounded-[2rem] p-6 md:p-8 focus-within:border-[#1EAB57] focus-within:ring-[6px] focus-within:ring-[#1EAB57]/10 transition-all shadow-sm">
                             <div className="bg-emerald-50 p-3 rounded-2xl mr-5"><IconClock className="w-8 h-8 text-[#1EAB57]" /></div>
+                            {/* UPDATE PENTING DI SINI: MENGGUNAKAN FUNGSI PENAHAN */}
                             <input 
-                              type="number" value={days} onChange={(e) => setDays(e.target.value)}
+                              type="number" 
+                              value={days} onChange={handleDaysChange}
                               className="flex-1 bg-transparent text-4xl md:text-5xl font-black text-[#0F172A] focus:outline-none placeholder:text-slate-300 w-full"
-                              placeholder="0" autoFocus
+                              placeholder="1 - 7" autoFocus
                             />
                             <span className="text-slate-400 font-black text-2xl uppercase tracking-widest ml-4">Hari</span>
                           </div>
@@ -362,10 +633,12 @@ export default function MealPlanGeneratorPage() {
                         {step === 3 && (
                           <div className="relative flex items-center bg-white border-2 border-slate-100 rounded-[2rem] p-6 md:p-8 focus-within:border-[#1EAB57] focus-within:ring-[6px] focus-within:ring-[#1EAB57]/10 transition-all shadow-sm">
                             <div className="bg-emerald-50 p-3 rounded-2xl mr-5"><IconUsers className="w-8 h-8 text-[#1EAB57]" /></div>
+                            {/* UPDATE PENTING DI SINI: MENGGUNAKAN FUNGSI PENAHAN */}
                             <input 
-                              type="number" value={people} onChange={(e) => setPeople(e.target.value)}
+                              type="number" 
+                              value={people} onChange={handlePeopleChange}
                               className="flex-1 bg-transparent text-4xl md:text-5xl font-black text-[#0F172A] focus:outline-none placeholder:text-slate-300 w-full"
-                              placeholder="0" autoFocus
+                              placeholder="1 - 10" autoFocus
                             />
                             <span className="text-slate-400 font-black text-2xl uppercase tracking-widest ml-4">Orang</span>
                           </div>

@@ -46,8 +46,8 @@ function CustomSelect({ label, value, options, onChange, icon: Icon, color = "te
       {isOpen && (
         <div className="absolute top-[110%] left-0 right-0 bg-white border border-slate-100 shadow-[0_20px_40px_rgba(0,0,0,0.15)] rounded-2xl overflow-hidden z-[100] animate-fade-in-down custom-scroll max-h-64 overflow-y-auto">
           {options.map((opt: any) => (
-            <div 
-              key={opt.value} 
+            <div
+              key={opt.value}
               onMouseDown={(e) => { e.preventDefault(); onChange(opt.value); setIsOpen(false); }}
               className={`px-5 py-3.5 text-sm font-black cursor-pointer transition-colors border-b border-slate-50 last:border-0 flex items-center justify-between ${value === opt.value ? `bg-slate-50 ${color}` : `text-slate-600 ${bgHover} hover:text-slate-900`}`}
             >
@@ -128,8 +128,8 @@ function CustomMultiSelect({ label, values = [], options, onChange, icon: Icon, 
           {options.map((opt: any) => {
             const isSelected = values.includes(opt.value);
             return (
-              <div 
-                key={opt.value} 
+              <div
+                key={opt.value}
                 onMouseDown={(e) => toggleOption(opt.value, e)}
                 className={`px-4 py-3 m-1 text-sm font-black cursor-pointer transition-all rounded-xl flex items-center gap-3 ${isSelected ? 'bg-emerald-50 text-[#1EAB57] shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
               >
@@ -189,9 +189,9 @@ export default function EditProfilePage() {
   const [dob, setDob] = useState("");
   const [location, setLocation] = useState("");
   const [role, setRole] = useState("BASIC");
-  const [photoURL, setPhotoURL] = useState(""); 
+  const [photoURL, setPhotoURL] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // =====================================
   // STATE: FISIK & AKTIVITAS
   // =====================================
@@ -285,19 +285,19 @@ export default function EditProfilePage() {
             setLocation(data.location || "");
             setRole(data.role || "BASIC");
             setPhotoURL(data.photoURL || user.photoURL || "");
-            
+
             // Fisik
             setHeight(data.height || "170");
             setWeight(data.weight || "65");
             setActivity(data.activity || "Sedang");
             setExercise(data.exercise || "1-2x/Minggu");
             setBodyGoal(data.bodyGoal || "Menurunkan Berat Badan");
-            
+
             // Diet (Migrasi fallback jika string lama ke array)
             const savedDiet = data.dietType || data.dietTypes;
             if (Array.isArray(savedDiet)) setDietTypes(savedDiet);
             else if (typeof savedDiet === 'string' && savedDiet !== "Normal / Bebas") setDietTypes([savedDiet]);
-            
+
             setMacroFocus(data.macroFocus || "Seimbang");
             setMealsPerDay(data.mealsPerDay || "3 Kali Sehari");
             setWaterIntake(data.waterIntake || "2 Liter");
@@ -314,7 +314,7 @@ export default function EditProfilePage() {
         } catch (error) {
           console.error("Error fetching data:", error);
         } finally {
-          setIsLoaded(true); 
+          setIsLoaded(true);
         }
       } else {
         router.push("/login");
@@ -376,13 +376,13 @@ export default function EditProfilePage() {
   // CUSTOM CALENDAR LOGIC
   // =====================================
   const [calYear, setCalYear] = useState(new Date().getFullYear() - 20);
-  const [calMonth, setCalMonth] = useState(0); 
+  const [calMonth, setCalMonth] = useState(0);
   const [calDay, setCalDay] = useState(1);
   const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
   const firstDayOfMonth = new Date(calYear, calMonth, 1).getDay();
-  const daysArray = Array.from({length: daysInMonth}, (_, i) => i + 1);
-  const emptyDaysArray = Array.from({length: firstDayOfMonth}, (_, i) => i);
+  const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const emptyDaysArray = Array.from({ length: firstDayOfMonth }, (_, i) => i);
 
   useEffect(() => {
     if (showDatePicker && dob) {
@@ -410,7 +410,7 @@ export default function EditProfilePage() {
   useEffect(() => {
     const h = parseFloat(height);
     const w = parseFloat(weight);
-    
+
     // 1. HITUNG USIA PRESISI (Berdasarkan Tahun, Bulan, dan Tanggal)
     const dobDate = new Date(dob);
     const today = new Date();
@@ -480,7 +480,7 @@ export default function EditProfilePage() {
     // Kombinasi dari aktivitas harian dan intensitas olahraga
     // =====================================================================
     let pal = 1.2; // Sedentary (Default)
-    
+
     if (activity === "Rendah") {
       if (exercise === "Jarang") pal = 1.2;          // Sangat pasif
       else if (exercise === "1-2x/Minggu") pal = 1.375; // Ringan
@@ -495,7 +495,7 @@ export default function EditProfilePage() {
       else if (exercise === "1-2x/Minggu") pal = 1.725; // Very active
       else pal = 1.9;                                   // Extremely active (Kuli + Gym)
     }
-    
+
     let totalCals = bmr * pal;
 
     // =====================================================================
@@ -509,13 +509,13 @@ export default function EditProfilePage() {
       totalCals += 300; // Surplus sehat 300-500 kkal (Mencegah nambah lemak doang)
       currentMacroFocus = "Tinggi Protein (Muscle)";
       setMacroFocus("Tinggi Protein (Muscle)"); // Auto toggle!
-    } 
+    }
     else if (bodyGoal === "Menurunkan Berat Badan") {
       totalCals -= 500; // Defisit sehat 500 kkal (Estimasi turun 0.5 kg/minggu)
       // Jika user sedang diet, kita sarankan Rendah Karbo atau Tinggi Protein
       if (currentMacroFocus === "Seimbang" || currentMacroFocus === "Sangat Rendah Karbo (Keto)") {
-         currentMacroFocus = "Rendah Karbohidrat";
-         setMacroFocus("Rendah Karbohidrat"); // Auto toggle!
+        currentMacroFocus = "Rendah Karbohidrat";
+        setMacroFocus("Rendah Karbohidrat"); // Auto toggle!
       }
     }
 
@@ -563,7 +563,7 @@ export default function EditProfilePage() {
     try {
       const userDocRef = doc(db, "users", userId);
       await setDoc(userDocRef, {
-        name, gender, birthDate: dob, location, photoURL, 
+        name, gender, birthDate: dob, location, photoURL,
         height, weight, activity, exercise, bodyGoal,
         dietTypes, macroFocus, mealsPerDay, waterIntake, // Diet Baru
         allergies, dislikedFoods, medicalHistory, // Medis
@@ -591,7 +591,7 @@ export default function EditProfilePage() {
   const formatDob = (dateStr: string) => {
     if (!dateStr) return "";
     const [year, month, day] = dateStr.split("-");
-    if(!day || !month || !year) return "";
+    if (!day || !month || !year) return "";
     return `${day}/${month}/${year}`;
   };
 
@@ -603,50 +603,50 @@ export default function EditProfilePage() {
       <div className="w-full pb-24 md:pb-12 flex flex-col gap-6 md:gap-8 relative overflow-x-hidden min-w-0 animate-in fade-in duration-500 mt-2 lg:mt-4 px-2 sm:px-4 md:px-8">
         <div className="w-full h-[160px] md:h-[180px] bg-slate-200 animate-pulse rounded-[2rem] md:rounded-[2.5rem]"></div>
         <div className="bg-white rounded-[2rem] p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 shadow-sm border border-slate-100 -mt-16 md:-mt-24 mx-2 md:mx-0 relative z-10">
-           <div className="w-32 h-32 md:w-36 md:h-36 rounded-full bg-slate-200 animate-pulse border-[6px] md:border-[8px] border-white shrink-0 -mt-12 md:-mt-8"></div>
-           <div className="flex-1 space-y-4 w-full md:mt-10">
-              <div className="h-8 bg-slate-200 animate-pulse rounded-xl w-1/2 md:w-1/3 mx-auto md:mx-0"></div>
-              <div className="h-4 bg-slate-200 animate-pulse rounded-lg w-1/3 md:w-1/4 mx-auto md:mx-0"></div>
-              <div className="flex gap-3 justify-center md:justify-start pt-2">
-                 <div className="h-8 bg-slate-200 animate-pulse rounded-xl w-24"></div>
-                 <div className="h-8 bg-slate-200 animate-pulse rounded-xl w-32"></div>
-              </div>
-           </div>
-           <div className="w-full md:w-32 h-12 bg-slate-200 animate-pulse rounded-2xl md:mt-10"></div>
+          <div className="w-32 h-32 md:w-36 md:h-36 rounded-full bg-slate-200 animate-pulse border-[6px] md:border-[8px] border-white shrink-0 -mt-12 md:-mt-8"></div>
+          <div className="flex-1 space-y-4 w-full md:mt-10">
+            <div className="h-8 bg-slate-200 animate-pulse rounded-xl w-1/2 md:w-1/3 mx-auto md:mx-0"></div>
+            <div className="h-4 bg-slate-200 animate-pulse rounded-lg w-1/3 md:w-1/4 mx-auto md:mx-0"></div>
+            <div className="flex gap-3 justify-center md:justify-start pt-2">
+              <div className="h-8 bg-slate-200 animate-pulse rounded-xl w-24"></div>
+              <div className="h-8 bg-slate-200 animate-pulse rounded-xl w-32"></div>
+            </div>
+          </div>
+          <div className="w-full md:w-32 h-12 bg-slate-200 animate-pulse rounded-2xl md:mt-10"></div>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 md:gap-8 mt-2">
-           <div className="xl:col-span-7 space-y-6 md:space-y-8">
-              <div className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-slate-100 h-[400px] flex flex-col">
-                 <div className="flex gap-4 mb-6">
-                    <div className="w-12 h-12 bg-slate-200 animate-pulse rounded-xl shrink-0"></div>
-                    <div className="space-y-2 flex-1 pt-1">
-                       <div className="h-5 bg-slate-200 animate-pulse rounded-md w-1/3"></div>
-                       <div className="h-3 bg-slate-200 animate-pulse rounded-md w-1/4"></div>
-                    </div>
-                 </div>
-                 <div className="space-y-4 flex-1">
-                    <div className="h-12 bg-slate-100 animate-pulse rounded-2xl w-full"></div>
-                    <div className="h-12 bg-slate-100 animate-pulse rounded-2xl w-full"></div>
-                    <div className="h-24 bg-slate-100 animate-pulse rounded-2xl w-full"></div>
-                 </div>
+          <div className="xl:col-span-7 space-y-6 md:space-y-8">
+            <div className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-slate-100 h-[400px] flex flex-col">
+              <div className="flex gap-4 mb-6">
+                <div className="w-12 h-12 bg-slate-200 animate-pulse rounded-xl shrink-0"></div>
+                <div className="space-y-2 flex-1 pt-1">
+                  <div className="h-5 bg-slate-200 animate-pulse rounded-md w-1/3"></div>
+                  <div className="h-3 bg-slate-200 animate-pulse rounded-md w-1/4"></div>
+                </div>
               </div>
-           </div>
-           <div className="xl:col-span-5 space-y-6 md:space-y-8">
-              <div className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-slate-100 h-[600px]">
-                 <div className="h-8 bg-slate-200 animate-pulse rounded-xl w-48 mb-8"></div>
-                 <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="h-28 bg-slate-100 animate-pulse rounded-2xl w-full"></div>
-                    <div className="h-28 bg-slate-100 animate-pulse rounded-2xl w-full"></div>
-                 </div>
-                 <div className="h-36 bg-slate-200 animate-pulse rounded-[2rem] w-full mb-6"></div>
-                 <div className="grid grid-cols-3 gap-3">
-                   <div className="h-24 bg-slate-100 animate-pulse rounded-2xl w-full"></div>
-                   <div className="h-24 bg-slate-100 animate-pulse rounded-2xl w-full"></div>
-                   <div className="h-24 bg-slate-100 animate-pulse rounded-2xl w-full"></div>
-                 </div>
+              <div className="space-y-4 flex-1">
+                <div className="h-12 bg-slate-100 animate-pulse rounded-2xl w-full"></div>
+                <div className="h-12 bg-slate-100 animate-pulse rounded-2xl w-full"></div>
+                <div className="h-24 bg-slate-100 animate-pulse rounded-2xl w-full"></div>
               </div>
-           </div>
+            </div>
+          </div>
+          <div className="xl:col-span-5 space-y-6 md:space-y-8">
+            <div className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-slate-100 h-[600px]">
+              <div className="h-8 bg-slate-200 animate-pulse rounded-xl w-48 mb-8"></div>
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="h-28 bg-slate-100 animate-pulse rounded-2xl w-full"></div>
+                <div className="h-28 bg-slate-100 animate-pulse rounded-2xl w-full"></div>
+              </div>
+              <div className="h-36 bg-slate-200 animate-pulse rounded-[2rem] w-full mb-6"></div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="h-24 bg-slate-100 animate-pulse rounded-2xl w-full"></div>
+                <div className="h-24 bg-slate-100 animate-pulse rounded-2xl w-full"></div>
+                <div className="h-24 bg-slate-100 animate-pulse rounded-2xl w-full"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -657,7 +657,7 @@ export default function EditProfilePage() {
   // =======================================
   return (
     <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 md:pb-12 flex flex-col gap-6 md:gap-8 relative overflow-x-hidden min-w-0">
-      
+
       {/* CSS Animasi Khusus & Scrollbar */}
       <style dangerouslySetInnerHTML={{
         __html: `
@@ -693,7 +693,7 @@ export default function EditProfilePage() {
                 <IconClose className="w-4 h-4" />
               </button>
             </div>
-            
+
             <div className="p-6 bg-white">
               <div className="flex items-center justify-between mb-8 px-1 relative">
                 <div onClick={handlePrevMonth} className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors active:scale-95">
@@ -702,7 +702,7 @@ export default function EditProfilePage() {
                 <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 px-4 py-2 rounded-2xl shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
                   <MiniDropdown value={calMonth} onChange={setCalMonth} options={monthNames.map((m, i) => ({ label: m, value: i }))} />
                   <div className="w-[1.5px] h-4 bg-slate-200 rounded-full mx-1"></div>
-                  <MiniDropdown value={calYear} onChange={setCalYear} options={Array.from({length: 100}, (_, i) => new Date().getFullYear() - i).map(y => ({ label: y.toString(), value: y }))} />
+                  <MiniDropdown value={calYear} onChange={setCalYear} options={Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map(y => ({ label: y.toString(), value: y }))} />
                 </div>
                 <div onClick={handleNextMonth} className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors active:scale-95">
                   <IconChevronRight className="w-5 h-5 text-slate-600" />
@@ -718,7 +718,7 @@ export default function EditProfilePage() {
               <div className="grid grid-cols-7 gap-y-4 gap-x-2 text-center items-center">
                 {emptyDaysArray.map(i => <div key={`empty-${i}`}></div>)}
                 {daysArray.map(d => (
-                  <div 
+                  <div
                     key={d} onClick={() => setCalDay(d)}
                     className={`w-10 h-10 mx-auto flex items-center justify-center text-sm rounded-full cursor-pointer transition-all ${d === calDay ? 'text-white bg-[#1EAB57] shadow-[0_6px_15px_rgba(30,171,87,0.4)] scale-110 font-black' : 'text-slate-700 font-black hover:bg-slate-100 hover:text-slate-900'}`}
                   >
@@ -739,7 +739,7 @@ export default function EditProfilePage() {
       {/* VIP HEADER BANNER (MODE EDIT + FOTO) */}
       {/* ======================================= */}
       <div className="relative w-full mt-2 lg:mt-4 transition-all duration-500 animate-fade-up">
-        
+
         {/* Lapis 1: Background Hijau */}
         <div className="absolute top-0 left-0 right-0 h-[160px] md:h-[180px] bg-gradient-to-r from-[#1EAB57] via-[#24C667] to-[#127236] rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-[0_15px_30px_-10px_rgba(30,171,87,0.3)]">
           <div className="absolute right-0 top-0 w-[400px] h-[400px] bg-white/20 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/4 pointer-events-none animate-pulse"></div>
@@ -748,12 +748,12 @@ export default function EditProfilePage() {
 
         {/* Lapis 2: White Info Card & Avatar Float */}
         <div className="relative pt-[90px] md:pt-[110px] px-2 sm:px-4 md:px-8 pb-2">
-          
+
           <div className="bg-white/95 backdrop-blur-xl rounded-[2rem] p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start justify-between gap-6 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] border border-white/60 relative z-30">
-            
+
             {/* Avatar Melayang */}
             <div className="md:absolute md:left-8 md:-top-[4.5rem] flex justify-center -mt-20 md:mt-0 z-20">
-              <div 
+              <div
                 className="w-32 h-32 md:w-36 md:h-36 rounded-full border-[6px] md:border-[8px] border-white shadow-[0_10px_25px_-5px_rgba(0,0,0,0.15)] overflow-hidden bg-slate-100 group relative flex items-center justify-center cursor-pointer"
                 onClick={() => fileInputRef.current?.click()}
               >
@@ -766,7 +766,7 @@ export default function EditProfilePage() {
                     {getInitials(name)}
                   </div>
                 )}
-                
+
                 <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-[2px]">
                   <IconCamera className="w-8 h-8 text-white scale-75 group-hover:scale-100 transition-transform duration-300" />
                   <span className="text-[9px] font-black text-white uppercase tracking-widest mt-2 scale-75 group-hover:scale-100 transition-transform duration-300">Ubah Foto</span>
@@ -781,7 +781,7 @@ export default function EditProfilePage() {
                 <h1 className="text-2xl md:text-[2rem] font-black text-slate-900 tracking-tight leading-none truncate max-w-[200px] md:max-w-full">{name.split(" ")[0] || "Nama Lengkap"}</h1>
                 {role !== "BASIC" && <IconVerify className="w-6 h-6 text-[#1EAB57] shrink-0" />}
               </div>
-              
+
               <p className="text-sm font-bold text-slate-500 mb-5 truncate max-w-[250px] md:max-w-full">{email || "email@gizify.ai"}</p>
 
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
@@ -801,12 +801,12 @@ export default function EditProfilePage() {
 
             {/* Action Buttons Top */}
             <div className="w-full md:w-auto shrink-0 flex flex-col sm:flex-row items-center justify-center gap-3 md:h-full md:pt-3 mt-4 md:mt-0">
-               <Link href="/profile" className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-slate-50 hover:bg-rose-50 text-slate-500 hover:text-rose-500 px-6 py-3.5 md:py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-colors cursor-pointer border border-slate-100">
-                  Batal
-               </Link>
-               <button onClick={handleSave} type="button" className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-gradient-to-b from-[#24C667] to-[#1EAB57] hover:from-[#1EAB57] hover:to-[#168E46] text-white px-8 py-3.5 md:py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-[0_8px_20px_rgba(30,171,87,0.3)] cursor-pointer group">
-                  <IconSave className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" /> Simpan
-               </button>
+              <Link href="/profile" className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-slate-50 hover:bg-rose-50 text-slate-500 hover:text-rose-500 px-6 py-3.5 md:py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-colors cursor-pointer border border-slate-100">
+                Batal
+              </Link>
+              <button onClick={handleSave} type="button" className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-gradient-to-b from-[#24C667] to-[#1EAB57] hover:from-[#1EAB57] hover:to-[#168E46] text-white px-8 py-3.5 md:py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-[0_8px_20px_rgba(30,171,87,0.3)] cursor-pointer group">
+                <IconSave className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" /> Simpan
+              </button>
             </div>
 
           </div>
@@ -817,7 +817,7 @@ export default function EditProfilePage() {
       {/* 4 METRIK KESEHATAN LIVE (SaaS Style) */}
       {/* ======================================= */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 px-2 sm:px-4 md:px-8 animate-fade-up delay-100">
-        
+
         {/* Card 1: Target Kalori */}
         <div className="bg-white rounded-[1.5rem] p-5 md:p-6 border border-slate-100 shadow-sm hover-float transition-all duration-300 group cursor-default relative overflow-hidden flex flex-col justify-between">
           <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#1EAB57] opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -885,17 +885,17 @@ export default function EditProfilePage() {
             Menggunakan modifikasi medis dari <strong className="text-slate-700">Formula Broca (1871)</strong>.
           </p>
         </div>
-        
+
       </div>
 
       {/* ======================================= */}
       {/* FORM AREA SPLIT (KIRI FORM, KANAN AI RESULT) */}
       {/* ======================================= */}
       <form onSubmit={handleSave} className="grid grid-cols-1 xl:grid-cols-12 gap-6 md:gap-8 items-start relative z-10 px-2 sm:px-4 md:px-8">
-        
+
         {/* KOLOM KIRI (7 Col) - FORM DATA LENGKAP */}
         <div className="xl:col-span-7 space-y-6 md:space-y-8 min-w-0 animate-fade-up delay-100">
-          
+
           {/* ======================================= */}
           {/* SECTION 1: INFORMASI DASAR */}
           {/* ======================================= */}
@@ -940,9 +940,9 @@ export default function EditProfilePage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-20">
-                <CustomSelect 
+                <CustomSelect
                   label="Jenis Kelamin" value={gender} onChange={setGender} icon={IconGender}
-                  options={[ { label: "Pria", value: "Pria" }, { label: "Wanita", value: "Wanita" } ]}
+                  options={[{ label: "Pria", value: "Pria" }, { label: "Wanita", value: "Wanita" }]}
                 />
 
                 <div onClick={() => setShowDatePicker(true)} className="input-vip-group bg-slate-50 rounded-2xl p-2 border border-slate-100/80 group cursor-pointer relative z-10">
@@ -971,7 +971,7 @@ export default function EditProfilePage() {
                   </div>
                 </div>
                 <button type="button" onClick={fetchCurrentLocation} className="mr-3 p-2 bg-slate-100 hover:bg-rose-100 text-slate-400 hover:text-rose-500 rounded-xl transition-colors tooltip" title="Ambil Lokasi Saat Ini">
-                   <IconTarget className="w-5 h-5" />
+                  <IconTarget className="w-5 h-5" />
                 </button>
               </div>
             </div>
@@ -1001,7 +1001,7 @@ export default function EditProfilePage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="input-vip-group bg-slate-50 rounded-2xl p-2 border border-slate-100/80 group">
                   <div className="flex items-center gap-3 px-3 py-1">
                     <div className="flex-1 flex flex-col justify-center text-center">
@@ -1013,7 +1013,7 @@ export default function EditProfilePage() {
               </div>
 
               <div className="relative z-30">
-                <CustomSelect 
+                <CustomSelect
                   label="Target Perubahan Tubuh" value={bodyGoal} onChange={setBodyGoal} icon={IconTarget} color="text-blue-500" bgHover="hover:bg-blue-50"
                   options={[
                     { label: "Menurunkan Berat (Defisit Kalori)", value: "Menurunkan Berat Badan" },
@@ -1024,7 +1024,7 @@ export default function EditProfilePage() {
               </div>
 
               <div className="relative z-20">
-                <CustomSelect 
+                <CustomSelect
                   label="Aktivitas Harian (Di luar olahraga)" value={activity} onChange={setActivity} icon={IconActivity} color="text-blue-500" bgHover="hover:bg-blue-50"
                   options={[
                     { label: "Rendah (Banyak Duduk / Rebahan)", value: "Rendah" },
@@ -1035,7 +1035,7 @@ export default function EditProfilePage() {
               </div>
 
               <div className="relative z-10">
-                <CustomSelect 
+                <CustomSelect
                   label="Rutinitas Olahraga" value={exercise} onChange={setExercise} icon={IconDumbbell} color="text-blue-500" bgHover="hover:bg-blue-50"
                   options={[
                     { label: "Jarang / Tidak Pernah", value: "Jarang" },
@@ -1066,18 +1066,18 @@ export default function EditProfilePage() {
             <div className="flex flex-col gap-5 relative z-10">
               {/* MULTI-SELECT: Tipe Diet */}
               <div className="relative z-40">
-                <CustomMultiSelect 
-                  label="Kombinasi Tipe Diet (Pilih >1)" 
-                  values={dietTypes} 
-                  onChange={setDietTypes} 
-                  icon={IconSparkles} 
+                <CustomMultiSelect
+                  label="Kombinasi Tipe Diet (Pilih >1)"
+                  values={dietTypes}
+                  onChange={setDietTypes}
+                  icon={IconSparkles}
                   options={dietOptions}
                 />
               </div>
 
               {/* SINGLE SELECT: Fokus Makro */}
               <div className="relative z-30">
-                <CustomSelect 
+                <CustomSelect
                   label="Fokus Makronutrisi" value={macroFocus} onChange={setMacroFocus} icon={IconPieChart}
                   options={[
                     { label: "Seimbang (Pro 30% : Car 40% : Fat 30%)", value: "Seimbang" },
@@ -1091,7 +1091,7 @@ export default function EditProfilePage() {
 
               {/* SINGLE SELECT: Frekuensi Makan */}
               <div className="relative z-20">
-                <CustomSelect 
+                <CustomSelect
                   label="Frekuensi Makan Harian" value={mealsPerDay} onChange={setMealsPerDay} icon={IconClock}
                   options={[
                     { label: "3 Kali Sehari (Pagi, Siang, Malam)", value: "3 Kali Sehari" },
@@ -1104,7 +1104,7 @@ export default function EditProfilePage() {
 
               {/* SINGLE SELECT: Target Air Minum */}
               <div className="relative z-10">
-                <CustomSelect 
+                <CustomSelect
                   label="Target Air Minum Harian" value={waterIntake} onChange={setWaterIntake} icon={IconDroplet}
                   options={[
                     { label: "Standar (2 - 2.5 Liter)", value: "2 Liter" },
@@ -1132,13 +1132,13 @@ export default function EditProfilePage() {
             </div>
 
             <div className="flex flex-col gap-5">
-              
+
               {/* MULTI-SELECT: Alergi */}
               <div className="relative z-30">
-                <CustomMultiSelect 
-                  label="Alergi Makanan (Pilih >1)" 
-                  values={allergies} 
-                  onChange={setAllergies} 
+                <CustomMultiSelect
+                  label="Alergi Makanan (Pilih >1)"
+                  values={allergies}
+                  onChange={setAllergies}
                   icon={IconClose} color="text-rose-500"
                   options={allergyOptions}
                 />
@@ -1151,10 +1151,10 @@ export default function EditProfilePage() {
                   </div>
                   <div className="flex-1 flex flex-col justify-center">
                     <label className="text-[9px] font-black text-slate-400 mb-1 uppercase tracking-widest group-focus-within:text-amber-500 transition-colors">Bahan Benci / Tidak Disukai</label>
-                    <textarea 
-                      value={dislikedFoods} onChange={(e) => setDislikedFoods(e.target.value)} 
-                      className="w-full bg-transparent text-sm font-bold text-slate-900 focus:outline-none placeholder:text-slate-300 resize-none h-12 custom-scroll" 
-                      placeholder="Ketik bahan yang dibenci. Contoh: Bawang mentah, Pete, Jeroan..." 
+                    <textarea
+                      value={dislikedFoods} onChange={(e) => setDislikedFoods(e.target.value)}
+                      className="w-full bg-transparent text-sm font-bold text-slate-900 focus:outline-none placeholder:text-slate-300 resize-none h-12 custom-scroll"
+                      placeholder="Ketik bahan yang dibenci. Contoh: Bawang mentah, Pete, Jeroan..."
                     />
                   </div>
                 </div>
@@ -1167,10 +1167,10 @@ export default function EditProfilePage() {
                   </div>
                   <div className="flex-1 flex flex-col justify-center">
                     <label className="text-[9px] font-black text-slate-400 mb-1 uppercase tracking-widest group-focus-within:text-blue-500 transition-colors">Riwayat Penyakit Khusus</label>
-                    <input 
-                      type="text" value={medicalHistory} onChange={(e) => setMedicalHistory(e.target.value)} 
-                      className="w-full bg-transparent text-sm font-bold text-slate-900 focus:outline-none placeholder:text-slate-300" 
-                      placeholder="Contoh: Asam lambung, Diabetes, Hipertensi..." 
+                    <input
+                      type="text" value={medicalHistory} onChange={(e) => setMedicalHistory(e.target.value)}
+                      className="w-full bg-transparent text-sm font-bold text-slate-900 focus:outline-none placeholder:text-slate-300"
+                      placeholder="Contoh: Asam lambung, Diabetes, Hipertensi..."
                     />
                   </div>
                 </div>
@@ -1194,9 +1194,9 @@ export default function EditProfilePage() {
             </div>
 
             <div className="flex flex-col gap-5">
-              
+
               <div className="relative z-30">
-                <CustomSelect 
+                <CustomSelect
                   label="Kemampuan Memasak" value={cookingSkill} onChange={setCookingSkill} icon={IconChefHat} color="text-orange-500" bgHover="hover:bg-orange-50"
                   options={[
                     { label: "Pemula (Bisa masak telur & mie)", value: "Pemula" },
@@ -1207,10 +1207,10 @@ export default function EditProfilePage() {
               </div>
 
               <div className="relative z-20">
-                <CustomMultiSelect 
-                  label="Peralatan Dapur Tersedia (Pilih >1)" 
-                  values={kitchenEquipments} 
-                  onChange={setKitchenEquipments} 
+                <CustomMultiSelect
+                  label="Peralatan Dapur Tersedia (Pilih >1)"
+                  values={kitchenEquipments}
+                  onChange={setKitchenEquipments}
                   icon={IconMicrowave} color="text-orange-500"
                   options={kitchenOptions}
                 />
@@ -1224,7 +1224,7 @@ export default function EditProfilePage() {
         {/* ================= KOLOM KANAN (5 Col) ================= */}
         <div className="xl:col-span-5 relative min-w-0 z-0 animate-fade-up delay-300">
           <div className="sticky top-8 space-y-6 md:space-y-8">
-            
+
             {/* ======================================= */}
             {/* DASHBOARD AI LIVE (GAYA PUTIH BERSIH) */}
             {/* ======================================= */}
@@ -1236,14 +1236,14 @@ export default function EditProfilePage() {
                   </div>
                   <h3 className="text-lg font-black text-slate-900 drop-shadow-sm">Distribusi Makro</h3>
                 </div>
-                
+
                 <div className="group relative cursor-help flex items-center justify-center p-2">
                   <IconInfo className="w-5 h-5 text-slate-400 hover:text-[#1EAB57] transition-colors" />
                   <div className="absolute right-0 bottom-full mb-2 hidden group-hover:block w-[240px] bg-slate-900 text-white text-[10px] p-4 rounded-xl shadow-2xl z-50 border border-slate-700 font-medium leading-relaxed">
-                    Makronutrisi adalah penyumbang kalori utama: 
-                    <br/><br/>
-                    <b className="text-blue-400">Protein</b>: Membangun & menjaga otot.<br/>
-                    <b className="text-[#34D399]">Karbohidrat</b>: Sumber energi utama tubuh.<br/>
+                    Makronutrisi adalah penyumbang kalori utama:
+                    <br /><br />
+                    <b className="text-blue-400">Protein</b>: Membangun & menjaga otot.<br />
+                    <b className="text-[#34D399]">Karbohidrat</b>: Sumber energi utama tubuh.<br />
                     <b className="text-rose-400">Lemak</b>: Menjaga keseimbangan hormon.
                   </div>
                 </div>
@@ -1252,9 +1252,9 @@ export default function EditProfilePage() {
               <div className="space-y-6">
                 {/* Visual Bar Makro Tanpa Jarak */}
                 <div className="w-full h-3 bg-slate-100 rounded-full flex overflow-hidden shadow-inner border border-slate-200/50">
-                   <div className="h-full bg-blue-500 transition-all duration-1000" style={{width: `${(macros.pro / (macros.pro+macros.car+macros.fat))*100}%`}}></div>
-                   <div className="h-full bg-[#1EAB57] transition-all duration-1000" style={{width: `${(macros.car / (macros.pro+macros.car+macros.fat))*100}%`}}></div>
-                   <div className="h-full bg-rose-500 transition-all duration-1000" style={{width: `${(macros.fat / (macros.pro+macros.car+macros.fat))*100}%`}}></div>
+                  <div className="h-full bg-blue-500 transition-all duration-1000" style={{ width: `${(macros.pro / (macros.pro + macros.car + macros.fat)) * 100}%` }}></div>
+                  <div className="h-full bg-[#1EAB57] transition-all duration-1000" style={{ width: `${(macros.car / (macros.pro + macros.car + macros.fat)) * 100}%` }}></div>
+                  <div className="h-full bg-rose-500 transition-all duration-1000" style={{ width: `${(macros.fat / (macros.pro + macros.car + macros.fat)) * 100}%` }}></div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
@@ -1264,14 +1264,14 @@ export default function EditProfilePage() {
                     </div>
                     <div className="text-2xl font-black text-slate-800 flex items-baseline justify-center gap-0.5">{macros.pro}<span className="text-[10px] text-slate-400 font-bold ml-0.5">g</span></div>
                   </div>
-                  
+
                   <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-100/80 text-center flex flex-col justify-center transition-colors hover:bg-white hover:shadow-[0_5px_15px_rgba(0,0,0,0.03)] cursor-default">
                     <div className="text-[9px] font-black uppercase tracking-widest text-[#1EAB57] mb-1.5 flex items-center justify-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-[#1EAB57] shadow-[0_0_5px_rgba(30,171,87,0.5)]"></span> KARBO
                     </div>
                     <div className="text-2xl font-black text-slate-800 flex items-baseline justify-center gap-0.5">{macros.car}<span className="text-[10px] text-slate-400 font-bold ml-0.5">g</span></div>
                   </div>
-                  
+
                   <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-100/80 text-center flex flex-col justify-center transition-colors hover:bg-white hover:shadow-[0_5px_15px_rgba(0,0,0,0.03)] cursor-default">
                     <div className="text-[9px] font-black uppercase tracking-widest text-rose-500 mb-1.5 flex items-center justify-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_5px_rgba(244,63,94,0.5)]"></span> LEMAK
@@ -1282,13 +1282,13 @@ export default function EditProfilePage() {
 
                 <div className="flex items-start gap-3.5 bg-emerald-50/50 border border-emerald-100/50 rounded-2xl p-4">
                   <div className="w-8 h-8 rounded-full bg-emerald-100/50 flex items-center justify-center text-[#1EAB57] shrink-0 border border-emerald-200/50 mt-0.5">
-                     <IconCheck className="w-4 h-4" />
+                    <IconCheck className="w-4 h-4" />
                   </div>
                   <div className="flex-1">
-                     <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Akurasi Klinis</p>
-                     <p className="text-[11px] font-medium text-slate-500 leading-relaxed">
-                       Kalkulasi AI ini menggunakan formula <strong>Mifflin-St Jeor</strong> yang direkomendasikan oleh WHO untuk akurasi tingkat metabolisme terbaik.
-                     </p>
+                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Akurasi Klinis</p>
+                    <p className="text-[11px] font-medium text-slate-500 leading-relaxed">
+                      Kalkulasi AI ini menggunakan formula <strong>Mifflin-St Jeor</strong> yang direkomendasikan oleh WHO untuk akurasi tingkat metabolisme terbaik.
+                    </p>
                   </div>
                 </div>
 
@@ -1308,12 +1308,12 @@ export default function EditProfilePage() {
 
           </div>
         </div>
-        
+
         {/* Sticky Mobile Save Button */}
         <div className="md:hidden fixed bottom-6 left-6 right-6 z-[60]">
-           <button type="submit" className="w-full flex justify-center items-center gap-2.5 bg-gradient-to-r from-[#24C667] to-[#1EAB57] hover:from-[#1EAB57] hover:to-[#168E46] text-white py-4.5 rounded-[1.5rem] text-xs font-black uppercase tracking-widest shadow-[0_10px_30px_rgba(30,171,87,0.4)] active:scale-95 transition-all border border-[#1EAB57]">
-             <IconSave className="w-4 h-4" /> Simpan Profil AI
-           </button>
+          <button type="submit" className="w-full flex justify-center items-center gap-2.5 bg-gradient-to-r from-[#24C667] to-[#1EAB57] hover:from-[#1EAB57] hover:to-[#168E46] text-white py-4.5 rounded-[1.5rem] text-xs font-black uppercase tracking-widest shadow-[0_10px_30px_rgba(30,171,87,0.4)] active:scale-95 transition-all border border-[#1EAB57]">
+            <IconSave className="w-4 h-4" /> Simpan Profil AI
+          </button>
         </div>
 
       </form>

@@ -96,7 +96,7 @@ export default function MealPlanResultPage() {
           <div className="h-[76px] md:h-[86px] shrink-0 bg-white border-b border-slate-100 px-6 md:px-10 flex items-center justify-between z-20 shadow-sm relative">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 md:w-14 md:h-14 rounded-[1rem] bg-slate-50 flex items-center justify-center shadow-inner overflow-hidden border border-slate-200/60 p-2 shrink-0">
-                <img src="/images/icon-plan-resep.png" alt="Meal Plan" className="w-full h-full object-contain" />
+                <img src="/image/icon-plan-resep.png" alt="Meal Plan" className="w-full h-full object-contain" />
               </div>
               <div>
                 <h2 className="text-lg md:text-2xl font-black text-[#0F172A] tracking-tight leading-none mb-1">Hasil Rencana Menu</h2>
@@ -238,9 +238,11 @@ export default function MealPlanResultPage() {
                           <IconFlame className="w-3.5 h-3.5 text-rose-500" />
                           <span className="text-[10px] font-black text-rose-700">{meal.kal} Kkal</span>
                         </div>
+                        
+                        {/* UPDATE PENTING: DARI meal.price JADI meal.totalBudget */}
                         <div className="flex items-center gap-1.5 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100">
                           <IconWallet className="w-3.5 h-3.5 text-emerald-600" />
-                          <span className="text-[10px] font-black text-emerald-800">Rp {meal.price}</span>
+                          <span className="text-[10px] font-black text-emerald-800">{meal.totalBudget || "Rp -"}</span>
                         </div>
                       </div>
                     </Link>

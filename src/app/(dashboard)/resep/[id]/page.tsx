@@ -16,23 +16,48 @@ export default function DetailResepPage() {
   const getImageUrl = (title: string) => `https://image.pollinations.ai/prompt/delicious%20food%20plating%20${encodeURIComponent(title)}?width=800&height=600&nologo=true`;
 
   useEffect(() => {
-    const fetchRecipe = async () => {
-      const saved = localStorage.getItem("gizify_saved_plan");
-      let foundMeal = null;
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.plan) {
-          for (const day of parsed.plan) {
-            for (const meal of day.meals) {
-              if (String(meal.id) === String(params.id)) {
-                foundMeal = meal;
-                break;
+    const searchInStorage = () => {
+      // 1. Cari di meal plan result (sessionStorage - kalau klik langsung dari hasil generate)
+      const mealPlanSession = sessionStorage.getItem("gizify_mealplan_result");
+      if (mealPlanSession) {
+        try {
+          const parsedData = JSON.parse(mealPlanSession);
+          if (parsedData.plan && Array.isArray(parsedData.plan)) {
+            for (const dayObj of parsedData.plan) {
+              if (dayObj.meals && Array.isArray(dayObj.meals)) {
+                const match = dayObj.meals.find((m: any) => String(m.id) === String(params.id));
+                if (match) return match;
               }
             }
-            if (foundMeal) break;
           }
+        } catch (e) {
+          console.error("Gagal parse meal plan dari session", e);
         }
       }
+
+      // 2. Cari di saved plan (localStorage - kalau diakses dari jurnal)
+      const mealPlanLocal = localStorage.getItem("gizify_saved_plan");
+      if (mealPlanLocal) {
+        try {
+          const parsedData = JSON.parse(mealPlanLocal);
+          if (parsedData.plan && Array.isArray(parsedData.plan)) {
+            for (const dayObj of parsedData.plan) {
+              if (dayObj.meals && Array.isArray(dayObj.meals)) {
+                const match = dayObj.meals.find((m: any) => String(m.id) === String(params.id));
+                if (match) return match;
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Gagal parse meal plan dari local storage", e);
+        }
+      }
+
+      return null;
+    };
+
+    const fetchRecipe = async () => {
+      const foundMeal = searchInStorage();
       
       if (foundMeal) {
         setRecipeDetail({

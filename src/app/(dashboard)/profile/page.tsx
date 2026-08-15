@@ -241,16 +241,25 @@ export default function ProfilePage() {
               <p className="text-sm font-bold text-slate-500 mb-5">{userData.email || "email@gizify.ai"}</p>
 
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                <div className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-100 transition-colors cursor-default shadow-sm">
+                <div className="group/loc relative flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-100 transition-colors cursor-help shadow-sm">
                   <IconMapPin className="w-4 h-4 text-rose-500" />
                   <span className="text-[11px] font-bold text-slate-600 uppercase tracking-widest">{userData.location.split(',')[0]}</span>
+                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover/loc:block w-max max-w-[200px] bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-xl z-50 text-center normal-case tracking-normal border border-slate-700 font-medium">
+                    Lokasi domisili Anda saat ini
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-white shadow-sm cursor-default">
+                <div className="group/goal relative flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-white shadow-sm cursor-help">
                   <span className="text-[11px] font-black uppercase tracking-widest">{userData.bodyGoal.split("(")[0]}</span>
+                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover/goal:block w-max max-w-[200px] bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-xl z-50 text-center normal-case tracking-normal border border-slate-700 font-medium">
+                    Target fisik utama yang sedang Anda usahakan
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-50 text-[#1EAB57] border border-emerald-100 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8)] cursor-default">
+                <div className="group/role relative flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-50 text-[#1EAB57] border border-emerald-100 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8)] cursor-help">
                   <IconSparkles className="w-4 h-4" />
                   <span className="text-[11px] font-black uppercase tracking-widest">{userData.role} Member</span>
+                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover/role:block w-max max-w-[200px] bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-xl z-50 text-center normal-case tracking-normal border border-slate-700 font-medium">
+                    Tingkat langganan akun Gizify Anda
+                  </div>
                 </div>
               </div>
             </div>
@@ -274,7 +283,13 @@ export default function ProfilePage() {
           <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#1EAB57] opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div className="flex justify-between items-start mb-2">
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Target Kalori</p>
+              <div className="group/cal relative flex items-center gap-1.5 w-max cursor-help mb-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Target Kalori</p>
+                <IconInfo className="w-3.5 h-3.5 text-slate-300 group-hover/cal:text-emerald-500 transition-colors" />
+                <div className="absolute bottom-full mb-2 left-0 hidden group-hover/cal:block w-[200px] bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-xl z-50 normal-case tracking-normal font-medium border border-slate-700">
+                  Total energi harian yang dibutuhkan tubuh untuk mencapai target Anda (defisit/surplus kalori).
+                </div>
+              </div>
               <h3 className="text-2xl md:text-3xl font-black text-slate-900 group-hover:text-emerald-600 transition-colors">{userData.calories}<span className="text-xs font-semibold text-slate-400 ml-1">Kkal</span></h3>
             </div>
             <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform border border-emerald-100">
@@ -291,7 +306,13 @@ export default function ProfilePage() {
           <div className="absolute left-0 top-0 bottom-0 w-1 bg-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div className="flex justify-between items-start mb-2">
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Status BMI</p>
+              <div className="group/bmi relative flex items-center gap-1.5 w-max cursor-help mb-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status BMI</p>
+                <IconInfo className="w-3.5 h-3.5 text-slate-300 group-hover/bmi:text-rose-500 transition-colors" />
+                <div className="absolute bottom-full mb-2 left-0 hidden group-hover/bmi:block w-[200px] bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-xl z-50 normal-case tracking-normal font-medium border border-slate-700">
+                  Body Mass Index (Indeks Massa Tubuh), rasio standar WHO untuk menentukan status berat badan.
+                </div>
+              </div>
               <h3 className="text-xl md:text-2xl font-black text-slate-900 group-hover:text-rose-600 transition-colors">{userData.bmiStatus}</h3>
             </div>
             <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform border border-rose-100">
@@ -308,7 +329,13 @@ export default function ProfilePage() {
           <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div className="flex justify-between items-start mb-2">
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Berat Aktual</p>
+              <div className="group/w relative flex items-center gap-1.5 w-max cursor-help mb-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Berat Aktual</p>
+                <IconInfo className="w-3.5 h-3.5 text-slate-300 group-hover/w:text-amber-500 transition-colors" />
+                <div className="absolute bottom-full mb-2 left-0 hidden group-hover/w:block w-[180px] bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-xl z-50 normal-case tracking-normal font-medium border border-slate-700">
+                  Berat badan Anda saat ini sesuai dengan data profil terbaru.
+                </div>
+              </div>
               <h3 className="text-2xl md:text-3xl font-black text-slate-900 group-hover:text-amber-500 transition-colors">{userData.weight}<span className="text-xs font-semibold text-slate-400 ml-1">Kg</span></h3>
             </div>
             <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform border border-amber-100">
@@ -325,7 +352,13 @@ export default function ProfilePage() {
           <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div className="flex justify-between items-start mb-2">
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Berat Ideal</p>
+              <div className="group/iw relative flex items-center gap-1.5 w-max cursor-help mb-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Berat Ideal</p>
+                <IconInfo className="w-3.5 h-3.5 text-slate-300 group-hover/iw:text-blue-500 transition-colors" />
+                <div className="absolute bottom-full mb-2 left-0 hidden group-hover/iw:block w-[200px] bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-xl z-50 normal-case tracking-normal font-medium border border-slate-700">
+                  Target berat badan medis paling optimal untuk Anda berdasarkan modifikasi Formula Broca.
+                </div>
+              </div>
               <h3 className="text-2xl md:text-3xl font-black text-slate-900 group-hover:text-blue-600 transition-colors">{userData.idealWeight}<span className="text-xs font-semibold text-slate-400 ml-1">Kg</span></h3>
             </div>
             <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform border border-blue-100">
@@ -395,8 +428,11 @@ export default function ProfilePage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
-              <div className="bg-rose-50/50 rounded-2xl p-5 border border-rose-100/80 hover:bg-white transition-colors cursor-default">
-                <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-3 flex items-center gap-1.5"><IconClose className="w-3.5 h-3.5"/> Alergi & Pantangan</p>
+              <div className="group/allergy relative bg-rose-50/50 rounded-2xl p-5 border border-rose-100/80 hover:bg-white transition-colors cursor-help">
+                <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-3 flex items-center gap-1.5 w-max"><IconClose className="w-3.5 h-3.5"/> Alergi & Pantangan <IconInfo className="w-3.5 h-3.5 text-rose-300 group-hover/allergy:text-rose-500 ml-1 transition-colors" /></p>
+                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover/allergy:block w-[220px] bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-xl z-50 text-center normal-case tracking-normal font-medium border border-slate-700">
+                  Bahan makanan yang akan dihindari oleh sistem rekomendasi agar aman dikonsumsi.
+                </div>
                 <div className="flex gap-2 flex-wrap">
                   {userData.allergies.length > 0 ? renderTags(userData.allergies, true) : null}
                   {userData.dislikedFoods && userData.dislikedFoods !== "Tidak Ada" ? renderTags(userData.dislikedFoods, true) : null}
@@ -404,8 +440,11 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className="bg-blue-50/50 rounded-2xl p-5 border border-blue-100/80 hover:bg-white transition-colors cursor-default">
-                <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-3 flex items-center gap-1.5"><IconInfo className="w-3.5 h-3.5"/> Riwayat Penyakit</p>
+              <div className="group/med relative bg-blue-50/50 rounded-2xl p-5 border border-blue-100/80 hover:bg-white transition-colors cursor-help">
+                <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-3 flex items-center gap-1.5 w-max"><IconStethoscope className="w-3.5 h-3.5"/> Riwayat Penyakit <IconInfo className="w-3.5 h-3.5 text-blue-300 group-hover/med:text-blue-500 ml-1 transition-colors" /></p>
+                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover/med:block w-[220px] bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-xl z-50 text-center normal-case tracking-normal font-medium border border-slate-700">
+                  Data penyakit untuk menyesuaikan batasan gizi (misal: rendah garam untuk hipertensi).
+                </div>
                 <div className="flex gap-2 flex-wrap">
                   {renderTags(userData.medicalHistory, false)}
                 </div>
@@ -422,18 +461,30 @@ export default function ProfilePage() {
               <h3 className="text-lg font-black text-slate-900 drop-shadow-sm">Gaya Hidup & Olahraga</h3>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-slate-50/80 rounded-2xl p-5 border border-slate-100/80 flex items-center gap-4">
+              <div className="group/act relative bg-slate-50/80 rounded-2xl p-5 border border-slate-100/80 flex items-center gap-4 cursor-help hover:bg-white transition-colors">
                 <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-500 flex items-center justify-center shrink-0"><IconActivity className="w-5 h-5"/></div>
                 <div>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Aktivitas Harian</p>
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Aktivitas Harian</p>
+                    <IconInfo className="w-3 h-3 text-slate-300 group-hover/act:text-blue-500 transition-colors" />
+                  </div>
                   <p className="text-sm font-black text-slate-800">{userData.activity}</p>
                 </div>
+                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover/act:block w-[220px] bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-xl z-50 text-center normal-case tracking-normal font-medium border border-slate-700">
+                  Tingkat aktivitas rutin harian yang mempengaruhi total kalori yang dibakar.
+                </div>
               </div>
-              <div className="bg-slate-50/80 rounded-2xl p-5 border border-slate-100/80 flex items-center gap-4">
+              <div className="group/exc relative bg-slate-50/80 rounded-2xl p-5 border border-slate-100/80 flex items-center gap-4 cursor-help hover:bg-white transition-colors">
                 <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-500 flex items-center justify-center shrink-0"><IconDumbbell className="w-5 h-5"/></div>
                 <div>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Olahraga</p>
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Olahraga</p>
+                    <IconInfo className="w-3 h-3 text-slate-300 group-hover/exc:text-blue-500 transition-colors" />
+                  </div>
                   <p className="text-sm font-black text-slate-800">{userData.exercise}</p>
+                </div>
+                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover/exc:block w-[220px] bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-xl z-50 text-center normal-case tracking-normal font-medium border border-slate-700">
+                  Intensitas dan frekuensi olahraga mingguan untuk kalkulasi gizi ekstra.
                 </div>
               </div>
             </div>
@@ -448,24 +499,28 @@ export default function ProfilePage() {
               <h3 className="text-lg font-black text-slate-900 drop-shadow-sm">Fasilitas Dapur</h3>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-slate-50/80 rounded-2xl p-5 border border-slate-100/80 relative z-20">
+              <div className="group/cook relative bg-slate-50/80 rounded-2xl p-5 border border-slate-100/80 z-20 cursor-help hover:bg-white transition-colors">
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Skill Memasak</p>
-                  <div className="group/tt relative cursor-help flex items-center">
-                    <IconInfo className="w-3.5 h-3.5 text-slate-400 hover:text-orange-500 transition-colors" />
-                    <div className="absolute left-0 top-[130%] hidden group-hover/tt:block w-[220px] bg-[#0F172A] text-white text-[10px] p-3.5 rounded-xl shadow-xl z-[100] border border-slate-700 font-medium leading-relaxed">
-                      <b className="text-orange-400">Pemula</b>: Bisa masak telur & mie.<br/>
-                      <b className="text-orange-400">Menengah</b>: Bisa ikuti resep standar.<br/>
-                      <b className="text-orange-400">Mahir</b>: Bisa racik bumbu & teknik kompleks.
-                    </div>
-                  </div>
+                  <IconInfo className="w-3.5 h-3.5 text-slate-300 group-hover/cook:text-orange-500 transition-colors" />
                 </div>
                 <p className="text-sm font-black text-slate-800 flex items-center gap-2"><IconChefHat className="w-4 h-4 text-orange-400"/> {userData.cookingSkill}</p>
+                <div className="absolute left-0 top-[130%] hidden group-hover/cook:block w-[220px] bg-[#0F172A] text-white text-[10px] p-3.5 rounded-xl shadow-xl z-[100] border border-slate-700 font-medium leading-relaxed normal-case tracking-normal">
+                  <b className="text-orange-400">Pemula</b>: Bisa masak telur & mie.<br/>
+                  <b className="text-orange-400">Menengah</b>: Bisa ikuti resep standar.<br/>
+                  <b className="text-orange-400">Mahir</b>: Bisa racik bumbu & teknik kompleks.
+                </div>
               </div>
-              <div className="bg-slate-50/80 rounded-2xl p-5 border border-slate-100/80 z-10">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Peralatan Tersedia</p>
+              <div className="group/equip relative bg-slate-50/80 rounded-2xl p-5 border border-slate-100/80 z-10 cursor-help hover:bg-white transition-colors">
+                <div className="flex items-center gap-1.5 mb-3">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Peralatan Tersedia</p>
+                  <IconInfo className="w-3.5 h-3.5 text-slate-300 group-hover/equip:text-orange-500 transition-colors" />
+                </div>
                 <div className="flex gap-2 flex-wrap">
                   {renderTags(userData.kitchenEquipments)}
+                </div>
+                <div className="absolute left-0 top-[110%] hidden group-hover/equip:block w-[220px] bg-[#0F172A] text-white text-[10px] p-3.5 rounded-xl shadow-xl z-[100] border border-slate-700 font-medium leading-relaxed normal-case tracking-normal">
+                  Fasilitas yang Anda miliki di dapur, digunakan untuk memfilter resep yang bisa Anda buat.
                 </div>
               </div>
             </div>
@@ -490,9 +545,9 @@ export default function ProfilePage() {
                 </div>
                 
                 {/* Tooltip Info Makro */}
-                <div className="group relative cursor-help flex items-center justify-center p-2">
-                  <IconInfo className="w-5 h-5 text-slate-400 hover:text-[#1EAB57] transition-colors" />
-                  <div className="absolute right-0 bottom-full mb-2 hidden group-hover:block w-[240px] bg-slate-900 text-white text-[10px] p-4 rounded-xl shadow-2xl z-50 border border-slate-700 font-medium leading-relaxed">
+                <div className="group relative cursor-help flex items-center justify-center p-2 rounded-full hover:bg-emerald-50 transition-colors">
+                  <IconInfo className="w-5 h-5 text-slate-400 group-hover:text-[#1EAB57] transition-colors" />
+                  <div className="absolute right-0 bottom-full mb-2 hidden group-hover:block w-[240px] bg-slate-900 text-white text-[10px] p-4 rounded-xl shadow-2xl z-[100] border border-slate-700 font-medium leading-relaxed">
                     Makronutrisi adalah penyumbang kalori utama: 
                     <br/><br/>
                     <b className="text-blue-400">Protein</b>: Membangun & menjaga otot.<br/>
@@ -511,25 +566,34 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-100/80 text-center flex flex-col justify-center transition-colors hover:bg-white hover:shadow-[0_5px_15px_rgba(0,0,0,0.03)] cursor-default">
+                  <div className="group/pro relative bg-slate-50/80 rounded-2xl p-4 border border-slate-100/80 text-center flex flex-col justify-center transition-colors hover:bg-white hover:shadow-[0_5px_15px_rgba(0,0,0,0.03)] cursor-help">
                     <div className="text-[9px] font-black uppercase tracking-widest text-blue-500 mb-1.5 flex items-center justify-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_5px_rgba(59,130,246,0.5)]"></span> PROTEIN
                     </div>
                     <div className="text-2xl font-black text-slate-800 flex items-baseline justify-center gap-0.5">{displayPro}<span className="text-[10px] text-slate-400 font-bold ml-0.5">g</span></div>
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover/pro:block w-[180px] bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-xl z-50 text-center normal-case tracking-normal font-medium border border-slate-700">
+                      Diperlukan untuk pembentukan sel dan massa otot
+                    </div>
                   </div>
                   
-                  <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-100/80 text-center flex flex-col justify-center transition-colors hover:bg-white hover:shadow-[0_5px_15px_rgba(0,0,0,0.03)] cursor-default">
+                  <div className="group/car relative bg-slate-50/80 rounded-2xl p-4 border border-slate-100/80 text-center flex flex-col justify-center transition-colors hover:bg-white hover:shadow-[0_5px_15px_rgba(0,0,0,0.03)] cursor-help">
                     <div className="text-[9px] font-black uppercase tracking-widest text-[#1EAB57] mb-1.5 flex items-center justify-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-[#1EAB57] shadow-[0_0_5px_rgba(30,171,87,0.5)]"></span> KARBO
                     </div>
                     <div className="text-2xl font-black text-slate-800 flex items-baseline justify-center gap-0.5">{displayCar}<span className="text-[10px] text-slate-400 font-bold ml-0.5">g</span></div>
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover/car:block w-[180px] bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-xl z-50 text-center normal-case tracking-normal font-medium border border-slate-700">
+                      Sumber energi utama untuk beraktivitas
+                    </div>
                   </div>
                   
-                  <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-100/80 text-center flex flex-col justify-center transition-colors hover:bg-white hover:shadow-[0_5px_15px_rgba(0,0,0,0.03)] cursor-default">
+                  <div className="group/fat relative bg-slate-50/80 rounded-2xl p-4 border border-slate-100/80 text-center flex flex-col justify-center transition-colors hover:bg-white hover:shadow-[0_5px_15px_rgba(0,0,0,0.03)] cursor-help">
                     <div className="text-[9px] font-black uppercase tracking-widest text-rose-500 mb-1.5 flex items-center justify-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_5px_rgba(244,63,94,0.5)]"></span> LEMAK
                     </div>
                     <div className="text-2xl font-black text-slate-800 flex items-baseline justify-center gap-0.5">{displayFat}<span className="text-[10px] text-slate-400 font-bold ml-0.5">g</span></div>
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover/fat:block w-[180px] bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-xl z-50 text-center normal-case tracking-normal font-medium border border-slate-700">
+                      Penting untuk kesehatan organ dan regulasi hormon
+                    </div>
                   </div>
                 </div>
 
@@ -559,30 +623,54 @@ export default function ProfilePage() {
               </div>
 
               <div className="space-y-4">
-                <div className="bg-slate-50/80 rounded-2xl p-5 border border-slate-100/80">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Tipe Diet Terpilih</p>
+                <div className="group/diet relative bg-slate-50/80 rounded-2xl p-5 border border-slate-100/80 cursor-help hover:bg-white transition-colors">
+                  <div className="flex items-center gap-1.5 mb-3">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tipe Diet Terpilih</p>
+                    <IconInfo className="w-3.5 h-3.5 text-slate-300 group-hover/diet:text-[#1EAB57] transition-colors" />
+                  </div>
                   <div className="flex gap-2 flex-wrap">
                      {userData.dietTypes.length > 0 
                        ? renderTags(userData.dietTypes) 
                        : <span className="px-3 py-1.5 text-[11px] font-bold rounded-lg bg-emerald-50 border border-emerald-100 text-[#1EAB57]">Normal / Bebas</span>
                      }
                   </div>
+                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover/diet:block w-[220px] bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-xl z-50 text-center normal-case tracking-normal font-medium border border-slate-700">
+                    Pola makan khusus yang Anda terapkan (seperti Vegan, Keto, atau Halal).
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-50/80 rounded-2xl p-5 border border-slate-100/80 flex flex-col justify-center items-center text-center">
+                  <div className="group/freq relative bg-slate-50/80 rounded-2xl p-5 border border-slate-100/80 flex flex-col justify-center items-center text-center cursor-help hover:bg-white transition-colors">
                     <IconClock className="w-5 h-5 text-[#1EAB57] mb-2"/>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Frekuensi</p>
+                    <div className="flex items-center justify-center gap-1.5 mb-1">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Frekuensi</p>
+                      <IconInfo className="w-3 h-3 text-slate-300 group-hover/freq:text-[#1EAB57] transition-colors" />
+                    </div>
                     <p className="text-xs font-black text-slate-800">{userData.mealsPerDay.split("(")[0]}</p>
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover/freq:block w-[180px] bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-xl z-50 text-center normal-case tracking-normal font-medium border border-slate-700">
+                      Jumlah waktu makan yang ideal bagi Anda dalam satu hari.
+                    </div>
                   </div>
-                  <div className="bg-slate-50/80 rounded-2xl p-5 border border-slate-100/80 flex flex-col justify-center items-center text-center">
+                  <div className="group/water relative bg-slate-50/80 rounded-2xl p-5 border border-slate-100/80 flex flex-col justify-center items-center text-center cursor-help hover:bg-white transition-colors">
                     <IconDroplet className="w-5 h-5 text-blue-400 mb-2"/>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Target Air</p>
+                    <div className="flex items-center justify-center gap-1.5 mb-1">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Target Air</p>
+                      <IconInfo className="w-3 h-3 text-slate-300 group-hover/water:text-blue-500 transition-colors" />
+                    </div>
                     <p className="text-xs font-black text-slate-800">{userData.waterIntake}</p>
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover/water:block w-[180px] bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-xl z-50 text-center normal-case tracking-normal font-medium border border-slate-700">
+                      Asupan cairan hidrasi harian yang disarankan.
+                    </div>
                   </div>
                 </div>
-                <div className="bg-slate-50/80 rounded-2xl p-5 border border-slate-100/80">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><IconHeart className="w-3.5 h-3.5 text-rose-400"/> Menu Favorit</p>
+                <div className="group/fav relative bg-slate-50/80 rounded-2xl p-5 border border-slate-100/80 cursor-help hover:bg-white transition-colors">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><IconHeart className="w-3.5 h-3.5 text-rose-400"/> Menu Favorit</p>
+                    <IconInfo className="w-3.5 h-3.5 text-slate-300 group-hover/fav:text-rose-400 transition-colors" />
+                  </div>
                   <p className="text-xs font-black text-slate-800 leading-relaxed">{userData.favoriteFoods}</p>
+                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover/fav:block w-[220px] bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-xl z-50 text-center normal-case tracking-normal font-medium border border-slate-700">
+                    Bahan dan hidangan favorit yang menjadi acuan rekomendasi menu harian Anda.
+                  </div>
                 </div>
               </div>
             </div>
@@ -631,7 +719,7 @@ export default function ProfilePage() {
                         <p className="text-[10px] font-bold text-slate-500 mt-0.5 uppercase tracking-wide">{member.role} • {member.cal}</p>
                       </div>
                     </div>
-                    <button className="text-[10px] font-bold text-slate-500 bg-white px-3.5 py-2 rounded-lg border border-slate-200 group-hover:bg-slate-900 group-hover:text-white transition-colors shadow-sm">
+                    <button className="cursor-pointer text-[10px] font-bold text-slate-500 bg-white px-3.5 py-2 rounded-lg border border-slate-200 group-hover:bg-slate-900 group-hover:text-white transition-colors shadow-sm">
                       {userData.role === "FAMILY" ? "Beralih" : <IconLock className="w-3.5 h-3.5" />}
                     </button>
                   </div>

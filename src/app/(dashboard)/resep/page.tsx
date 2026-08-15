@@ -24,10 +24,13 @@ function ResepPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   
-  const tabQuery = searchParams.get('tab');
-  const activeMainTab = tabQuery === 'eksplor' ? 'Eksplor' : 'Resep Kamu';
-  
+  // STATE TAB DENGAN LOCAL STORAGE MEMORY (Anti Reset)
+  const [activeMainTab, setActiveMainTabState] = useState<string>("Eksplor");
+
+  // Fungsi sinkronisasi Tab & URL
   const setActiveMainTab = (tab: string) => {
+    setActiveMainTabState(tab);
+    localStorage.setItem("gizify_last_resep_tab", tab); // Simpan ingatan
     const newParams = new URLSearchParams(searchParams);
     newParams.set('tab', tab === 'Eksplor' ? 'eksplor' : 'resep-kamu');
     router.replace(`${pathname}?${newParams.toString()}`);
@@ -35,16 +38,12 @@ function ResepPageContent() {
 
   // STATE: Tabs & Filters
   const [activeCategory, setActiveCategory] = useState("Semua");
-  const [activeDayIndex, setActiveDayIndex] = useState(0); // For saved plan
+  const [activeDayIndex, setActiveDayIndex] = useState(0); 
   
-  // STATE: Filter Sort Dropdown (Apple Style)
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeSort, setActiveSort] = useState("Paling Populer");
   const filterRef = useRef<HTMLDivElement>(null);
   
-  // STATE: Kalender Expand
-  const [isCalendarExpanded, setIsCalendarExpanded] = useState(false);
-
   // REF & STATE: Drag to Scroll
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -63,30 +62,38 @@ function ResepPageContent() {
     if (!isDragging || !scrollContainerRef.current) return;
     e.preventDefault();
     const x = e.pageX - scrollContainerRef.current.offsetLeft;
-    const walk = (x - startX) * 2; // scroll-fast
+    const walk = (x - startX) * 2; 
     scrollContainerRef.current.scrollLeft = scrollLeft - walk;
   };
 
-  // STATE: User Interactions
   const [savedRecipes, setSavedRecipes] = useState<string[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
-  
-  // STATE: Saved Plan from localStorage
   const [savedPlanData, setSavedPlanData] = useState<any>(null);
 
   useEffect(() => {
-    // Animasi masuk global
+    // PEMULIHAN INGATAN TAB
+    const urlTab = searchParams.get('tab');
+    const storedTab = localStorage.getItem("gizify_last_resep_tab");
+    
+    if (urlTab === 'eksplor') {
+      setActiveMainTabState('Eksplor');
+    } else if (urlTab === 'resep-kamu') {
+      setActiveMainTabState('Resep Kamu');
+    } else if (storedTab) {
+      // Jika dari sidebar (URL kosong), panggil memori terakhir
+      setActiveMainTabState(storedTab);
+    } else {
+      setActiveMainTabState('Eksplor'); // Default kalau belum pernah buka
+    }
+
     const timer = setTimeout(() => {
       setIsLoaded(true);
     }, 100);
     
-    // Ambil data plan dari lokal
     const saved = localStorage.getItem("gizify_saved_plan");
     if (saved) {
       setSavedPlanData(JSON.parse(saved));
     }
     
-    // Handle Click Outside for Filter Dropdown
     const handleClickOutside = (event: MouseEvent) => {
       if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
         setIsFilterOpen(false);
@@ -98,13 +105,11 @@ function ResepPageContent() {
       clearTimeout(timer);
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [searchParams]);
 
-  // Helper image
   const fallbackImg = "https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=400&auto=format&fit=crop";
   const getImageUrl = (title: string) => `https://image.pollinations.ai/prompt/delicious%20food%20plating%20${encodeURIComponent(title)}?width=400&height=300&nologo=true`;
 
-  // Handler Bookmark (Simpan Resep)
   const toggleBookmark = (e: React.MouseEvent, id: string) => {
     e.preventDefault();
     if (savedRecipes.includes(id)) {
@@ -114,7 +119,6 @@ function ResepPageContent() {
     }
   };
 
-  // Filter Logic untuk Tab Eksplor
   let filteredPopular = dummyRecipes.filter(recipe => {
     const matchCategory = activeCategory === "Semua" || recipe.category === activeCategory;
     const matchSearch = recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -122,7 +126,6 @@ function ResepPageContent() {
     return matchCategory && matchSearch;
   });
 
-  // Sorting Logic (Berdasarkan activeSort)
   if (activeSort === "Rating Tertinggi") {
     filteredPopular.sort((a, b) => b.rating - a.rating);
   } else if (activeSort === "Kalori Terendah") {
@@ -133,13 +136,10 @@ function ResepPageContent() {
       return getMins(a.prepTime) - getMins(b.prepTime);
     });
   } else {
-    // Default: Paling Populer (berdasarkan review)
     filteredPopular.sort((a, b) => b.reviews - a.reviews);
   }
 
   const isNoResults = filteredPopular.length === 0;
-
-  // Resep Sering Dilihat
   const frequentlyViewed = [...dummyRecipes].sort((a, b) => b.reviews - a.reviews).slice(0, 4);
 
   return (
@@ -150,7 +150,6 @@ function ResepPageContent() {
       <div className={`fixed bottom-0 right-0 w-[40rem] h-[40rem] bg-emerald-400/5 rounded-full blur-[120px] pointer-events-none z-0 transition-opacity duration-1000 delay-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}></div>
       <div className={`fixed top-1/2 left-0 w-[20rem] h-[20rem] bg-blue-400/5 rounded-full blur-[100px] pointer-events-none z-0 transition-opacity duration-1000 delay-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}></div>
 
-      {/* CSS ANIMASI KUSTOM */}
       <style dangerouslySetInnerHTML={{
         __html: `
           .animate-fade-up { opacity: 0; transform: translateY(30px); animation: fadeUpAnim 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -190,13 +189,10 @@ function ResepPageContent() {
 
       <div className="w-full mt-4 lg:mt-6 relative z-10">
        
-        {/* ======================================= */}
         {/* PREMIUM HEADER & TABS SWITCHER */}
-        {/* ======================================= */}
         <div className={`flex flex-col lg:flex-row lg:items-center justify-between gap-6 glass-panel p-6 md:p-8 rounded-[2.5rem] shadow-[0_20px_40px_-15px_rgb(0,0,0,0.03)] mb-10 ${isLoaded ? 'animate-fade-up delay-100' : 'opacity-0'}`}>
           <div className="flex items-center gap-5">
             <div className="relative group cursor-pointer">
-              {/* Gambar Icon - Sekarang Full Cover & Tanpa Padding */}
               <div className="w-12 h-12 md:w-16 md:h-16 rounded-[1.25rem] bg-slate-50 flex items-center justify-center shadow-inner overflow-hidden border border-slate-200/60 shrink-0 group-hover:scale-105 transition-transform duration-500">
                 <img src="/image/icon-plan-resep.jpg" alt="Meal Plan" className="w-full h-full object-cover" />
               </div>
@@ -234,13 +230,10 @@ function ResepPageContent() {
           </div>
         </div>
 
-        {/* ======================================= */}
         {/* KONTEN 1: EKSPLOR GLOBAL */}
-        {/* ======================================= */}
         {activeMainTab === "Eksplor" && (
           <div className="flex flex-col gap-6 md:gap-8">
             
-            {/* APPLE STYLE SEARCH & FILTER BAR */}
             <div className={`relative flex items-center w-full bg-white/80 backdrop-blur-xl hover:bg-white transition-colors border border-slate-200/60 rounded-[2rem] p-2 shadow-[0_8px_30px_rgb(0,0,0,0.04)] z-[60] ${isLoaded ? 'animate-fade-up delay-200' : 'opacity-0'}`}>
               <div className="pl-4 pr-2 text-slate-400 shrink-0">
                 <IconSearch className="w-5 h-5" />
@@ -254,7 +247,6 @@ function ResepPageContent() {
                 placeholder="Cari Nasi Goreng Diet, Salad Ayam..."
               />
               
-              {/* Apple Dropdown Filter Inside Search Bar */}
               <div className="relative shrink-0" ref={filterRef}>
                 <button 
                   onClick={() => setIsFilterOpen(!isFilterOpen)} 
@@ -282,7 +274,6 @@ function ResepPageContent() {
               </div>
             </div>
 
-            {/* Categories Scrollable */}
             <div 
               ref={scrollContainerRef}
               onMouseDown={handleMouseDown}
@@ -297,10 +288,9 @@ function ResepPageContent() {
                   <button
                     key={cat.name}
                     onClick={() => setActiveCategory(cat.name)}
-                    // shrink-0 mencegah gepeng, rounded-full bikin bentuk kapsul mulus
                     className={`shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all duration-300 cursor-pointer outline-none border ${
                       activeCategory === cat.name 
-                      ? 'bg-[#1EAB57] text-white border-[#1EAB57] shadow-sm' // Glow hijau dihapus, sisa shadow natural
+                      ? 'bg-[#1EAB57] text-white border-[#1EAB57] shadow-sm'
                       : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-800 shadow-sm'
                     }`}
                   >
@@ -310,7 +300,6 @@ function ResepPageContent() {
               </div>
             </div>
 
-            {/* Content Results */}
             {isNoResults ? (
               <div className="py-24 flex flex-col items-center justify-center text-center w-full bg-white rounded-[2.5rem] border border-slate-100 shadow-sm animate-scale-in">
                 <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6 border-4 border-white shadow-sm relative overflow-hidden">
@@ -330,7 +319,6 @@ function ResepPageContent() {
               </div>
             ) : (
               <>
-                {/* Section: Rekomendasi Menu */}
                 {filteredPopular.length > 0 && (
                   <div className={`mb-8 ${isLoaded ? 'animate-fade-up delay-400' : 'opacity-0'}`}>
                     <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 px-1 gap-4">
@@ -339,7 +327,6 @@ function ResepPageContent() {
                           {searchQuery ? "Hasil Pencarian" : "Rekomendasi Menu"}
                           {activeSort !== "Paling Populer" && <span className="text-xs font-bold text-[#1EAB57] bg-emerald-50 px-2.5 py-1 rounded-md align-middle">{activeSort}</span>}
                         </h2>
-                        {/* Teks Disclaimer Harga (Sesuai Request) */}
                         <p className="text-[10px] md:text-[11px] font-medium text-slate-500 mt-1.5 flex items-center gap-1.5">
                           <IconInfo className="w-3.5 h-3.5 text-slate-400" />
                           *Estimasi harga pada resep berdasarkan total harga rata-rata bahan di lokasi terkait.
@@ -352,7 +339,6 @@ function ResepPageContent() {
                         const isSaved = savedRecipes.includes(recipe.id);
                         return (
                           <Link href={`/resep/${recipe.id}`} key={recipe.id} style={{animationDelay: `${400 + (index * 100)}ms`}} className={`bg-white rounded-[2rem] p-2.5 border border-slate-100/60 shadow-[0_4px_15px_rgba(0,0,0,0.03)] card-hover group flex flex-col h-full relative overflow-hidden ${isLoaded ? 'animate-fade-up opacity-0' : 'opacity-0'}`}>
-                            {/* Bookmark Button Floating */}
                             <button 
                               onClick={(e) => toggleBookmark(e, recipe.id)} 
                               className={`absolute top-5 right-5 w-9 h-9 backdrop-blur-md rounded-full flex items-center justify-center outline-none shadow-sm z-10 transition-all duration-300 cursor-pointer hover:scale-110 active:scale-95 ${isSaved ? 'bg-[#1EAB57] text-white' : 'bg-white/90 text-slate-400 hover:text-[#1EAB57]'}`}
@@ -360,19 +346,16 @@ function ResepPageContent() {
                               <IconBookmark filled={isSaved} className="w-4 h-4" />
                             </button>
                             
-                            {/* Image Header with Glassmorphism Tags */}
                             <div className="w-full h-44 rounded-[1.5rem] overflow-hidden bg-slate-100 mb-3 relative shrink-0">
                               <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" loading="lazy" />
                               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-50 group-hover:opacity-70 transition-opacity duration-300"></div>
                               
-                              {/* Kategori Makanan (Kiri Atas) */}
                               <div className="absolute top-3 left-3 flex gap-2">
                                 <span className="bg-white/90 backdrop-blur-md text-slate-800 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg shadow-sm flex items-center gap-1.5">
                                   <IconClock className="w-3 h-3 text-[#1EAB57]" /> {recipe.category}
                                 </span>
                               </div>
                               
-                              {/* Kalori Makanan (Kiri Bawah) */}
                               <div className="absolute bottom-3 left-3 flex gap-2">
                                 <span className="bg-[#1EAB57]/95 backdrop-blur-md text-white px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm flex items-center gap-1">
                                   <IconFlame className="w-3 h-3" /> {recipe.calories} Kkal
@@ -380,12 +363,9 @@ function ResepPageContent() {
                               </div>
                             </div>
                             
-                            {/* Details Body */}
                             <div className="px-3 pb-2 pt-1 flex flex-col flex-1">
-                              {/* Judul Max 2 Baris */}
                               <h3 className="text-[16px] font-black text-[#0F172A] line-clamp-2 leading-snug mb-3 group-hover:text-[#1EAB57] transition-colors pr-1">{recipe.title}</h3>
                               
-                              {/* Area Bawah (Budget/Lokasi nempel rapat) */}
                               <div className="mt-auto">
                                 {(recipe.totalBudget || recipe.location) && (
                                   <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -402,7 +382,6 @@ function ResepPageContent() {
                                   </div>
                                 )}
                                 
-                                {/* Author & Rating */}
                                 <div className="flex items-center justify-between pt-3 border-t border-slate-100/80">
                                   <div className="flex items-center gap-2.5 min-w-0">
                                     <div className="w-7 h-7 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100 overflow-hidden shrink-0">
@@ -427,7 +406,6 @@ function ResepPageContent() {
                   </div>
                 )}
 
-                {/* Section: Sering Dilihat (Tambahin Disclaimer Juga Biar Konsisten) */}
                 {frequentlyViewed.length > 0 && !searchQuery && activeCategory === "Semua" && activeSort === "Paling Populer" && (
                   <div className={`mb-8 ${isLoaded ? 'animate-fade-up delay-400' : 'opacity-0'}`}>
                     <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 px-1 gap-4">
@@ -441,7 +419,6 @@ function ResepPageContent() {
                         const isSaved = savedRecipes.includes(recipe.id);
                         return (
                           <Link href={`/resep/${recipe.id}`} key={`viewed-${recipe.id}`} style={{animationDelay: `${400 + (index * 100)}ms`}} className={`bg-white rounded-[2rem] p-2.5 border border-slate-100/60 shadow-[0_4px_15px_rgba(0,0,0,0.03)] card-hover group flex flex-col h-full relative overflow-hidden ${isLoaded ? 'animate-fade-up opacity-0' : 'opacity-0'}`}>
-                            {/* Bookmark Button Floating */}
                             <button 
                               onClick={(e) => toggleBookmark(e, recipe.id)} 
                               className={`absolute top-5 right-5 w-9 h-9 backdrop-blur-md rounded-full flex items-center justify-center shadow-sm z-10 transition-all duration-300 outline-none cursor-pointer hover:scale-110 active:scale-95 ${isSaved ? 'bg-[#1EAB57] text-white' : 'bg-white/90 text-slate-400 hover:text-[#1EAB57]'}`}
@@ -449,7 +426,6 @@ function ResepPageContent() {
                               <IconBookmark filled={isSaved} className="w-4 h-4" />
                             </button>
                             
-                            {/* Image Header with Tags */}
                             <div className="w-full h-44 rounded-[1.5rem] overflow-hidden bg-slate-100 mb-3 relative shrink-0">
                               <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" loading="lazy" />
                               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-50 group-hover:opacity-70 transition-opacity duration-300"></div>
@@ -466,12 +442,10 @@ function ResepPageContent() {
                               </div>
                             </div>
                             
-                            {/* Details Body */}
                             <div className="px-3 pb-2 pt-1 flex flex-col flex-1">
                               <h3 className="text-[16px] font-black text-[#0F172A] line-clamp-2 leading-snug mb-3 group-hover:text-[#1EAB57] transition-colors pr-1">{recipe.title}</h3>
                               
                               <div className="mt-auto">
-                                {/* Budget & Location Row */}
                                 {(recipe.totalBudget || recipe.location) && (
                                   <div className="flex flex-wrap items-center gap-2 mb-3">
                                     {recipe.totalBudget && (
@@ -486,8 +460,7 @@ function ResepPageContent() {
                                     )}
                                   </div>
                                 )}
-
-                                {/* Author & Rating */}
+                                
                                 <div className="flex items-center justify-between pt-3 border-t border-slate-100/80">
                                   <div className="flex items-center gap-2.5 min-w-0">
                                     <div className="w-7 h-7 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100 overflow-hidden shrink-0">
@@ -516,20 +489,17 @@ function ResepPageContent() {
           </div>
         )}
 
-        {/* ======================================= */}
         {/* KONTEN 2: RESEP KAMU (MEAL PLAN & BUDGET) */}
-        {/* ======================================= */}
         {activeMainTab === "Resep Kamu" && (
           <div className="flex flex-col gap-8 md:gap-10">
             
-            {/* CARD BUDGET VIP (Clean White Ultra Premium) */}
             <div className={`bg-white rounded-[2.5rem] p-6 md:p-10 border border-slate-100 shadow-[0_20px_50px_-15px_rgb(0,0,0,0.05)] relative overflow-hidden flex flex-col xl:flex-row xl:items-center justify-between gap-10 ${isLoaded ? 'animate-fade-up delay-200' : 'opacity-0'}`}>
               
               <div className="absolute right-0 top-0 w-[500px] h-[500px] bg-gradient-to-bl from-[#1EAB57]/10 to-transparent rounded-full blur-[80px] pointer-events-none transition-colors duration-700 -translate-y-1/2 translate-x-1/3"></div>
               <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-slate-50 rounded-full blur-[40px] pointer-events-none"></div>
 
               <div className="relative z-10 flex-1 w-full lg:max-w-2xl">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-100/50 mb-5 shadow-sm">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-100/50 mb-5 shadow-sm cursor-default">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#1EAB57] opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-[#1EAB57]"></span>
@@ -540,7 +510,7 @@ function ResepPageContent() {
                 <h2 className="text-4xl md:text-[3rem] font-black text-[#0F172A] tracking-tight leading-[1.1] mb-4">Meal Plan Keluarga</h2>
                 <p className="text-sm md:text-base font-medium text-slate-500 mb-10 max-w-xl leading-relaxed">Fokus diet defisit kalori tinggi protein. Rencana menu di-generate cerdas oleh algoritma AI GiziBot sesuai budget Anda.</p>
                 
-                <div className="space-y-3 mb-10 w-full max-w-md">
+                <div className="space-y-3 mb-10 w-full max-w-md cursor-default">
                   <div className="flex justify-between items-end text-[11px] font-black uppercase tracking-widest">
                     <span className="text-slate-400">Progres Diet ({savedPlanData ? savedPlanData.days : 7} Hari)</span>
                     <span className="text-[#1EAB57] text-sm">Target Defisit</span>
@@ -560,8 +530,7 @@ function ResepPageContent() {
                 </div>
               </div>
 
-              {/* Box Budget & Detail Kanan */}
-              <div className="relative z-10 bg-slate-50/80 rounded-[2rem] p-8 border border-slate-100 shadow-[inset_0_2px_4px_rgb(0,0,0,0.02)] w-full xl:min-w-[340px] xl:w-auto shrink-0 hover:bg-emerald-50/30 hover:border-emerald-100/50 transition-colors duration-500">
+              <div className="relative z-10 bg-slate-50/80 rounded-[2rem] p-8 border border-slate-100 shadow-[inset_0_2px_4px_rgb(0,0,0,0.02)] w-full xl:min-w-[340px] xl:w-auto shrink-0 hover:bg-emerald-50/30 hover:border-emerald-100/50 transition-colors duration-500 cursor-default">
                 <div className="flex items-center justify-between mb-10">
                   <div className="w-14 h-14 rounded-[1.25rem] bg-white flex items-center justify-center text-[#1EAB57] shadow-sm border border-slate-100">
                      <IconWallet className="w-6 h-6" />
@@ -589,7 +558,6 @@ function ResepPageContent() {
 
             </div>
 
-            {/* HORIZONTAL CALENDAR (Clean White Expandable - No Gap Issue) */}
             <div className={`bg-white rounded-[2.5rem] p-6 md:p-8 border border-slate-100 shadow-[0_15px_40px_-10px_rgb(0,0,0,0.04)] ${isLoaded ? 'animate-fade-up delay-300' : 'opacity-0'}`}>
               
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 px-1">
@@ -599,7 +567,6 @@ function ResepPageContent() {
                 </div>
               </div>
               
-              {/* List Hari */}
               <div className="overflow-x-auto no-scrollbar -mx-6 px-6 md:mx-0 md:px-0">
                 <div className="flex items-center pb-4 transition-all duration-500 px-1 w-max justify-start gap-2 md:gap-3">
                   {savedPlanData && savedPlanData.plan && savedPlanData.plan.map((dayObj: any, index: number) => {
@@ -631,19 +598,18 @@ function ResepPageContent() {
                     )
                   })}
                   {!savedPlanData && (
-                     <div className="text-sm font-bold text-slate-400 py-4">Belum ada plan yang di-generate. Silahkan buat dari Meal Plan Wizard.</div>
+                     <div className="text-sm font-bold text-slate-400 py-4 cursor-default">Belum ada plan yang di-generate. Silahkan buat dari Meal Plan Wizard.</div>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* TIMELINE JADWAL MASAK HARI INI */}
             {savedPlanData && savedPlanData.plan && savedPlanData.plan[activeDayIndex] && (
             <div className={`bg-white rounded-[2.5rem] p-6 md:p-10 border border-slate-100 shadow-[0_15px_40px_-10px_rgb(0,0,0,0.03)] ${isLoaded ? 'animate-fade-up delay-400' : 'opacity-0'}`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-10 gap-4">
                 <div>
                   <h3 className="text-2xl md:text-3xl font-black text-[#0F172A] tracking-tight">Jadwal Masak Hari {activeDayIndex + 1}</h3>
-                  <div className="flex items-center gap-3 mt-2">
+                  <div className="flex items-center gap-3 mt-2 cursor-default">
                     <span className="text-[11px] font-black text-[#1EAB57] uppercase tracking-widest flex items-center gap-1.5">
                        <IconFlame className="w-3.5 h-3.5"/> Total: {savedPlanData.plan[activeDayIndex].meals.reduce((sum: number, meal: any) => sum + parseInt(meal.kal), 0)} Kkal
                     </span>
@@ -651,23 +617,20 @@ function ResepPageContent() {
                 </div>
               </div>
 
-              {/* TIMELINE WRAPPER WITH VERTICAL LINE */}
               <div className="relative pl-2 md:pl-0">
-                {/* Garis Vertikal Timeline */}
                 <div className="hidden md:block absolute left-[95px] top-8 bottom-8 w-[2px] bg-slate-100 rounded-full"></div>
 
                 {savedPlanData.plan[activeDayIndex].meals.map((meal: any, idx: number) => (
                 <div key={idx} className={`flex flex-col md:flex-row gap-5 md:gap-10 mb-10 relative group ${isLoaded ? 'animate-slide-left' : 'opacity-0'}`} style={{ animationDelay: `${0.4 + (idx * 0.1)}s` }}>
-                  <div className="md:w-[80px] shrink-0 pt-3 flex flex-row md:flex-col items-center md:items-end justify-between md:justify-start relative z-10">
+                  <div className="md:w-[80px] shrink-0 pt-3 flex flex-row md:flex-col items-center md:items-end justify-between md:justify-start relative z-10 cursor-default">
                     <div className="flex flex-col md:items-end">
                       <span className={`text-xl font-black tracking-tight ${idx === 1 ? 'text-[#1EAB57]' : 'text-slate-900'}`}>{meal.time}</span>
                       <span className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${idx === 1 ? 'text-[#1EAB57]' : 'text-slate-400'}`}>{meal.type}</span>
                     </div>
-                    {/* Dot Indikator */}
                     <div className={`hidden md:flex absolute -right-[23px] top-4 w-4 h-4 rounded-full ${idx === 1 ? 'bg-[#1EAB57] ring-2 ring-emerald-200 animate-pulse' : 'bg-[#1EAB57]'} border-[3px] border-white shadow-sm ring-1 ring-slate-100`}></div>
                   </div>
 
-                  <div className={`flex-1 ${idx === 1 ? 'bg-emerald-50/50 border-2 border-[#1EAB57]/30 shadow-md hover:shadow-xl hover:-translate-y-1' : 'bg-white border border-slate-100 hover:shadow-[0_15px_35px_-10px_rgba(0,0,0,0.08)] hover:-translate-y-1'} rounded-[2rem] p-4 transition-all duration-300 flex flex-col sm:flex-row gap-5 cursor-pointer relative`}>
+                  <Link href={`/resep/${meal.id}`} className={`flex-1 block ${idx === 1 ? 'bg-emerald-50/50 border-2 border-[#1EAB57]/30 shadow-md hover:shadow-xl hover:-translate-y-1' : 'bg-white border border-slate-100 hover:shadow-[0_15px_35px_-10px_rgba(0,0,0,0.08)] hover:-translate-y-1'} rounded-[2rem] p-4 transition-all duration-300 flex flex-col sm:flex-row gap-5 cursor-pointer relative outline-none`}>
                     {idx === 1 && (
                       <span className="absolute -top-3 right-6 bg-[#1EAB57] text-white px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-md animate-bounce flex items-center gap-1.5 z-20">
                         <IconActivity className="w-3 h-3" /> Waktunya Masak!
@@ -695,12 +658,12 @@ function ResepPageContent() {
                         <span className={`bg-white border border-slate-100 text-amber-500 px-3 py-1.5 rounded-lg text-[10px] font-bold ${idx === 1 ? 'shadow-sm' : ''}`}>Car: {meal.car}g</span>
                       </div>
                       
-                      <Link href={`/resep/${meal.id}`} className={`inline-flex items-center justify-between px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors w-full md:w-auto mt-auto cursor-pointer outline-none ${idx === 1 ? 'bg-[#1EAB57] hover:bg-[#168E46] text-white shadow-sm' : 'bg-slate-50 hover:bg-[#1EAB57] text-slate-600 hover:text-white border border-slate-100'}`}>
+                      <div className={`inline-flex items-center justify-between px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors w-full md:w-auto mt-auto ${idx === 1 ? 'bg-[#1EAB57] group-hover:bg-[#168E46] text-white shadow-sm' : 'bg-slate-50 group-hover:bg-[#1EAB57] text-slate-600 group-hover:text-white border border-slate-100'}`}>
                         <span className="flex items-center gap-2">{idx === 1 ? <IconPlay className="w-3.5 h-3.5" /> : null} {idx === 1 ? "Mulai Panduan Masak" : "Lihat Detail Resep"}</span>
                         <IconChevronRight className="w-4 h-4"/>
-                      </Link>
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                 </div>
                 ))}
               </div>
