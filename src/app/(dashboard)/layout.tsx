@@ -54,9 +54,28 @@ export default function DashboardLayout({
     window.addEventListener("offline", handleOffline);
     window.addEventListener("online", handleOnline);
 
+    // Patch console.error untuk mendeteksi error Firestore
+    const originalConsoleError = console.error;
+    console.error = (...args) => {
+      const msg = args.join(' ');
+      if (typeof msg === 'string' && msg.includes("Could not reach Cloud Firestore backend")) {
+        Swal.fire({
+          title: "Koneksi Database Terputus",
+          text: "GiziBot berjalan dalam mode offline. Pastikan internet Anda stabil.",
+          icon: "warning",
+          toast: true,
+          position: 'top-end',
+          timer: 5000,
+          showConfirmButton: false
+        });
+      }
+      originalConsoleError.apply(console, args);
+    };
+
     return () => {
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener("online", handleOnline);
+      console.error = originalConsoleError;
     };
   }, []);
 
@@ -97,6 +116,7 @@ export default function DashboardLayout({
       items: [
         { name: "Ringkasan Harian", icon: IconHome, path: "/home" },
         { name: "Katalog Resep", icon: IconBook, path: "/resep" },
+        { name: "Peta Belanja Bahan", icon: IconMap, path: "/maps" }, // MENU MAPS BARU DITAMBAHKAN
       ]
     },
     {
@@ -165,7 +185,7 @@ export default function DashboardLayout({
         </div>
 
         {/* Navigation Area */}
-        <nav className="flex-1 px-4 py-2 space-y-6 overflow-y-auto relative z-10 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
+        <nav className="flex-1 px-4 py-2 space-y-6 overflow-y-auto relative z-10 custom-scroll-sidebar">
           
           {menuGroups.map((group, groupIndex) => (
             <div key={groupIndex} className="space-y-1.5">
@@ -279,8 +299,8 @@ export default function DashboardLayout({
             <Link href="/home" className={`flex flex-col items-center p-2 transition-colors ${pathname === "/home" ? "text-[#1A453A]" : "text-slate-400 hover:text-emerald-500"}`}>
               <IconHome className="w-6 h-6" />
             </Link>
-            <Link href="/chatbot" className={`flex flex-col items-center p-2 transition-colors ${pathname === "/chatbot" ? "text-[#1A453A]" : "text-slate-400 hover:text-emerald-500"}`}>
-              <IconBot className="w-6 h-6" />
+            <Link href="/resep" className={`flex flex-col items-center p-2 transition-colors ${pathname === "/resep" ? "text-[#1A453A]" : "text-slate-400 hover:text-emerald-500"}`}>
+              <IconBook className="w-6 h-6" />
             </Link>
             
             {/* Tombol Scanner Melayang Tengah */}
@@ -288,8 +308,8 @@ export default function DashboardLayout({
               <IconScan className="w-6 h-6" />
             </Link>
             
-            <Link href="/meal-plan" className={`flex flex-col items-center p-2 transition-colors ${pathname === "/meal-plan" ? "text-[#1A453A]" : "text-slate-400 hover:text-emerald-500"}`}>
-              <IconWallet className="w-6 h-6" />
+            <Link href="/maps" className={`flex flex-col items-center p-2 transition-colors ${pathname === "/maps" ? "text-[#1A453A]" : "text-slate-400 hover:text-emerald-500"}`}>
+              <IconMap className="w-6 h-6" />
             </Link>
             <Link href="/profile" className={`flex flex-col items-center p-2 transition-colors ${pathname === "/profile" ? "text-[#1A453A]" : "text-slate-400 hover:text-emerald-500"}`}>
               <IconUser className="w-6 h-6" />
@@ -307,6 +327,9 @@ export default function DashboardLayout({
           .custom-scroll::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
           .custom-scroll::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
           .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+          .custom-scroll-sidebar::-webkit-scrollbar { width: 4px; }
+          .custom-scroll-sidebar::-webkit-scrollbar-track { background: transparent; }
+          .custom-scroll-sidebar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
         `
       }} />
     </div>
@@ -323,3 +346,4 @@ const IconBook = ({ className = "w-5 h-5" }) => <svg className={className} viewB
 const IconWallet = ({ className = "w-5 h-5" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>;
 const IconUser = ({ className = "w-5 h-5" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
 const IconLogout = ({ className = "w-5 h-5" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>;
+const IconMap = ({ className = "w-5 h-5" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>;

@@ -1,8 +1,9 @@
 // Path: src/app/(dashboard)/resep/page.tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Swal from "sweetalert2";
 import { dummyRecipes } from "@/data/dummyRecipes";
 
@@ -15,12 +16,24 @@ const categories = [
   { name: "Vegan", icon: "🥬" }, { name: "Keto", icon: "🥩" }, { name: "Low Carbs", icon: "🥑" }
 ];
 
-export default function ResepPage() {
+function ResepPageContent() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  
+  const tabQuery = searchParams.get('tab');
+  const activeMainTab = tabQuery === 'eksplor' ? 'Eksplor' : 'Resep Kamu';
+  
+  const setActiveMainTab = (tab: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('tab', tab === 'Eksplor' ? 'eksplor' : 'resep-kamu');
+    router.replace(`${pathname}?${newParams.toString()}`);
+  };
+
   // STATE: Tabs & Filters
-  const [activeMainTab, setActiveMainTab] = useState("Resep Kamu");
   const [activeCategory, setActiveCategory] = useState("Semua");
   const [activeDayIndex, setActiveDayIndex] = useState(0); // For saved plan
   
@@ -66,12 +79,6 @@ export default function ResepPage() {
     const timer = setTimeout(() => {
       setIsLoaded(true);
     }, 100);
-    
-    // Restore state tab aktif
-    const savedTab = sessionStorage.getItem("gizify_active_resep_tab");
-    if (savedTab) {
-      setActiveMainTab(savedTab);
-    }
     
     // Ambil data plan dari lokal
     const saved = localStorage.getItem("gizify_saved_plan");
@@ -209,7 +216,7 @@ export default function ResepPage() {
             <div className={`absolute top-1.5 bottom-1.5 left-1.5 w-[calc(50%-6px)] bg-white rounded-[14px] shadow-[0_4px_12px_rgb(0,0,0,0.05)] border border-white transition-all duration-500 ease-out z-0 ${activeMainTab === "Resep Kamu" ? 'translate-x-full' : 'translate-x-0'}`}></div>
             
             <button 
-              onClick={() => { setActiveMainTab("Eksplor"); sessionStorage.setItem("gizify_active_resep_tab", "Eksplor"); }}
+              onClick={() => setActiveMainTab("Eksplor")}
               className={`flex-1 lg:flex-none px-6 md:px-10 py-3.5 rounded-[14px] text-[11px] md:text-xs font-black uppercase tracking-widest transition-all duration-400 cursor-pointer relative z-10 outline-none ${
                 activeMainTab === "Eksplor" ? 'text-[#1EAB57]' : 'text-slate-500 hover:text-slate-800'
               }`}
@@ -217,7 +224,7 @@ export default function ResepPage() {
               Eksplor Global
             </button>
             <button 
-              onClick={() => { setActiveMainTab("Resep Kamu"); sessionStorage.setItem("gizify_active_resep_tab", "Resep Kamu"); }}
+              onClick={() => setActiveMainTab("Resep Kamu")}
               className={`flex-1 lg:flex-none px-6 md:px-10 py-3.5 rounded-[14px] text-[11px] md:text-xs font-black uppercase tracking-widest transition-all duration-400 cursor-pointer relative z-10 outline-none ${
                 activeMainTab === "Resep Kamu" ? 'text-[#1EAB57]' : 'text-slate-500 hover:text-slate-800'
               }`}
@@ -704,6 +711,14 @@ export default function ResepPage() {
 
       </div>
     </div>
+  );
+}
+
+export default function ResepPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center">Memuat...</div>}>
+      <ResepPageContent />
+    </Suspense>
   );
 }
 
