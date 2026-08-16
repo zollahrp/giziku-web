@@ -409,7 +409,7 @@ export default function ScannerPage() {
               <div className="relative w-full h-[80vh] min-h-[500px] lg:h-[550px] rounded-[2.5rem] overflow-hidden bg-slate-900 shadow-lg">
                 {!uploadedImage && scanState === "idle" ? (
                   <>
-                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover transform -scale-x-100 md:scale-x-100" />
+                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
                     {activeMode === "kemasan" && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-8">
                          <div className="w-full max-w-sm h-64 border-4 border-dashed border-white/50 rounded-3xl relative">
@@ -462,9 +462,9 @@ export default function ScannerPage() {
                   <>
                     <div className="laser-line"></div>
                     <div className="absolute inset-0 bg-[#1EAB57]/10 animate-pulse mix-blend-overlay pointer-events-none"></div>
-                    <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 flex items-center gap-3 z-30 shadow-2xl">
+                    <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-white backdrop-blur-md px-6 py-3 rounded-full border border-slate-100 flex items-center gap-3 z-30 shadow-md">
                       <IconLoader className="w-4 h-4 text-[#1EAB57] animate-spin" />
-                      <span key={scanText} className="text-[11px] font-bold text-white tracking-wider animate-text-change whitespace-nowrap">{scanText}</span>
+                      <span key={scanText} className="text-[11px] font-bold text-[#0F172A] tracking-wider animate-text-change whitespace-nowrap">{scanText}</span>
                     </div>
                   </>
                 )}
@@ -525,15 +525,15 @@ export default function ScannerPage() {
                 <p className="text-sm font-medium text-slate-500 max-w-[250px] mb-6">Arahkan kamera ke {activeMode === "kemasan" ? "tabel nilai gizi atau kemasan" : "makanan Anda"} lalu tekan tombol jepret.</p>
               </div>
             ) : scanState === "scanning" ? (
-              <div className="bg-slate-900 rounded-[2.5rem] p-8 shadow-xl h-full flex flex-col items-center justify-center text-center relative overflow-hidden min-h-[400px]">
+              <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 h-full flex flex-col items-center justify-center text-center relative overflow-hidden min-h-[400px]">
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-[#1EAB57] to-transparent animate-[shimmer_2s_infinite]"></div>
                 <div className="relative mb-8">
-                  <div className="w-28 h-28 border-4 border-slate-800 border-t-[#1EAB57] rounded-full animate-spin"></div>
+                  <div className="w-28 h-28 border-4 border-slate-100 border-t-[#1EAB57] rounded-full animate-spin"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <IconBot className="w-10 h-10 text-emerald-400 animate-pulse" />
+                    <IconBot className="w-10 h-10 text-[#1EAB57] animate-pulse" />
                   </div>
                 </div>
-                <h3 className="text-3xl font-black text-white tracking-tight mb-4">Gizify Bekerja...</h3>
+                <h3 className="text-3xl font-black text-[#0F172A] tracking-tight mb-4">Gizify Bekerja...</h3>
               </div>
             ) : scanState === "success" && scanResult && isFoodItem ? (
               <div className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-slate-100 shadow-sm h-full flex flex-col relative animate-scale-in">
