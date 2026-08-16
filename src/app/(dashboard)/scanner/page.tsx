@@ -5,73 +5,38 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
+import ShareModal from "@/components/dashboard/ShareModal";
 
 // FIREBASE IMPORTS
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs, doc, getDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs, doc, getDoc, where } from "firebase/firestore";
 
 // TIPE DATA
-type Micronutrients = {
-  vitC: string;
-  fiber: string;
-  calcium: string;
-  iron: string;
-};
-
-type FoodItem = {
-  name: string;
-  box: [number, number, number, number];
-  portion: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  micronutrients: Micronutrients;
-};
-
-type ScanResult = {
-  items: FoodItem[];
-  total: {
-    name: string;
-    portion: string;
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-    score: number;
-    micronutrients: Micronutrients;
-    ai_insight: string;
-  };
-};
+type Micronutrients = { vitC: string; fiber: string; calcium: string; iron: string; };
+type FoodItem = { name: string; box: [number, number, number, number]; portion: string; calories: number; protein: number; carbs: number; fat: number; micronutrients: Micronutrients; };
+type ScanResult = { items: FoodItem[]; total: { name: string; portion: string; calories: number; protein: number; carbs: number; fat: number; score: number; micronutrients: Micronutrients; ai_insight: string; }; };
 
 export default function ScannerPage() {
   const router = useRouter();
   const [isLoaded, setIsLoaded] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [userGoal, setUserGoal] = useState<string>("Menjaga Berat Badan");
+  const [userTargets, setUserTargets] = useState({ calories: 2000, protein: 150, carbs: 200, fat: 66 });
+  const [todayTotals, setTodayTotals] = useState({ calories: 0, protein: 0, carbs: 0, fat: 0 });
 
-  // ==========================================
-  // STATE MODE SCANNER (BARU)
-  // ==========================================
   type ScanMode = "piring" | "kemasan" | "manual";
   const [activeMode, setActiveMode] = useState<ScanMode>("piring");
 
   const [scanState, setScanState] = useState<"idle" | "scanning" | "success" | "error">("idle");
   const [scanText, setScanText] = useState("Arahkan kamera ke makanan...");
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
   
-  // TOGGLES
   const [showPointers, setShowPointers] = useState(true);
   const [showMicro, setShowMicro] = useState(false); 
   const [showShareModal, setShowShareModal] = useState(false); 
-
-  // STRAVA SHARE STATE
-  const [shareMode, setShareMode] = useState<"portrait" | "story" | "landscape" | "minimalist">("story");
-  const [shareColor, setShareColor] = useState<string>("text-white");
 
   const [recentScans, setRecentScans] = useState<any[]>([]);
   const isFoodItem = scanResult ? scanResult.total.calories > 0 : false;
@@ -81,14 +46,7 @@ export default function ScannerPage() {
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // STATE UNTUK FORM MANUAL
-  const [manualForm, setManualForm] = useState({
-    name: "",
-    calories: "",
-    pro: "",
-    car: "",
-    fat: ""
-  });
+  const [manualForm, setManualForm] = useState({ name: "", calories: "", pro: "", car: "", fat: "" });
 
   const fetchRecentScans = async (uid: string) => {
     try {
@@ -97,20 +55,34 @@ export default function ScannerPage() {
       const logs: any[] = [];
       querySnapshot.forEach((d) => logs.push({ id: d.id, ...d.data() }));
       setRecentScans(logs);
-    } catch (error) {
-      console.error("Gagal menarik riwayat:", error);
-    }
+    } catch (error) { console.error("Gagal menarik riwayat:", error); }
+  };
+
+  const fetchTodayTotals = async (uid: string) => {
+    try {
+      const today = new Date(); today.setHours(0,0,0,0);
+      const q = query(collection(db, "users", uid, "foodLogs"), where("scannedAt", ">=", today));
+      const snaps = await getDocs(q);
+      let cals = 0, pro = 0, car = 0, fat = 0;
+      snaps.forEach(d => {
+         const data = d.data();
+         cals += data.calories || 0; pro += data.protein || 0; car += data.carbs || 0; fat += data.fat || 0;
+      });
+      setTodayTotals({ calories: cals, protein: pro, carbs: car, fat: fat });
+    } catch(error) { console.error("Gagal menarik total hari ini:", error); }
   };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        setUserId(user.uid);
-        fetchRecentScans(user.uid);
+        setUserId(user.uid); fetchRecentScans(user.uid); fetchTodayTotals(user.uid);
         try {
            const userDoc = await getDoc(doc(db, "users", user.uid));
-           if(userDoc.exists() && userDoc.data().bodyGoal) {
-              setUserGoal(userDoc.data().bodyGoal);
+           if(userDoc.exists()) {
+              const d = userDoc.data();
+              if (d.bodyGoal) setUserGoal(d.bodyGoal);
+              const tCals = parseInt(d.calories) || 2000;
+              setUserTargets({ calories: tCals, protein: Math.round((tCals * 0.3)/4), carbs: Math.round((tCals * 0.4)/4), fat: Math.round((tCals * 0.3)/9) });
            }
         } catch(e) {}
       } else router.push("/login");
@@ -123,20 +95,17 @@ export default function ScannerPage() {
     if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
     if (videoRef.current && videoRef.current.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(t => t.stop());
-      videoRef.current.srcObject = null;
+      stream.getTracks().forEach(t => t.stop()); videoRef.current.srcObject = null;
     }
   };
 
-  // EFEK KAMERA (DIMATIKAN JIKA MASUK MODE MANUAL)
   useEffect(() => {
     let isActive = true;
     const startCamera = async () => {
       try {
         const mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
         if (!isActive || document.hidden || activeMode === "manual") { mediaStream.getTracks().forEach(t => t.stop()); return; }
-        stopCamera(); 
-        streamRef.current = mediaStream;
+        stopCamera(); streamRef.current = mediaStream;
         if (videoRef.current) videoRef.current.srcObject = mediaStream;
       } catch (err) { console.error("Camera error:", err); }
     };
@@ -148,33 +117,24 @@ export default function ScannerPage() {
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     
-    if (activeMode === "manual") {
-      stopCamera();
-    } else if (scanState === "idle" && !uploadedImage && !document.hidden) {
+    if (activeMode === "manual") stopCamera();
+    else if (scanState === "idle" && !uploadedImage && !document.hidden) {
       startCamera();
       setScanText(activeMode === "piring" ? "Arahkan kamera ke makanan..." : "Arahkan kamera ke Tabel Gizi / Barcode...");
     }
 
-    return () => {
-      isActive = false;
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      stopCamera();
-    };
+    return () => { isActive = false; document.removeEventListener("visibilitychange", handleVisibilityChange); stopCamera(); };
   }, [scanState, uploadedImage, activeMode]);
 
   const captureImage = () => {
     if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      const video = videoRef.current; const canvas = canvasRef.current;
+      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageUrl = canvas.toDataURL('image/jpeg', 0.8);
-        setUploadedImage(imageUrl);
-        stopCamera();
-        processImageToGemini(imageUrl);
+        setUploadedImage(imageUrl); stopCamera(); processImageToGemini(imageUrl);
       }
     }
   };
@@ -185,19 +145,14 @@ export default function ScannerPage() {
       const reader = new FileReader();
       reader.onloadend = () => {
         const imageUrl = reader.result as string;
-        setUploadedImage(imageUrl);
-        stopCamera();
-        processImageToGemini(imageUrl);
+        setUploadedImage(imageUrl); stopCamera(); processImageToGemini(imageUrl);
       };
       reader.readAsDataURL(file);
     }
   };
 
   const processImageToGemini = async (base64Image: string) => {
-    setScanState("scanning");
-    setSelectedItemIndex(null); 
-    setShowPointers(true);
-    setShowMicro(false); 
+    setScanState("scanning"); setSelectedItemIndex(null); setShowPointers(true); setShowMicro(false); 
     
     if (activeMode === "piring") {
       setScanText("Mata Gizify lagi melototin makananmu...");
@@ -210,95 +165,48 @@ export default function ScannerPage() {
     }
 
     try {
-      // API Call (Bisa dimodifikasi nanti di backend biar ngebedain prompt piring vs kemasan)
-      const response = await fetch("/api/scan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: base64Image, bodyGoal: userGoal, scanType: activeMode })
-      });
+      const response = await fetch("/api/scan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image: base64Image, bodyGoal: userGoal, scanType: activeMode }) });
       const data = await response.json();
-
-      if (response.ok) {
-        setScanResult(data);
-        setScanState("success");
-      } else throw new Error(data.error);
+      if (response.ok) { setScanResult(data); setScanState("success"); } 
+      else throw new Error(data.error);
     } catch (error) {
-      setScanState("error");
-      Swal.fire("Gagal", "Kamera nge-blank nih! Coba foto lagi yang lebih jelas ya.", "error");
-      handleRetake();
+      setScanState("error"); Swal.fire("Gagal", "Kamera nge-blank nih! Coba foto lagi yang lebih jelas ya.", "error"); handleRetake();
     }
   };
 
   const handleSaveLog = async () => {
     if (!userId || !scanResult || !isFoodItem) return;
     const dataToSave = selectedItemIndex !== null ? scanResult.items[selectedItemIndex] : scanResult.total;
-    const saveType = activeMode === "piring" 
-        ? (selectedItemIndex !== null ? "Gizify Vision - Item Satuan" : "Gizify Vision - Piring Lengkap")
-        : "Gizify Vision - Kemasan";
+    const saveType = activeMode === "piring" ? (selectedItemIndex !== null ? "Gizify Vision - Item Satuan" : "Gizify Vision - Piring Lengkap") : "Gizify Vision - Kemasan";
 
     try {
       Swal.fire({ title: "Menyimpan...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       await addDoc(collection(db, "users", userId, "foodLogs"), {
-        name: dataToSave.name,
-        calories: dataToSave.calories,
-        protein: dataToSave.protein,
-        carbs: dataToSave.carbs,
-        fat: dataToSave.fat,
-        score: (dataToSave as any).score || 8,
-        scannedAt: serverTimestamp(),
-        type: saveType
+        name: dataToSave.name, calories: dataToSave.calories, protein: dataToSave.protein, carbs: dataToSave.carbs, fat: dataToSave.fat, score: (dataToSave as any).score || 8, scannedAt: serverTimestamp(), type: saveType
       });
-      Swal.fire({ title: "Masuk Jurnal!", text: "Asupanmu sudah dicatat dengan aman.", icon: "success", timer: 1500, showConfirmButton: false, customClass: { popup: "rounded-3xl" }})
-      .then(() => {
-        fetchRecentScans(userId);
-        handleRetake();
-        document.getElementById('riwayat-scan')?.scrollIntoView({ behavior: 'smooth' });
+      Swal.fire({ title: "Masuk Jurnal!", text: "Asupanmu sudah dicatat dengan aman.", icon: "success", timer: 1500, showConfirmButton: false, customClass: { popup: "rounded-3xl" }}).then(() => {
+        fetchRecentScans(userId); fetchTodayTotals(userId); handleRetake(); document.getElementById('riwayat-scan')?.scrollIntoView({ behavior: 'smooth' });
       });
-    } catch (error) {
-      Swal.fire("Error!", "Gagal menyimpan.", "error");
-    }
+    } catch (error) { Swal.fire("Error!", "Gagal menyimpan.", "error"); }
   };
 
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId) return;
-    
-    if (!manualForm.name || !manualForm.calories) {
-      Swal.fire("Data Belum Lengkap", "Nama makanan dan kalori wajib diisi!", "warning");
-      return;
-    }
-
+    if (!manualForm.name || !manualForm.calories) { Swal.fire("Data Belum Lengkap", "Nama makanan dan kalori wajib diisi!", "warning"); return; }
     try {
       Swal.fire({ title: "Menyimpan...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       await addDoc(collection(db, "users", userId, "foodLogs"), {
-        name: manualForm.name,
-        calories: parseInt(manualForm.calories),
-        protein: parseInt(manualForm.pro) || 0,
-        carbs: parseInt(manualForm.car) || 0,
-        fat: parseInt(manualForm.fat) || 0,
-        score: 8, // Default
-        scannedAt: serverTimestamp(),
-        type: "Input Manual"
+        name: manualForm.name, calories: parseInt(manualForm.calories), protein: parseInt(manualForm.pro) || 0, carbs: parseInt(manualForm.car) || 0, fat: parseInt(manualForm.fat) || 0, score: 8, scannedAt: serverTimestamp(), type: "Input Manual"
       });
-      Swal.fire({ title: "Tersimpan!", text: "Input manual berhasil ditambahkan.", icon: "success", timer: 1500, showConfirmButton: false, customClass: { popup: "rounded-3xl" }})
-      .then(() => {
-        fetchRecentScans(userId);
-        setManualForm({ name: "", calories: "", pro: "", car: "", fat: "" });
-        document.getElementById('riwayat-scan')?.scrollIntoView({ behavior: 'smooth' });
+      Swal.fire({ title: "Tersimpan!", text: "Input manual berhasil ditambahkan.", icon: "success", timer: 1500, showConfirmButton: false, customClass: { popup: "rounded-3xl" }}).then(() => {
+        fetchRecentScans(userId); fetchTodayTotals(userId); setManualForm({ name: "", calories: "", pro: "", car: "", fat: "" }); document.getElementById('riwayat-scan')?.scrollIntoView({ behavior: 'smooth' });
       });
-    } catch (error) {
-      Swal.fire("Error!", "Gagal menyimpan data manual.", "error");
-    }
+    } catch (error) { Swal.fire("Error!", "Gagal menyimpan data manual.", "error"); }
   };
 
   const handleRetake = () => {
-    setScanState("idle");
-    setScanText(activeMode === "piring" ? "Arahkan kamera ke makanan..." : "Arahkan kamera ke Tabel Gizi / Barcode...");
-    setUploadedImage(null);
-    setScanResult(null);
-    setSelectedItemIndex(null);
-    setShowMicro(false);
-    setShowShareModal(false);
+    setScanState("idle"); setScanText(activeMode === "piring" ? "Arahkan kamera ke makanan..." : "Arahkan kamera ke Tabel Gizi / Barcode..."); setUploadedImage(null); setScanResult(null); setSelectedItemIndex(null); setShowMicro(false); setShowShareModal(false);
     if (galleryInputRef.current) galleryInputRef.current.value = "";
   };
 
@@ -309,101 +217,18 @@ export default function ScannerPage() {
 
   const currentDisplayData = selectedItemIndex !== null && scanResult ? scanResult.items[selectedItemIndex] : scanResult?.total;
 
-  const colorOptions = [
-    { name: "Putih", class: "text-white", bg: "bg-white" },
-    { name: "Hitam", class: "text-slate-900", bg: "bg-slate-900" },
-    { name: "Hijau", class: "text-[#1EAB57]", bg: "bg-[#1EAB57]" },
-    { name: "Kuning", class: "text-amber-400", bg: "bg-amber-400" },
-    { name: "Merah", class: "text-rose-500", bg: "bg-rose-500" },
-  ];
-
-  const shareModes = [
-    { id: "story", label: "Story (9:16)", aspect: "aspect-[9/16]" },
-    { id: "portrait", label: "Portrait (4:5)", aspect: "aspect-[4/5]" },
-    { id: "landscape", label: "Landscape", aspect: "aspect-[16/9] md:aspect-[21/9]" },
-    { id: "minimalist", label: "Minimalis", aspect: "aspect-square" }
-  ];
-
   return (
     <div className="w-full flex-1 overflow-y-auto px-4 md:px-6 lg:px-8 lg:pr-10 pb-32 md:pb-16 relative min-w-0 overflow-x-hidden bg-[#F8FAFC]">
       <canvas ref={canvasRef} className="hidden"></canvas>
       <input type="file" accept="image/*" ref={galleryInputRef} onChange={handleImageUpload} className="hidden" />
 
-      {/* SHARE MODAL */}
-      {showShareModal && scanResult && uploadedImage && (
-        <div className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-4 animate-fade-in overflow-y-auto custom-scroll">
-          <button onClick={() => setShowShareModal(false)} className="absolute top-4 right-4 md:top-8 md:right-8 w-10 h-10 bg-white/10 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-all z-[210] cursor-pointer">
-             <IconClose className="w-5 h-5" />
-          </button>
-
-          <div className="bg-white/10 border border-white/20 backdrop-blur-xl p-4 rounded-[1.5rem] mb-6 flex flex-col lg:flex-row items-center justify-center gap-4 md:gap-8 z-10 w-full max-w-4xl mt-12 md:mt-0">
-            <div className="flex flex-wrap justify-center gap-2 bg-black/40 p-1.5 rounded-xl w-full lg:w-auto">
-               {shareModes.map(mode => (
-                 <button key={mode.id} onClick={() => setShareMode(mode.id as any)} className={`flex-1 lg:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${shareMode === mode.id ? "bg-white text-slate-900" : "text-white hover:bg-white/20"}`}>
-                   {mode.label}
-                 </button>
-               ))}
-            </div>
-            <div className="flex items-center justify-center gap-3 w-full lg:w-auto mt-2 lg:mt-0">
-               <span className="text-xs font-black text-white/60 uppercase tracking-widest">Teks:</span>
-               <div className="flex gap-2">
-                 {colorOptions.map((color) => (
-                    <button key={color.name} onClick={() => setShareColor(color.class)} className={`w-7 h-7 rounded-full border-[3px] transition-transform cursor-pointer shadow-sm ${shareColor === color.class ? 'border-white scale-125' : 'border-transparent hover:scale-110'} ${color.bg}`} title={color.name}></button>
-                 ))}
-               </div>
-            </div>
-          </div>
-          
-          <div id="gizify-share-card" className={`relative bg-slate-900 rounded-[2.5rem] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.8)] border border-white/20 flex transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${shareModes.find(m => m.id === shareMode)?.aspect} ${shareMode === "story" || shareMode === "portrait" ? "w-full max-w-[380px]" : "w-full max-w-4xl"}`}>
-             <div className="absolute inset-0 z-0">
-                <img src={uploadedImage} className={`w-full h-full object-cover transition-all duration-700 ${shareMode === "minimalist" ? "opacity-30 blur-xl scale-125" : "opacity-80"}`} />
-                <div className={`absolute inset-0 transition-opacity duration-500 ${shareMode === "minimalist" ? "bg-slate-950/40" : shareMode === "landscape" ? "bg-gradient-to-r from-slate-950/90 via-slate-900/50 to-transparent" : "bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent"}`}></div>
-             </div>
-             <div className={`relative z-10 flex flex-col justify-between w-full h-full ${shareMode === "minimalist" ? "p-8 items-center justify-center text-center" : "p-8 md:p-10"}`}>
-                <div className={`flex justify-between items-start w-full ${shareMode === "minimalist" ? "absolute top-8 left-0 px-8" : ""}`}>
-                  <img src="/images/logo.png" alt="GIZIFY" className="h-6 md:h-7 object-contain drop-shadow-lg" />
-                  {shareMode !== "minimalist" && (
-                    <div className="text-right">
-                      <p className={`font-black text-[10px] uppercase tracking-widest drop-shadow-md ${shareColor === 'text-slate-900' ? 'text-slate-800' : 'text-white/80'}`}>
-                        {new Date().toLocaleDateString('id-ID', { weekday: 'short', month: 'short', day: 'numeric' })}
-                      </p>
-                    </div>
-                  )}
-                </div>
-                <div className={`flex flex-col gap-4 ${shareMode === "landscape" ? "max-w-md my-auto" : "mt-auto"}`}>
-                  <div>
-                    <h2 className={`font-black leading-tight drop-shadow-xl transition-colors duration-300 ${shareColor} ${shareMode === "minimalist" ? "text-3xl" : "text-4xl md:text-5xl"}`}>
-                      {scanResult.total.name}
-                    </h2>
-                    <div className={`flex items-baseline gap-2 mt-1 ${shareMode === "minimalist" ? "justify-center" : ""}`}>
-                      <span className={`font-black tracking-tighter drop-shadow-2xl transition-colors duration-300 ${shareColor} ${shareMode === "minimalist" ? "text-7xl" : "text-7xl md:text-8xl"}`}>
-                        {scanResult.total.calories}
-                      </span>
-                      <span className={`font-bold drop-shadow-md text-xl md:text-2xl ${shareColor === 'text-slate-900' ? 'text-slate-700' : 'text-white/70'}`}>Kkal</span>
-                    </div>
-                  </div>
-                  <div className={`flex items-center justify-between bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl shadow-xl mt-2 ${shareMode === "minimalist" ? "mx-auto w-max gap-8" : ""}`}>
-                     <div className="text-center flex-1">
-                       <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${shareColor === 'text-slate-900' ? 'text-slate-600' : 'text-white/70'}`}>Protein</p>
-                       <p className={`text-xl font-black drop-shadow-md ${shareColor}`}>{scanResult.total.protein}g</p>
-                     </div>
-                     <div className="w-px h-8 bg-white/20"></div>
-                     <div className="text-center flex-1">
-                       <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${shareColor === 'text-slate-900' ? 'text-slate-600' : 'text-white/70'}`}>Karbo</p>
-                       <p className={`text-xl font-black drop-shadow-md ${shareColor}`}>{scanResult.total.carbs}g</p>
-                     </div>
-                     <div className="w-px h-8 bg-white/20"></div>
-                     <div className="text-center flex-1">
-                       <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${shareColor === 'text-slate-900' ? 'text-slate-600' : 'text-white/70'}`}>Lemak</p>
-                       <p className={`text-xl font-black drop-shadow-md ${shareColor}`}>{scanResult.total.fat}g</p>
-                     </div>
-                  </div>
-                </div>
-             </div>
-          </div>
-          <p className="text-white/50 text-xs mt-6 font-bold animate-pulse">Screenshot kartu estetik ini untuk dibagikan! 📸</p>
-        </div>
-      )}
+      {/* COMPONENT SHARE MODAL ESTATIK */}
+      <ShareModal 
+        isOpen={showShareModal} 
+        onClose={() => setShowShareModal(false)} 
+        uploadedImage={uploadedImage} 
+        displayData={currentDisplayData} 
+      />
 
       <style dangerouslySetInnerHTML={{
         __html: `
@@ -434,9 +259,7 @@ export default function ScannerPage() {
             </div>
           </div>
 
-          {/* DYNAMIC MODE TABS (PIRING, KEMASAN, MANUAL) */}
           <div className="bg-slate-100 p-1.5 rounded-2xl flex items-center w-full lg:w-max relative overflow-hidden">
-             {/* Slider Background */}
              <div className={`absolute top-1.5 bottom-1.5 w-[calc(33.333%-4px)] bg-white rounded-[14px] shadow-sm border border-slate-200 transition-all duration-300 ease-out z-0
                ${activeMode === 'piring' ? 'left-1.5' : activeMode === 'kemasan' ? 'left-[calc(33.333%+1.5px)]' : 'left-[calc(66.666%-1.5px)]'}
              `}></div>
@@ -453,15 +276,11 @@ export default function ScannerPage() {
           </div>
         </div>
 
-        <div className="flex flex-col xl:flex-row gap-8 mb-12">
+        <div className="flex flex-col xl:flex-row justify-center gap-8 mb-12 max-w-7xl mx-auto w-full">
           
-          {/* ==================================================== */}
-          {/* AREA KIRI: CAMERA (Piring & Kemasan) / FORM (Manual) */}
-          {/* ==================================================== */}
-          <div className={`flex-1 flex flex-col gap-4 animate-fade-up`} style={{ animationDelay: '0.1s' }}>
+          <div className={`flex-1 max-w-4xl flex flex-col gap-4 animate-fade-up`} style={{ animationDelay: '0.1s' }}>
             
             {activeMode === "manual" ? (
-              /* FORM INPUT MANUAL (Aesthetic & Premium) */
               <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-lg relative overflow-hidden h-full flex flex-col justify-center">
                  <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
                  
@@ -540,18 +359,57 @@ export default function ScannerPage() {
                        </div>
                     </div>
 
+                    {parseInt(manualForm.calories) > 0 && (
+                      <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 mb-4 shadow-inner animate-fade-up">
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">Prediksi Track Harian</p>
+                          {(todayTotals.calories + parseInt(manualForm.calories)) > userTargets.calories ? (
+                             <span className="text-[10px] font-black uppercase bg-rose-100 text-rose-600 px-2 py-1 rounded-md">Melebihi Target</span>
+                          ) : (
+                             <span className="text-[10px] font-black uppercase bg-emerald-100 text-[#1EAB57] px-2 py-1 rounded-md">Masih Aman</span>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <div className="flex justify-between text-[10px] font-bold mb-1">
+                              <span className="text-slate-500">Kalori</span>
+                              <span className="text-slate-800">{todayTotals.calories + parseInt(manualForm.calories)} / {userTargets.calories} Kkal</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden flex">
+                              <div className="h-full bg-slate-400" style={{ width: `${Math.min((todayTotals.calories / userTargets.calories) * 100, 100)}%`}}></div>
+                              <div className={`h-full ${(todayTotals.calories + parseInt(manualForm.calories)) > userTargets.calories ? 'bg-rose-500' : 'bg-[#1EAB57]'}`} style={{ width: `${Math.min((parseInt(manualForm.calories) / userTargets.calories) * 100, 100 - Math.min((todayTotals.calories / userTargets.calories) * 100, 100))}%`}}></div>
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-3 gap-2 mt-2">
+                            <div className="bg-white p-2 rounded-lg border border-slate-100 text-center">
+                              <p className="text-[9px] font-black text-slate-400 uppercase">Protein</p>
+                              <p className={`text-[10px] font-bold ${(todayTotals.protein + (parseInt(manualForm.pro) || 0)) > userTargets.protein ? 'text-rose-500' : 'text-slate-700'}`}>{todayTotals.protein + (parseInt(manualForm.pro) || 0)}g <span className="text-[8px] text-slate-400">/ {userTargets.protein}g</span></p>
+                            </div>
+                            <div className="bg-white p-2 rounded-lg border border-slate-100 text-center">
+                              <p className="text-[9px] font-black text-slate-400 uppercase">Karbo</p>
+                              <p className={`text-[10px] font-bold ${(todayTotals.carbs + (parseInt(manualForm.car) || 0)) > userTargets.carbs ? 'text-rose-500' : 'text-slate-700'}`}>{todayTotals.carbs + (parseInt(manualForm.car) || 0)}g <span className="text-[8px] text-slate-400">/ {userTargets.carbs}g</span></p>
+                            </div>
+                            <div className="bg-white p-2 rounded-lg border border-slate-100 text-center">
+                              <p className="text-[9px] font-black text-slate-400 uppercase">Lemak</p>
+                              <p className={`text-[10px] font-bold ${(todayTotals.fat + (parseInt(manualForm.fat) || 0)) > userTargets.fat ? 'text-rose-500' : 'text-slate-700'}`}>{todayTotals.fat + (parseInt(manualForm.fat) || 0)}g <span className="text-[8px] text-slate-400">/ {userTargets.fat}g</span></p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <button type="submit" className="w-full mt-4 bg-[#1EAB57] hover:bg-[#168E46] text-white py-5 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-[0_15px_30px_-5px_rgba(30,171,87,0.4)] active:scale-95 transition-all outline-none">
                        <IconSave className="w-5 h-5" /> Simpan ke Jurnal
                     </button>
                  </form>
               </div>
             ) : (
-              /* CAMERA VIEW (Untuk Piring & Kemasan) */
               <div className="relative w-full h-[80vh] min-h-[500px] lg:h-[550px] rounded-[2.5rem] overflow-hidden bg-slate-900 shadow-lg">
                 {!uploadedImage && scanState === "idle" ? (
                   <>
                     <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover transform -scale-x-100 md:scale-x-100" />
-                    {/* Panduan Visual di Layar Kamera */}
                     {activeMode === "kemasan" && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-8">
                          <div className="w-full max-w-sm h-64 border-4 border-dashed border-white/50 rounded-3xl relative">
@@ -568,7 +426,6 @@ export default function ScannerPage() {
                   <div className="w-full h-full relative">
                     <img src={uploadedImage || ""} alt="Captured" className={`w-full h-full object-contain bg-black transition-all duration-1000 ${scanState === 'scanning' ? 'blur-[2px] brightness-75' : ''}`} />
                     
-                    {/* OVERLAY INTERAKTIF (POINTER DARI AI) - Hanya kalau mode piring yang detail */}
                     {scanState === "success" && scanResult && isFoodItem && activeMode === "piring" && scanResult.items.map((item, idx) => {
                       const yCenter = (item.box[0] + item.box[2]) / 2;
                       const xCenter = (item.box[1] + item.box[3]) / 2;
@@ -637,7 +494,6 @@ export default function ScannerPage() {
               </div>
             )}
             
-            {/* Scroll Indikator untuk Mobile */}
             {scanState === "success" && activeMode !== "manual" && (
               <div className="lg:hidden flex flex-col items-center justify-center mt-2 animate-bounce text-slate-400">
                  <p className="text-[10px] font-black uppercase tracking-widest mb-1">Scroll Hasil</p>
@@ -646,11 +502,9 @@ export default function ScannerPage() {
             )}
           </div>
 
-          {/* HASIL ANALISA AI (KOLOM KANAN) */}
           <div className={`w-full xl:w-[450px] shrink-0 flex flex-col gap-6 animate-fade-up`} style={{ animationDelay: '0.2s' }}>
             
             {activeMode === "manual" ? (
-              // CARD TIPS MANUAL
               <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[2.5rem] p-8 shadow-xl h-full flex flex-col relative overflow-hidden">
                 <div className="absolute right-[-20%] bottom-[-20%] w-64 h-64 bg-[#1EAB57] rounded-full blur-[80px] opacity-30 pointer-events-none"></div>
                 <IconSparkles className="w-10 h-10 text-emerald-400 mb-6 relative z-10" />
@@ -662,7 +516,6 @@ export default function ScannerPage() {
                 </div>
               </div>
             ) : scanState === "idle" ? (
-              // IDLE CAMERA
               <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 h-full flex flex-col items-center justify-center text-center">
                 <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mb-6 border border-emerald-100 relative">
                   <div className="absolute inset-0 rounded-full border border-[#1EAB57] opacity-20 animate-ping"></div>
@@ -683,7 +536,6 @@ export default function ScannerPage() {
                 <h3 className="text-3xl font-black text-white tracking-tight mb-4">Gizify Bekerja...</h3>
               </div>
             ) : scanState === "success" && scanResult && isFoodItem ? (
-              // SUCCESS CARD DARI KAMERA
               <div className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-slate-100 shadow-sm h-full flex flex-col relative animate-scale-in">
                  <div className="flex-1 flex flex-col h-full overflow-hidden">
                     <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-4 shrink-0">
@@ -706,7 +558,6 @@ export default function ScannerPage() {
                         {activeMode === "kemasan" ? "Kemasan" : "Porsi"}: <span className="text-[#1EAB57] font-black">{(currentDisplayData as any)?.portion || "1 Sajian"}</span>
                       </p>
                       
-                      {/* KARTU KALORI */}
                       <div className="flex items-center gap-4 mb-6 bg-slate-50 p-5 rounded-[2rem] border border-slate-100 shadow-inner">
                         <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center border border-slate-200 shadow-sm shrink-0">
                           <IconFlame className="w-7 h-7 text-rose-500" />
@@ -717,7 +568,6 @@ export default function ScannerPage() {
                         </div>
                       </div>
                       
-                      {/* GIZI MAKRO */}
                       <div className="grid grid-cols-3 gap-3 mb-6">
                         <div className="bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center text-center shadow-sm">
                           <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center mb-2 font-black text-[10px]">P</div>
@@ -736,7 +586,6 @@ export default function ScannerPage() {
                         </div>
                       </div>
 
-                      {/* TOMBOL EXPAND GIZI MIKRO */}
                       <div className="mb-6">
                         <button onClick={() => setShowMicro(!showMicro)} className="w-full flex items-center justify-between px-5 py-3.5 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors cursor-pointer group">
                           <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest group-hover:text-[#1EAB57] transition-colors">Lihat Detail Gizi Mikro</span>
@@ -767,7 +616,6 @@ export default function ScannerPage() {
                         </div>
                       </div>
 
-                      {/* AI INSIGHT CARD */}
                       {selectedItemIndex === null && scanResult.total.ai_insight && (
                         <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-5 relative overflow-hidden">
                           <IconSparkles className="absolute -right-4 -bottom-4 w-20 h-20 text-indigo-500/10 pointer-events-none" />
@@ -782,7 +630,6 @@ export default function ScannerPage() {
                       )}
                     </div>
                     
-                    {/* ACTION BUTTONS */}
                     <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-100 shrink-0">
                       <button onClick={handleSaveLog} className="col-span-2 bg-[#1EAB57] hover:bg-[#168E46] text-white py-3.5 rounded-xl text-[11px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer">
                         <IconPlus className="w-4 h-4" /> Simpan Jurnal
@@ -802,7 +649,6 @@ export default function ScannerPage() {
           </div>
         </div>
 
-        {/* RIWAYAT SCAN TERAKHIR */}
         <div id="riwayat-scan" className={`mt-8 md:mt-12 ${isLoaded ? 'animate-fade-up' : 'opacity-0'}`} style={{ animationDelay: '0.3s' }}>
           <div className="flex items-center justify-between mb-6 px-1">
             <h2 className="text-2xl font-black text-[#0F172A] tracking-tight">Riwayat Scan Terakhir</h2>
@@ -860,7 +706,7 @@ const IconImage = ({ className }: { className: string }) => <svg className={clas
 const IconLightning = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>;
 const IconFlame = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>;
 const IconPlus = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
-const IconRefresh = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>;
+const IconRefresh = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 0 20.49 15"></path></svg>;
 const IconClose = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
 const IconChevronLeft = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>;
 const IconCutlery = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg>;
@@ -873,3 +719,4 @@ const IconShare = ({ className }: { className?: string }) => <svg className={cla
 const IconBarcode = ({ className }: { className?: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 5v14"></path><path d="M8 5v14"></path><path d="M12 5v14"></path><path d="M17 5v14"></path><path d="M21 5v14"></path></svg>;
 const IconEdit3 = ({ className }: { className?: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>;
 const IconSave = ({ className }: { className?: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>;
+const IconDownload = ({ className }: { className?: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>;

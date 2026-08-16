@@ -158,39 +158,41 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="flex h-screen w-full bg-[#FAFAFA] overflow-hidden font-sans">
+    <div className="flex h-screen w-full bg-slate-50 overflow-hidden font-sans">
       
       {/* ======================================= */}
       {/* SIDEBAR DESKTOP (FLOATING PREMIUM) */}
       {/* ======================================= */}
-      <aside className="hidden lg:flex w-[280px] bg-white/80 backdrop-blur-2xl border border-white/80 flex-col fixed left-5 top-5 bottom-5 z-50 rounded-[2.5rem] shadow-[0_15px_40px_-10px_rgba(26,69,58,0.1)] overflow-hidden transition-all">
+      <aside className="hidden lg:flex w-[280px] bg-white/70 backdrop-blur-3xl border border-white flex-col fixed left-5 top-5 bottom-5 z-40 rounded-[2.5rem] shadow-[0_20px_50px_-10px_rgba(26,69,58,0.12)] overflow-hidden transition-all duration-500 ease-out group/sidebar hover:shadow-[0_20px_60px_-10px_rgba(26,69,58,0.2)] hover:bg-white/80">
         
         {/* Ornamen Grafis Background Sidebar */}
-        <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-[#1A453A]/5 to-transparent pointer-events-none z-0" />
-        <div className="absolute top-[-50px] right-[-50px] w-32 h-32 bg-emerald-500/10 blur-[40px] rounded-full pointer-events-none z-0" />
+        <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-emerald-500/10 to-transparent pointer-events-none z-0 transition-opacity duration-700 opacity-50 group-hover/sidebar:opacity-100" />
+        <div className="absolute top-[-50px] right-[-50px] w-40 h-40 bg-emerald-400/20 blur-[50px] rounded-full pointer-events-none z-0 transition-transform duration-1000 group-hover/sidebar:scale-150" />
+        <div className="absolute bottom-[-50px] left-[-50px] w-40 h-40 bg-teal-400/10 blur-[50px] rounded-full pointer-events-none z-0 transition-transform duration-1000 group-hover/sidebar:scale-125" />
 
         {/* Header - LOGO GIZIFY */}
         <div className="pt-8 pb-4 px-8 flex flex-col gap-2 relative z-10">
           <Link href="/home" className="flex items-center gap-2 group w-fit cursor-pointer hover:scale-105 transition-transform duration-500 origin-left">
-            <div className="w-10 h-10 rounded-full bg-[#1A453A] text-white flex items-center justify-center font-black text-xl shadow-[0_8px_15px_rgba(26,69,58,0.3)] transition-transform group-hover:rotate-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#1A453A] to-emerald-700 text-white flex items-center justify-center font-black text-xl shadow-[0_8px_15px_rgba(26,69,58,0.3)] transition-all duration-500 group-hover:rotate-12 group-hover:shadow-[0_12px_20px_rgba(26,69,58,0.4)] group-hover:rounded-xl">
               G
             </div>
-            <span className="text-xl font-black tracking-tight text-gray-900">
+            <span className="text-2xl font-black tracking-tight text-slate-800 transition-colors duration-300">
               GIZIFY<span className="text-emerald-500">.AI</span>
             </span>
           </Link>
-          <p className="text-[9px] font-extrabold text-[#1A453A]/60 uppercase tracking-[0.25em] pl-1 mt-1">
+          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em] pl-1.5 mt-1 transition-colors duration-300 group-hover/sidebar:text-emerald-600/80">
             Nutrition Assistant
           </p>
         </div>
 
         {/* Navigation Area */}
-        <nav className="flex-1 px-4 py-2 space-y-6 overflow-y-auto relative z-10 custom-scroll-sidebar">
+        <nav className="flex-1 px-4 py-2 space-y-7 overflow-y-auto relative z-10 custom-scroll-sidebar mt-4">
           
           {menuGroups.map((group, groupIndex) => (
-            <div key={groupIndex} className="space-y-1.5">
-              <h3 className="px-4 text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">
+            <div key={groupIndex} className="space-y-2 relative">
+              <h3 className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                 {group.title}
+                <div className="h-px flex-1 bg-slate-200/50"></div>
               </h3>
               
               {group.items.map((item) => {
@@ -200,25 +202,32 @@ export default function DashboardLayout({
                   <Link
                     key={item.name}
                     href={item.path}
-                    className={`group relative overflow-hidden flex items-center gap-3.5 px-4 py-3 rounded-2xl font-bold transition-all duration-300 ease-out active:scale-95 cursor-pointer ${
+                    className={`group relative overflow-hidden flex items-center gap-4 px-4 py-3.5 rounded-2xl font-bold transition-all duration-300 ease-out cursor-pointer ${
                       isActive 
-                        ? "bg-[#1A453A] text-white shadow-[0_10px_20px_-5px_rgba(26,69,58,0.3)] hover:shadow-[0_15px_30px_-5px_rgba(26,69,58,0.4)] hover:-translate-y-0.5" 
-                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                        ? "bg-gradient-to-r from-[#1A453A] to-emerald-900 text-white shadow-[0_10px_20px_-5px_rgba(26,69,58,0.4)] translate-x-1" 
+                        : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/80 hover:translate-x-1 active:scale-95"
                     }`}
                   >
                     {isActive && (
-                      <div className="absolute inset-0 -translate-x-[150%] bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:translate-x-[150%] transition-transform duration-1000 ease-in-out" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-[150%] animate-[shimmer_2s_infinite]" />
                     )}
 
-                    <item.icon 
-                      className={`w-5 h-5 transition-transform duration-300 relative z-10 ${
-                        isActive ? 'text-emerald-300' : 'text-gray-400 group-hover:text-[#1A453A]'
-                      } ${!isActive && 'group-hover:scale-110'}`} 
-                    />
-                    <span className="text-[13px] relative z-10 tracking-wide">{item.name}</span>
+                    <div className={`p-1.5 rounded-xl transition-colors duration-300 ${isActive ? 'bg-white/10' : 'bg-transparent group-hover:bg-white'}`}>
+                      <item.icon 
+                        className={`w-5 h-5 transition-transform duration-500 relative z-10 ${
+                          isActive ? 'text-emerald-300 scale-110' : 'text-slate-400 group-hover:text-emerald-600 group-hover:scale-110'
+                        }`} 
+                      />
+                    </div>
+                    <span className={`text-[13.5px] relative z-10 tracking-wide transition-all duration-300 ${isActive ? 'font-black' : 'font-semibold'}`}>
+                      {item.name}
+                    </span>
                     
                     {item.name === "Scan Makanan" && !isActive && (
-                      <span className="absolute right-4 w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                      <span className="absolute right-4 w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.8)]"></span>
+                    )}
+                    {isActive && (
+                      <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                     )}
                   </Link>
                 );
@@ -229,11 +238,11 @@ export default function DashboardLayout({
         </nav>
 
         {/* Footer Area - Profil & Logout */}
-        <div className="p-4 relative z-10 mt-auto bg-gradient-to-t from-white via-white to-transparent">
-          <div className="bg-white border border-gray-100 shadow-[0_5px_15px_rgba(0,0,0,0.03)] rounded-[1.5rem] p-2 flex flex-col gap-1">
+        <div className="p-4 relative z-10 mt-auto bg-gradient-to-t from-white/90 via-white/80 to-transparent backdrop-blur-sm">
+          <div className="bg-white border border-slate-100 shadow-[0_8px_20px_rgba(0,0,0,0.04)] rounded-[1.5rem] p-2 flex flex-col gap-1 transition-transform duration-300 hover:shadow-[0_12px_25px_rgba(0,0,0,0.06)] hover:-translate-y-0.5">
             
             <div className="flex items-center gap-3 px-3 py-2.5">
-              <div className="w-10 h-10 shrink-0 rounded-full bg-gradient-to-br from-emerald-500 to-[#1A453A] flex items-center justify-center font-bold text-white text-lg shadow-md border-2 border-white overflow-hidden">
+              <div className="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center font-bold text-white text-lg shadow-md border-2 border-white overflow-hidden transition-transform duration-300 hover:scale-105">
                 {photoURL ? (
                   <img src={photoURL} alt={userName} className="w-full h-full object-cover" />
                 ) : (
@@ -241,17 +250,18 @@ export default function DashboardLayout({
                 )}
               </div>
               <div className="overflow-hidden">
-                <p className="text-sm font-extrabold text-gray-900 truncate leading-tight">{userName.split(' ')[0]}</p>
-                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">{userRole} Member</p>
+                <p className="text-sm font-extrabold text-slate-800 truncate leading-tight">{userName.split(' ')[0]}</p>
+                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mt-0.5">{userRole} Member</p>
               </div>
             </div>
 
             <button 
               onClick={handleLogout}
-              className="cursor-pointer flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-red-500 hover:text-white hover:bg-red-500 transition-all duration-300 ease-out font-bold text-sm active:scale-95 group"
+              className="cursor-pointer flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-red-500 hover:text-white hover:bg-red-500 transition-all duration-300 ease-out font-bold text-sm active:scale-95 group relative overflow-hidden"
             >
-              <IconLogout className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-              Keluar Akun
+              <div className="absolute inset-0 bg-red-600 translate-y-[100%] group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+              <IconLogout className="w-4 h-4 transition-transform group-hover:-translate-x-1 relative z-10" />
+              <span className="relative z-10">Keluar Akun</span>
             </button>
             
           </div>
@@ -264,17 +274,17 @@ export default function DashboardLayout({
       <main className="flex-1 flex flex-col h-screen w-full overflow-hidden relative lg:pl-[320px] transition-all duration-300">
         
         {/* Header Mobile (Hanya muncul di layar kecil) */}
-        <header className="lg:hidden flex items-center justify-between bg-white/80 backdrop-blur-md px-6 py-4 border-b border-slate-100 z-20 sticky top-0 shadow-sm">
-          <Link href="/home" className="flex items-center gap-2 cursor-pointer">
-            <div className="w-8 h-8 rounded-full bg-[#1A453A] text-white flex items-center justify-center font-black text-sm shadow-md">
+        <header className="lg:hidden flex items-center justify-between bg-white/80 backdrop-blur-xl px-5 py-4 border-b border-slate-100 z-30 sticky top-0 shadow-sm">
+          <Link href="/home" className="flex items-center gap-2 cursor-pointer active:scale-95 transition-transform">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#1A453A] to-emerald-700 text-white flex items-center justify-center font-black text-sm shadow-md">
               G
             </div>
-            <span className="text-lg font-black tracking-tight text-slate-900">
-              GIZIFY
+            <span className="text-lg font-black tracking-tight text-slate-800">
+              GIZIFY<span className="text-emerald-500">.AI</span>
             </span>
           </Link>
           <div 
-            className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-[#1A453A] text-white flex items-center justify-center font-bold text-sm shadow-sm cursor-pointer overflow-hidden border border-emerald-100" 
+            className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center font-bold text-sm shadow-md cursor-pointer overflow-hidden border-2 border-white active:scale-95 transition-transform" 
             onClick={handleLogout}
             title="Klik untuk Keluar"
           >
@@ -294,42 +304,54 @@ export default function DashboardLayout({
         </div>
 
         {/* NAVIGASI BAWAH (Hanya Mobile) */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-slate-100 px-6 py-2 pb-safe shadow-[0_-10px_20px_rgba(0,0,0,0.03)]">
-          <div className="flex justify-between items-center relative">
-            <Link href="/home" className={`flex flex-col items-center p-2 transition-colors ${pathname === "/home" ? "text-[#1A453A]" : "text-slate-400 hover:text-emerald-500"}`}>
-              <IconHome className="w-6 h-6" />
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-2xl border-t border-slate-100 px-2 sm:px-4 py-2 pb-safe shadow-[0_-15px_30px_rgba(0,0,0,0.04)]">
+          <div className="flex justify-between items-center relative max-w-md mx-auto">
+            <Link href="/home" className={`flex flex-col items-center justify-center w-11 h-11 rounded-xl transition-all duration-300 ${pathname === "/home" ? "text-emerald-600 bg-emerald-50 scale-110" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>
+              <IconHome className="w-[20px] h-[20px]" />
             </Link>
-            <Link href="/resep" className={`flex flex-col items-center p-2 transition-colors ${pathname === "/resep" ? "text-[#1A453A]" : "text-slate-400 hover:text-emerald-500"}`}>
-              <IconBook className="w-6 h-6" />
+            <Link href="/resep" className={`flex flex-col items-center justify-center w-11 h-11 rounded-xl transition-all duration-300 ${pathname === "/resep" ? "text-emerald-600 bg-emerald-50 scale-110" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>
+              <IconBook className="w-[20px] h-[20px]" />
+            </Link>
+            <Link href="/chatbot" className={`flex flex-col items-center justify-center w-11 h-11 rounded-xl transition-all duration-300 ${pathname === "/chatbot" ? "text-emerald-600 bg-emerald-50 scale-110" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>
+              <IconBot className="w-[20px] h-[20px]" />
             </Link>
             
             {/* Tombol Scanner Melayang Tengah */}
-            <Link href="/scanner" className="relative -top-6 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-[#1EAB57] to-[#127236] text-white shadow-[0_8px_20px_rgba(30,171,87,0.3)] hover:scale-105 transition-transform cursor-pointer border-[3px] border-white active:scale-95">
-              <IconScan className="w-6 h-6" />
-            </Link>
+            <div className="relative -top-6 px-1 shrink-0">
+              <Link href="/scanner" className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-gradient-to-tr from-[#1EAB57] to-[#0d5929] text-white shadow-[0_10px_25px_rgba(30,171,87,0.4)] hover:shadow-[0_15px_30px_rgba(30,171,87,0.5)] hover:scale-110 transition-all duration-300 cursor-pointer border-[4px] border-white active:scale-95">
+                <IconScan className="w-6 h-6 animate-[pulse_2s_infinite]" />
+              </Link>
+            </div>
             
-            <Link href="/maps" className={`flex flex-col items-center p-2 transition-colors ${pathname === "/maps" ? "text-[#1A453A]" : "text-slate-400 hover:text-emerald-500"}`}>
-              <IconMap className="w-6 h-6" />
+            <Link href="/meal-plan" className={`flex flex-col items-center justify-center w-11 h-11 rounded-xl transition-all duration-300 ${pathname === "/meal-plan" ? "text-emerald-600 bg-emerald-50 scale-110" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>
+              <IconWallet className="w-[20px] h-[20px]" />
             </Link>
-            <Link href="/profile" className={`flex flex-col items-center p-2 transition-colors ${pathname === "/profile" ? "text-[#1A453A]" : "text-slate-400 hover:text-emerald-500"}`}>
-              <IconUser className="w-6 h-6" />
+            <Link href="/maps" className={`flex flex-col items-center justify-center w-11 h-11 rounded-xl transition-all duration-300 ${pathname === "/maps" ? "text-emerald-600 bg-emerald-50 scale-110" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>
+              <IconMap className="w-[20px] h-[20px]" />
+            </Link>
+            <Link href="/profile" className={`flex flex-col items-center justify-center w-11 h-11 rounded-xl transition-all duration-300 ${pathname === "/profile" ? "text-emerald-600 bg-emerald-50 scale-110" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>
+              <IconUser className="w-[20px] h-[20px]" />
             </Link>
           </div>
         </nav>
         
       </main>
 
-      {/* Global Style untuk Custom Scrollbar */}
+      {/* Global Style untuk Custom Scrollbar & Animations */}
       <style dangerouslySetInnerHTML={{
         __html: `
+          @keyframes shimmer {
+            100% { transform: translateX(150%); }
+          }
           .custom-scroll::-webkit-scrollbar { width: 6px; }
           .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-          .custom-scroll::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
-          .custom-scroll::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
+          .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+          .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
           .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
           .custom-scroll-sidebar::-webkit-scrollbar { width: 4px; }
           .custom-scroll-sidebar::-webkit-scrollbar-track { background: transparent; }
-          .custom-scroll-sidebar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+          .custom-scroll-sidebar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 10px; }
+          .custom-scroll-sidebar:hover::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); }
         `
       }} />
     </div>
