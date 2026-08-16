@@ -24,6 +24,19 @@ export default function DashboardLayout({
   const [userRole, setUserRole] = useState("BASIC");
   const [photoURL, setPhotoURL] = useState("");
 
+  // STATE UNTUK ANIMASI PAGE TRANSITION
+  const [isPageTransitioning, setIsPageTransitioning] = useState(false);
+
+  useEffect(() => {
+    // Animasi transisi halaman setiap kali pathname berubah
+    setIsPageTransitioning(true);
+    const timer = setTimeout(() => {
+      setIsPageTransitioning(false);
+    }, 300); // Durasi animasi
+
+    return () => clearTimeout(timer);
+  }, [pathname]);
+
   useEffect(() => {
     // Listener untuk notifikasi koneksi internet (Offline/Online)
     const handleOffline = () => {
@@ -116,7 +129,7 @@ export default function DashboardLayout({
       items: [
         { name: "Ringkasan Harian", icon: IconHome, path: "/home" },
         { name: "Katalog Resep", icon: IconBook, path: "/resep" },
-        { name: "Peta Belanja Bahan", icon: IconMap, path: "/maps" }, // MENU MAPS BARU DITAMBAHKAN
+        { name: "Peta Belanja Bahan", icon: IconMap, path: "/maps" }, 
       ]
     },
     {
@@ -223,11 +236,9 @@ export default function DashboardLayout({
                       {item.name}
                     </span>
                     
+                    {/* HILANGKAN TITIK HIJAU SAAT MENU SCAN MAKANAN AKTIF */}
                     {item.name === "Scan Makanan" && !isActive && (
                       <span className="absolute right-4 w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.8)]"></span>
-                    )}
-                    {isActive && (
-                      <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                     )}
                   </Link>
                 );
@@ -296,41 +307,43 @@ export default function DashboardLayout({
           </div>
         </header>
 
-        {/* Konten Scrollable */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 lg:pr-10 pb-28 lg:pb-10 custom-scroll relative z-0">
+        {/* Konten Scrollable dengan Transisi */}
+        <div className={`flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 lg:pr-10 pb-28 lg:pb-10 custom-scroll relative z-0 transition-opacity duration-300 ease-in-out ${isPageTransitioning ? 'opacity-0 scale-[0.98]' : 'opacity-100 scale-100'}`}>
           <div className="max-w-[1400px] mx-auto w-full">
             {children}
           </div>
         </div>
 
-        {/* NAVIGASI BAWAH (Hanya Mobile) */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-2xl border-t border-slate-100 px-2 sm:px-4 py-2 pb-safe shadow-[0_-15px_30px_rgba(0,0,0,0.04)]">
+        {/* NAVIGASI BAWAH (Hanya Mobile) - FIX 7 MENU */}
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-2xl border-t border-slate-100 px-1.5 sm:px-4 py-2 pb-safe shadow-[0_-15px_40px_rgba(0,0,0,0.06)]">
           <div className="flex justify-between items-center relative max-w-md mx-auto">
-            <Link href="/home" className={`flex flex-col items-center justify-center w-11 h-11 rounded-xl transition-all duration-300 ${pathname === "/home" ? "text-emerald-600 bg-emerald-50 scale-110" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>
-              <IconHome className="w-[20px] h-[20px]" />
+            {/* Kiri (3 Menu) */}
+            <Link href="/home" className={`flex flex-col items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-[12px] transition-all duration-300 ${pathname === "/home" ? "text-emerald-600 bg-emerald-50 scale-110 shadow-sm" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>
+              <IconHome className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px]" />
             </Link>
-            <Link href="/resep" className={`flex flex-col items-center justify-center w-11 h-11 rounded-xl transition-all duration-300 ${pathname === "/resep" ? "text-emerald-600 bg-emerald-50 scale-110" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>
-              <IconBook className="w-[20px] h-[20px]" />
+            <Link href="/resep" className={`flex flex-col items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-[12px] transition-all duration-300 ${pathname === "/resep" ? "text-emerald-600 bg-emerald-50 scale-110 shadow-sm" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>
+              <IconBook className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px]" />
             </Link>
-            <Link href="/chatbot" className={`flex flex-col items-center justify-center w-11 h-11 rounded-xl transition-all duration-300 ${pathname === "/chatbot" ? "text-emerald-600 bg-emerald-50 scale-110" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>
-              <IconBot className="w-[20px] h-[20px]" />
+            <Link href="/maps" className={`flex flex-col items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-[12px] transition-all duration-300 ${pathname === "/maps" ? "text-emerald-600 bg-emerald-50 scale-110 shadow-sm" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>
+              <IconMap className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px]" />
             </Link>
             
-            {/* Tombol Scanner Melayang Tengah */}
+            {/* Tombol Scanner Melayang Tengah (Sedikit dikecilin dikit biar 7 menu muat) */}
             <div className="relative -top-6 px-1 shrink-0">
-              <Link href="/scanner" className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-gradient-to-tr from-[#1EAB57] to-[#0d5929] text-white shadow-[0_10px_25px_rgba(30,171,87,0.4)] hover:shadow-[0_15px_30px_rgba(30,171,87,0.5)] hover:scale-110 transition-all duration-300 cursor-pointer border-[4px] border-white active:scale-95">
-                <IconScan className="w-6 h-6 animate-[pulse_2s_infinite]" />
+              <Link href="/scanner" className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-gradient-to-tr from-[#1EAB57] to-[#0d5929] text-white shadow-[0_12px_30px_rgba(30,171,87,0.45)] hover:shadow-[0_15px_35px_rgba(30,171,87,0.6)] hover:scale-105 transition-all duration-300 cursor-pointer border-[4px] border-white active:scale-95">
+                <IconScan className="w-6 h-6 sm:w-7 sm:h-7 animate-[pulse_2s_infinite]" />
               </Link>
             </div>
             
-            <Link href="/meal-plan" className={`flex flex-col items-center justify-center w-11 h-11 rounded-xl transition-all duration-300 ${pathname === "/meal-plan" ? "text-emerald-600 bg-emerald-50 scale-110" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>
-              <IconWallet className="w-[20px] h-[20px]" />
+            {/* Kanan (3 Menu) */}
+            <Link href="/chatbot" className={`flex flex-col items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-[12px] transition-all duration-300 ${pathname === "/chatbot" ? "text-emerald-600 bg-emerald-50 scale-110 shadow-sm" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>
+              <IconBot className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px]" />
             </Link>
-            <Link href="/maps" className={`flex flex-col items-center justify-center w-11 h-11 rounded-xl transition-all duration-300 ${pathname === "/maps" ? "text-emerald-600 bg-emerald-50 scale-110" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>
-              <IconMap className="w-[20px] h-[20px]" />
+            <Link href="/meal-plan" className={`flex flex-col items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-[12px] transition-all duration-300 ${pathname === "/meal-plan" ? "text-emerald-600 bg-emerald-50 scale-110 shadow-sm" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>
+              <IconWallet className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px]" />
             </Link>
-            <Link href="/profile" className={`flex flex-col items-center justify-center w-11 h-11 rounded-xl transition-all duration-300 ${pathname === "/profile" ? "text-emerald-600 bg-emerald-50 scale-110" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>
-              <IconUser className="w-[20px] h-[20px]" />
+            <Link href="/profile" className={`flex flex-col items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-[12px] transition-all duration-300 ${pathname === "/profile" ? "text-emerald-600 bg-emerald-50 scale-110 shadow-sm" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>
+              <IconUser className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px]" />
             </Link>
           </div>
         </nav>
@@ -347,7 +360,7 @@ export default function DashboardLayout({
           .custom-scroll::-webkit-scrollbar-track { background: transparent; }
           .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
           .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-          .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+          .pb-safe { padding-bottom: calc(env(safe-area-inset-bottom) + 8px); }
           .custom-scroll-sidebar::-webkit-scrollbar { width: 4px; }
           .custom-scroll-sidebar::-webkit-scrollbar-track { background: transparent; }
           .custom-scroll-sidebar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 10px; }
