@@ -7,7 +7,7 @@ import { getAuth } from "firebase/auth";
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyBQvYqPmtyI6767r8hDMO7p89wrT2UZYIs",
-  authDomain: "giziku-19ded.firebaseapp.com",
+  authDomain: "gizify.vercel.app",
   projectId: "giziku-19ded",
   storageBucket: "giziku-19ded.firebasestorage.app",
   messagingSenderId: "840411135689",
