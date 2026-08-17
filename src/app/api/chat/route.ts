@@ -10,7 +10,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "API Key Gemini belum dipasang." }, { status: 500 });
     }
 
-    // KEMBALI PAKAI 3.1 SESUAI REQUEST! 🔥
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
 
     // =================================================================

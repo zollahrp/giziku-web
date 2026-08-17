@@ -36,7 +36,7 @@ export default function ScannerPage() {
   
   const [showPointers, setShowPointers] = useState(true);
   const [showMicro, setShowMicro] = useState(false); 
-  const [showManualMicro, setShowManualMicro] = useState(false); // STATE UNTUK MICRO MANUAL
+  const [showManualMicro, setShowManualMicro] = useState(false); 
   const [showShareModal, setShowShareModal] = useState(false); 
   const [isFlashOn, setIsFlashOn] = useState(false);
 
@@ -53,11 +53,23 @@ export default function ScannerPage() {
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // TAMBAHAN FIELD MIKRO PADA FORM MANUAL
+  // STATE MANUAL FORM DENGAN SISTEM PER-100G
   const [manualForm, setManualForm] = useState({ 
-    name: "", calories: "", pro: "", car: "", fat: "",
-    vitC: "", fiber: "", calcium: "", iron: ""
+    name: "", 
+    portion: "100", // Porsi konsumsi (default 100g)
+    baseCalories: "", basePro: "", baseCar: "", baseFat: "",
+    baseVitC: "", baseFiber: "", baseCalcium: "", baseIron: ""
   });
+
+  // STATE LOADING UNTUK AUTO-GENERATE GIZI
+  const [isGeneratingMacro, setIsGeneratingMacro] = useState(false);
+
+  // KALKULASI OTOMATIS BERDASARKAN PORSI KONSUMSI
+  const multiplier = (parseFloat(manualForm.portion) || 0) / 100;
+  const calcCals = Math.round((parseFloat(manualForm.baseCalories) || 0) * multiplier);
+  const calcPro = Math.round((parseFloat(manualForm.basePro) || 0) * multiplier);
+  const calcCar = Math.round((parseFloat(manualForm.baseCar) || 0) * multiplier);
+  const calcFat = Math.round((parseFloat(manualForm.baseFat) || 0) * multiplier);
 
   const mealOptions = [
     { id: 'Sarapan', label: 'Sarapan', icon: <IconSunrise className="w-4 h-4" /> },
@@ -215,6 +227,46 @@ export default function ScannerPage() {
     }
   };
 
+  // --- FUNGSI AUTO GENERATE GIZI MENGGUNAKAN GEMINI API ---
+  const handleAutoGenerate = async () => {
+    if (!manualForm.name) {
+      Swal.fire("Ups!", "Isi nama makanannya dulu ya biar AI tahu apa yang mau dicari.", "warning");
+      return;
+    }
+
+    setIsGeneratingMacro(true);
+    try {
+      const response = await fetch("/api/manual-track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ foodName: manualForm.name })
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        setManualForm(prev => ({
+          ...prev,
+          baseCalories: data.baseCalories || "",
+          basePro: data.basePro || "",
+          baseCar: data.baseCar || "",
+          baseFat: data.baseFat || "",
+          baseVitC: data.baseVitC || "",
+          baseFiber: data.baseFiber || "",
+          baseCalcium: data.baseCalcium || "",
+          baseIron: data.baseIron || ""
+        }));
+        setShowManualMicro(true); // Otomatis buka form micro biar user tau ada datanya
+        Swal.fire({ title: "Selesai!", text: "Data gizi otomatis terisi. Kamu bisa mengubahnya jika diperlukan.", icon: "success", timer: 2000, showConfirmButton: false, customClass: { popup: "rounded-[2rem]" }});
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error) {
+      Swal.fire("Gagal Menarik Data", "Gagal menghubungi AI. Silakan isi secara manual.", "error");
+    } finally {
+      setIsGeneratingMacro(false);
+    }
+  };
+
   const currentDisplayData = selectedItemIndex !== null && scanResult ? scanResult.items[selectedItemIndex] : scanResult?.total;
 
   const startEditMacro = () => {
@@ -270,20 +322,24 @@ export default function ScannerPage() {
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId) return;
-    if (!manualForm.name || !manualForm.calories) { Swal.fire("Data Belum Lengkap", "Nama makanan dan kalori wajib diisi!", "warning"); return; }
+    if (!manualForm.name || !manualForm.baseCalories || !manualForm.portion) { 
+      Swal.fire("Data Belum Lengkap", "Nama makanan, porsi, dan kalori dasar wajib diisi!", "warning"); 
+      return; 
+    }
+    
     try {
       Swal.fire({ title: "Menyimpan...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       await addDoc(collection(db, "users", userId, "foodLogs"), {
         name: manualForm.name, 
-        calories: parseInt(manualForm.calories), 
-        protein: parseInt(manualForm.pro) || 0, 
-        carbs: parseInt(manualForm.car) || 0, 
-        fat: parseInt(manualForm.fat) || 0, 
+        calories: calcCals, 
+        protein: calcPro, 
+        carbs: calcCar, 
+        fat: calcFat, 
         micronutrients: {
-          vitC: manualForm.vitC ? manualForm.vitC + "mg" : "0mg",
-          fiber: manualForm.fiber ? manualForm.fiber + "g" : "0g",
-          calcium: manualForm.calcium ? manualForm.calcium + "mg" : "0mg",
-          iron: manualForm.iron ? manualForm.iron + "mg" : "0mg",
+          vitC: manualForm.baseVitC ? Math.round(parseFloat(manualForm.baseVitC) * multiplier) + "mg" : "0mg",
+          fiber: manualForm.baseFiber ? Math.round(parseFloat(manualForm.baseFiber) * multiplier) + "g" : "0g",
+          calcium: manualForm.baseCalcium ? Math.round(parseFloat(manualForm.baseCalcium) * multiplier) + "mg" : "0mg",
+          iron: manualForm.baseIron ? Math.round(parseFloat(manualForm.baseIron) * multiplier) + "mg" : "0mg",
         },
         score: 8, 
         scannedAt: serverTimestamp(), 
@@ -292,7 +348,7 @@ export default function ScannerPage() {
       });
       Swal.fire({ title: "Tersimpan!", text: `Input ${mealType} berhasil ditambahkan.`, icon: "success", timer: 1500, showConfirmButton: false, customClass: { popup: "rounded-3xl" }}).then(() => {
         fetchRecentScans(userId); fetchTodayTotals(userId); 
-        setManualForm({ name: "", calories: "", pro: "", car: "", fat: "", vitC: "", fiber: "", calcium: "", iron: "" }); 
+        setManualForm({ name: "", portion: "100", baseCalories: "", basePro: "", baseCar: "", baseFat: "", baseVitC: "", baseFiber: "", baseCalcium: "", baseIron: "" }); 
         setShowManualMicro(false);
         document.getElementById('riwayat-scan')?.scrollIntoView({ behavior: 'smooth' });
       });
@@ -311,7 +367,7 @@ export default function ScannerPage() {
 
   const renderMealTypeDropdown = () => (
     <div className="relative">
-      <button type="button" onClick={() => setIsDropdownOpen(!isDropdownOpen)} className={`w-full bg-white border ${isDropdownOpen ? 'border-[#1EAB57] ring-2 ring-[#1EAB57]/10' : 'border-slate-200'} rounded-xl px-4 py-3 md:px-5 md:py-4 flex items-center justify-between shadow-sm outline-none transition-all`}>
+      <button type="button" onClick={() => setIsDropdownOpen(!isDropdownOpen)} className={`w-full bg-white border cursor-pointer ${isDropdownOpen ? 'border-[#1EAB57] ring-2 ring-[#1EAB57]/10' : 'border-slate-200'} rounded-xl px-4 py-3 md:px-5 md:py-4 flex items-center justify-between shadow-sm outline-none transition-all`}>
          <div className="flex items-center gap-2.5">
             <span className={mealType === 'Sore / Cemilan' ? 'text-amber-600' : mealType === 'Makan Malam' ? 'text-blue-500' : 'text-amber-500'}>
               {mealOptions.find(o => o.id === mealType)?.icon}
@@ -328,7 +384,7 @@ export default function ScannerPage() {
             {mealOptions.map(opt => {
               const isSelected = mealType === opt.id;
               return (
-                <button type="button" key={opt.id} onClick={() => { setMealType(opt.id); setIsDropdownOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 outline-none text-left transition-colors ${isSelected ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-50'}`}>
+                <button type="button" key={opt.id} onClick={() => { setMealType(opt.id); setIsDropdownOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 outline-none text-left transition-colors cursor-pointer ${isSelected ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-50'}`}>
                   <span className={isSelected ? 'text-white' : opt.id === 'Sore / Cemilan' ? 'text-amber-600' : opt.id === 'Makan Malam' ? 'text-blue-500' : 'text-amber-500'}>
                     {opt.icon}
                   </span>
@@ -391,10 +447,10 @@ export default function ScannerPage() {
                ${activeMode === 'piring' ? 'left-1.5' : 'left-[calc(50%+1.5px)]'}
              `}></div>
              
-             <button onClick={() => { setActiveMode("piring"); handleRetake(); }} className={`flex-1 md:w-40 py-3 md:py-3.5 text-[11px] md:text-xs font-black uppercase tracking-widest relative z-10 transition-colors duration-300 outline-none flex items-center justify-center gap-2 ${activeMode === "piring" ? "text-[#1EAB57]" : "text-slate-500 hover:text-slate-800"}`}>
+             <button onClick={() => { setActiveMode("piring"); handleRetake(); }} className={`flex-1 md:w-40 py-3 md:py-3.5 text-[11px] md:text-xs font-black uppercase tracking-widest relative z-10 transition-colors duration-300 outline-none flex items-center justify-center gap-2 cursor-pointer ${activeMode === "piring" ? "text-[#1EAB57]" : "text-slate-500 hover:text-slate-800"}`}>
                 <IconCutlery className="w-4 h-4" /> Scanner
              </button>
-             <button onClick={() => { setActiveMode("manual"); handleRetake(); }} className={`flex-1 md:w-40 py-3 md:py-3.5 text-[11px] md:text-xs font-black uppercase tracking-widest relative z-10 transition-colors duration-300 outline-none flex items-center justify-center gap-2 ${activeMode === "manual" ? "text-[#1EAB57]" : "text-slate-500 hover:text-slate-800"}`}>
+             <button onClick={() => { setActiveMode("manual"); handleRetake(); }} className={`flex-1 md:w-40 py-3 md:py-3.5 text-[11px] md:text-xs font-black uppercase tracking-widest relative z-10 transition-colors duration-300 outline-none flex items-center justify-center gap-2 cursor-pointer ${activeMode === "manual" ? "text-[#1EAB57]" : "text-slate-500 hover:text-slate-800"}`}>
                 <IconEdit3 className="w-4 h-4" /> Manual
              </button>
           </div>
@@ -408,169 +464,190 @@ export default function ScannerPage() {
               <div className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-slate-100 shadow-lg relative overflow-hidden h-full flex flex-col justify-center">
                  <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
                  
-                 <div className="flex items-center gap-4 mb-8">
+                 <div className="flex items-center gap-4 mb-6">
                    <div className="w-14 h-14 bg-emerald-50 text-[#1EAB57] rounded-2xl flex items-center justify-center border border-emerald-100">
                      <IconEdit3 className="w-6 h-6" />
                    </div>
                    <div>
                      <h2 className="text-xl md:text-2xl font-black text-[#0F172A]">Input Jurnal Manual</h2>
-                     <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">Catat kalori jajananmu</p>
+                     <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">Kalkulator Gizi Instan</p>
                    </div>
                  </div>
 
-                 <form onSubmit={handleManualSubmit} className="space-y-6">
-                    <div className="space-y-2">
-                       <label className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-slate-400 ml-2">Nama Makanan/Minuman <span className="text-rose-500">*</span></label>
-                       <input 
-                         type="text" required 
-                         value={manualForm.name} onChange={(e) => setManualForm({...manualForm, name: e.target.value})}
-                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 md:px-5 md:py-4 font-bold text-slate-800 focus:outline-none focus:border-[#1EAB57] focus:ring-2 focus:ring-[#1EAB57]/20 transition-all placeholder:text-slate-300" 
-                         placeholder="Contoh: Kopi Kenangan Mantan, Indomie Goreng..." 
-                       />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
-                       <div className="space-y-2">
-                         <label className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-slate-400 ml-2">Total Kalori <span className="text-rose-500">*</span></label>
-                         <div className="relative flex items-center">
-                            <input 
-                              type="number" required min="1"
-                              value={manualForm.calories} onChange={(e) => setManualForm({...manualForm, calories: e.target.value})}
-                              className="w-full bg-white border border-slate-200 rounded-xl pl-4 pr-14 py-3.5 md:pl-5 md:py-4 text-lg md:text-xl font-black text-[#0F172A] focus:outline-none focus:border-[#1EAB57] focus:ring-2 focus:ring-[#1EAB57]/20 transition-all placeholder:text-slate-200 shadow-inner" 
-                              placeholder="0" 
-                            />
-                            <span className="absolute right-4 md:right-5 font-black text-slate-400 text-sm md:text-base">Kkal</span>
-                         </div>
-                       </div>
-                       
-                       <div className="space-y-2">
-                         <label className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-slate-400 ml-2">Protein (Opsional)</label>
-                         <div className="relative flex items-center">
-                            <input 
-                              type="number" min="0"
-                              value={manualForm.pro} onChange={(e) => setManualForm({...manualForm, pro: e.target.value})}
-                              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-10 py-3.5 md:pl-5 md:py-4 font-bold text-slate-800 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all placeholder:text-slate-300" 
-                              placeholder="0" 
-                            />
-                            <span className="absolute right-4 md:right-5 font-bold text-slate-400">g</span>
-                         </div>
-                       </div>
-
-                       <div className="space-y-2">
-                         <label className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-slate-400 ml-2">Karbohidrat (Opsional)</label>
-                         <div className="relative flex items-center">
-                            <input 
-                              type="number" min="0"
-                              value={manualForm.car} onChange={(e) => setManualForm({...manualForm, car: e.target.value})}
-                              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-10 py-3.5 md:pl-5 md:py-4 font-bold text-slate-800 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition-all placeholder:text-slate-300" 
-                              placeholder="0" 
-                            />
-                            <span className="absolute right-4 md:right-5 font-bold text-slate-400">g</span>
-                         </div>
-                       </div>
-
-                       <div className="space-y-2">
-                         <label className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-slate-400 ml-2">Lemak (Opsional)</label>
-                         <div className="relative flex items-center">
-                            <input 
-                              type="number" min="0"
-                              value={manualForm.fat} onChange={(e) => setManualForm({...manualForm, fat: e.target.value})}
-                              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-10 py-3.5 md:pl-5 md:py-4 font-bold text-slate-800 focus:outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-400/20 transition-all placeholder:text-slate-300" 
-                              placeholder="0" 
-                            />
-                            <span className="absolute right-4 md:right-5 font-bold text-slate-400">g</span>
-                         </div>
-                       </div>
-                    </div>
-
-                    {/* MIKRONUTRISI MANUAL - SEPERTI SCAN */}
-                    <div className="mb-2">
-                      <button type="button" onClick={() => setShowManualMicro(!showManualMicro)} className="w-full flex items-center justify-between px-4 py-3 md:px-5 md:py-3.5 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors cursor-pointer group">
-                        <span className="text-[10px] md:text-[11px] font-black text-slate-600 uppercase tracking-widest group-hover:text-[#1EAB57] transition-colors">Isi Detail Gizi Mikro (Opsional)</span>
-                        <IconChevronDown className={`w-3 h-3 md:w-4 md:h-4 text-slate-400 transition-transform duration-300 ${showManualMicro ? 'rotate-180 text-[#1EAB57]' : ''}`} />
-                      </button>
+                 <form onSubmit={handleManualSubmit} className="space-y-5">
+                    
+                    {/* BAGIAN 1: INPUT MAKANAN & PORSI KONSUMSI */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 bg-slate-50 p-4 md:p-5 rounded-3xl border border-slate-100 shadow-inner">
+                      <div className="space-y-2 md:col-span-1 relative">
+                         <label htmlFor="foodName" className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-slate-400 ml-2 cursor-pointer">Nama Makanan <span className="text-rose-500">*</span></label>
+                         <input 
+                           id="foodName" type="text" required 
+                           value={manualForm.name} onChange={(e) => setManualForm({...manualForm, name: e.target.value})}
+                           className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 md:px-5 md:py-3.5 font-bold text-slate-800 focus:outline-none focus:border-[#1EAB57] focus:ring-2 focus:ring-[#1EAB57]/20 transition-all placeholder:text-slate-300 shadow-sm" 
+                           placeholder="Cth: Dada Ayam Rebus" 
+                         />
+                      </div>
                       
-                      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showManualMicro ? 'max-h-[500px] opacity-100 mt-2 md:mt-3' : 'max-h-0 opacity-0'}`}>
-                        <div className="bg-white border border-slate-100 rounded-xl md:rounded-2xl p-4 md:p-5 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-                           <div className="space-y-2">
-                             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Vitamin C</label>
-                             <div className="relative flex items-center">
-                                <input type="number" min="0" value={manualForm.vitC} onChange={(e) => setManualForm({...manualForm, vitC: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-10 py-3 font-bold text-slate-800 focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 transition-all placeholder:text-slate-300" placeholder="0" />
-                                <span className="absolute right-4 font-bold text-slate-400 text-xs">mg</span>
-                             </div>
+                      <div className="space-y-2 md:col-span-1">
+                         <label htmlFor="foodPortion" className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-slate-400 ml-2 cursor-pointer">Berat yg Dimakan <span className="text-rose-500">*</span></label>
+                         <div className="relative flex items-center">
+                            <input 
+                              id="foodPortion" type="number" required min="1"
+                              value={manualForm.portion} onChange={(e) => setManualForm({...manualForm, portion: e.target.value})}
+                              className="w-full bg-white border border-slate-200 rounded-xl pl-4 pr-16 py-3 md:pl-5 md:py-3.5 text-base md:text-lg font-black text-[#1EAB57] focus:outline-none focus:border-[#1EAB57] focus:ring-2 focus:ring-[#1EAB57]/20 transition-all placeholder:text-slate-300 shadow-sm" 
+                              placeholder="100" 
+                            />
+                            <span className="absolute right-4 font-black text-slate-400 text-[10px] md:text-xs uppercase tracking-widest">Gram</span>
+                         </div>
+                      </div>
+
+                      {/* TOMBOL AI GENERATOR */}
+                      <div className="md:col-span-2 mt-1">
+                        <button 
+                           type="button" 
+                           onClick={handleAutoGenerate} 
+                           disabled={isGeneratingMacro} 
+                           className="w-full bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 border border-emerald-200 text-emerald-700 py-3 rounded-xl font-black text-[10px] md:text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-70"
+                        >
+                          {isGeneratingMacro ? <IconLoader className="w-4 h-4 animate-spin text-emerald-600" /> : <IconSparkles className="w-4 h-4 text-emerald-500" />}
+                          {isGeneratingMacro ? "Mencari Data Gizi..." : "✨ Auto Generate Gizi (AI)"}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* BAGIAN 2: INPUT GIZI DASAR (PER 100G) */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 ml-2">
+                        <IconSparkles className="w-4 h-4 text-[#1EAB57]" />
+                        <h4 className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-slate-500">Kandungan Gizi Dasar (Per 100 Gram)</h4>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                         <div className="space-y-1.5">
+                           <label htmlFor="baseCal" className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 cursor-pointer">Kalori <span className="text-rose-500">*</span></label>
+                           <div className="relative flex items-center">
+                              <input id="baseCal" type="number" required min="1" value={manualForm.baseCalories} onChange={(e) => setManualForm({...manualForm, baseCalories: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl pl-3 pr-10 py-2.5 md:py-3 font-bold text-slate-800 focus:outline-none focus:border-[#1EAB57] focus:ring-1 focus:ring-[#1EAB57]/20 transition-all placeholder:text-slate-300 shadow-sm" placeholder="0" />
+                              <span className="absolute right-3 font-bold text-slate-400 text-[9px] md:text-[10px]">Kkal</span>
                            </div>
-                           <div className="space-y-2">
-                             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Serat</label>
-                             <div className="relative flex items-center">
-                                <input type="number" min="0" value={manualForm.fiber} onChange={(e) => setManualForm({...manualForm, fiber: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-10 py-3 font-bold text-slate-800 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/20 transition-all placeholder:text-slate-300" placeholder="0" />
-                                <span className="absolute right-4 font-bold text-slate-400 text-xs">g</span>
-                             </div>
+                         </div>
+                         <div className="space-y-1.5">
+                           <label htmlFor="basePro" className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 cursor-pointer">Protein</label>
+                           <div className="relative flex items-center">
+                              <input id="basePro" type="number" min="0" value={manualForm.basePro} onChange={(e) => setManualForm({...manualForm, basePro: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl pl-3 pr-8 py-2.5 md:py-3 font-bold text-slate-800 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/20 transition-all placeholder:text-slate-300 shadow-sm" placeholder="0" />
+                              <span className="absolute right-3 font-bold text-slate-400 text-[10px]">g</span>
                            </div>
-                           <div className="space-y-2">
-                             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Kalsium</label>
-                             <div className="relative flex items-center">
-                                <input type="number" min="0" value={manualForm.calcium} onChange={(e) => setManualForm({...manualForm, calcium: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-10 py-3 font-bold text-slate-800 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/20 transition-all placeholder:text-slate-300" placeholder="0" />
-                                <span className="absolute right-4 font-bold text-slate-400 text-xs">mg</span>
-                             </div>
+                         </div>
+                         <div className="space-y-1.5">
+                           <label htmlFor="baseCar" className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 cursor-pointer">Karbo</label>
+                           <div className="relative flex items-center">
+                              <input id="baseCar" type="number" min="0" value={manualForm.baseCar} onChange={(e) => setManualForm({...manualForm, baseCar: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl pl-3 pr-8 py-2.5 md:py-3 font-bold text-slate-800 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/20 transition-all placeholder:text-slate-300 shadow-sm" placeholder="0" />
+                              <span className="absolute right-3 font-bold text-slate-400 text-[10px]">g</span>
                            </div>
-                           <div className="space-y-2">
-                             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Zat Besi</label>
-                             <div className="relative flex items-center">
-                                <input type="number" min="0" value={manualForm.iron} onChange={(e) => setManualForm({...manualForm, iron: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-10 py-3 font-bold text-slate-800 focus:outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-400/20 transition-all placeholder:text-slate-300" placeholder="0" />
-                                <span className="absolute right-4 font-bold text-slate-400 text-xs">mg</span>
-                             </div>
+                         </div>
+                         <div className="space-y-1.5">
+                           <label htmlFor="baseFat" className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 cursor-pointer">Lemak</label>
+                           <div className="relative flex items-center">
+                              <input id="baseFat" type="number" min="0" value={manualForm.baseFat} onChange={(e) => setManualForm({...manualForm, baseFat: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl pl-3 pr-8 py-2.5 md:py-3 font-bold text-slate-800 focus:outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-400/20 transition-all placeholder:text-slate-300 shadow-sm" placeholder="0" />
+                              <span className="absolute right-3 font-bold text-slate-400 text-[10px]">g</span>
                            </div>
+                         </div>
+                      </div>
+
+                      {/* MIKRONUTRISI MANUAL - ACCORDION */}
+                      <div className="mt-2">
+                        <button type="button" onClick={() => setShowManualMicro(!showManualMicro)} className="w-full flex items-center justify-between px-4 py-3 bg-white hover:bg-slate-50 rounded-xl border border-slate-200 transition-colors cursor-pointer group shadow-sm">
+                          <span className="text-[9px] md:text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-[#1EAB57] transition-colors">Isi Detail Gizi Mikro (Opsional)</span>
+                          <IconChevronDown className={`w-3 h-3 md:w-4 md:h-4 text-slate-400 transition-transform duration-300 ${showManualMicro ? 'rotate-180 text-[#1EAB57]' : ''}`} />
+                        </button>
+                        
+                        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showManualMicro ? 'max-h-[500px] opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
+                          <div className="bg-white border border-slate-100 rounded-xl p-4 shadow-sm grid grid-cols-2 gap-3 md:gap-4">
+                             <div className="space-y-1.5">
+                               <label htmlFor="microVitC" className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1 cursor-pointer">Vitamin C</label>
+                               <div className="relative flex items-center">
+                                  <input id="microVitC" type="number" min="0" value={manualForm.baseVitC} onChange={(e) => setManualForm({...manualForm, baseVitC: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-10 py-2.5 font-bold text-slate-800 focus:outline-none focus:border-yellow-400 focus:ring-1 transition-all placeholder:text-slate-300" placeholder="0" />
+                                  <span className="absolute right-3 font-bold text-slate-400 text-[9px]">mg</span>
+                               </div>
+                             </div>
+                             <div className="space-y-1.5">
+                               <label htmlFor="microFiber" className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1 cursor-pointer">Serat</label>
+                               <div className="relative flex items-center">
+                                  <input id="microFiber" type="number" min="0" value={manualForm.baseFiber} onChange={(e) => setManualForm({...manualForm, baseFiber: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-8 py-2.5 font-bold text-slate-800 focus:outline-none focus:border-emerald-400 focus:ring-1 transition-all placeholder:text-slate-300" placeholder="0" />
+                                  <span className="absolute right-3 font-bold text-slate-400 text-[9px]">g</span>
+                               </div>
+                             </div>
+                             <div className="space-y-1.5">
+                               <label htmlFor="microCalcium" className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1 cursor-pointer">Kalsium</label>
+                               <div className="relative flex items-center">
+                                  <input id="microCalcium" type="number" min="0" value={manualForm.baseCalcium} onChange={(e) => setManualForm({...manualForm, baseCalcium: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-10 py-2.5 font-bold text-slate-800 focus:outline-none focus:border-blue-400 focus:ring-1 transition-all placeholder:text-slate-300" placeholder="0" />
+                                  <span className="absolute right-3 font-bold text-slate-400 text-[9px]">mg</span>
+                               </div>
+                             </div>
+                             <div className="space-y-1.5">
+                               <label htmlFor="microIron" className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1 cursor-pointer">Zat Besi</label>
+                               <div className="relative flex items-center">
+                                  <input id="microIron" type="number" min="0" value={manualForm.baseIron} onChange={(e) => setManualForm({...manualForm, baseIron: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-10 py-2.5 font-bold text-slate-800 focus:outline-none focus:border-rose-400 focus:ring-1 transition-all placeholder:text-slate-300" placeholder="0" />
+                                  <span className="absolute right-3 font-bold text-slate-400 text-[9px]">mg</span>
+                               </div>
+                             </div>
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    {parseInt(manualForm.calories) > 0 && (
-                      <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 md:p-5 mb-4 shadow-inner animate-fade-up">
-                        <div className="flex items-center justify-between mb-3">
-                          <p className="text-[9px] md:text-[11px] font-black uppercase tracking-widest text-slate-400">Prediksi Track Harian</p>
-                          {(todayTotals.calories + parseInt(manualForm.calories)) > userTargets.calories ? (
-                             <span className="text-[9px] md:text-[10px] font-black uppercase bg-rose-100 text-rose-600 px-2 py-1 rounded-md">Melebihi Target</span>
-                          ) : (
-                             <span className="text-[9px] md:text-[10px] font-black uppercase bg-emerald-100 text-[#1EAB57] px-2 py-1 rounded-md">Masih Aman</span>
-                          )}
+                    {/* BAGIAN 3: PREDIKSI HASIL (DIKALIKAN PORSI OTOMATIS) */}
+                    {calcCals > 0 && (
+                      <div className="bg-emerald-50 border border-emerald-100 rounded-3xl p-5 md:p-6 mb-4 shadow-inner animate-fade-up">
+                        <div className="flex items-center gap-2 mb-4 justify-center md:justify-start">
+                          <IconFlame className="w-5 h-5 text-emerald-500" />
+                          <h4 className="text-[11px] md:text-xs font-black uppercase tracking-widest text-emerald-600">Total Gizi Dikonsumsi</h4>
                         </div>
                         
-                        <div className="space-y-3">
-                          <div>
-                            <div className="flex justify-between text-[10px] font-bold mb-1">
-                              <span className="text-slate-500">Kalori</span>
-                              <span className="text-slate-800">{todayTotals.calories + parseInt(manualForm.calories)} / {userTargets.calories} Kkal</span>
-                            </div>
-                            <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden flex">
-                              <div className="h-full bg-slate-400" style={{ width: `${Math.min((todayTotals.calories / userTargets.calories) * 100, 100)}%`}}></div>
-                              <div className={`h-full ${(todayTotals.calories + parseInt(manualForm.calories)) > userTargets.calories ? 'bg-rose-500' : 'bg-[#1EAB57]'}`} style={{ width: `${Math.min((parseInt(manualForm.calories) / userTargets.calories) * 100, 100 - Math.min((todayTotals.calories / userTargets.calories) * 100, 100))}%`}}></div>
-                            </div>
-                          </div>
-                          
-                          <div className="grid grid-cols-3 gap-2 mt-2">
-                            <div className="bg-white p-2 rounded-lg border border-slate-100 text-center">
-                              <p className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase">Protein</p>
-                              <p className={`text-[9px] md:text-[10px] font-bold ${(todayTotals.protein + (parseInt(manualForm.pro) || 0)) > userTargets.protein ? 'text-rose-500' : 'text-slate-700'}`}>{todayTotals.protein + (parseInt(manualForm.pro) || 0)}g <span className="text-[7px] md:text-[8px] text-slate-400">/ {userTargets.protein}g</span></p>
-                            </div>
-                            <div className="bg-white p-2 rounded-lg border border-slate-100 text-center">
-                              <p className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase">Karbo</p>
-                              <p className={`text-[9px] md:text-[10px] font-bold ${(todayTotals.carbs + (parseInt(manualForm.car) || 0)) > userTargets.carbs ? 'text-rose-500' : 'text-slate-700'}`}>{todayTotals.carbs + (parseInt(manualForm.car) || 0)}g <span className="text-[7px] md:text-[8px] text-slate-400">/ {userTargets.carbs}g</span></p>
-                            </div>
-                            <div className="bg-white p-2 rounded-lg border border-slate-100 text-center">
-                              <p className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase">Lemak</p>
-                              <p className={`text-[9px] md:text-[10px] font-bold ${(todayTotals.fat + (parseInt(manualForm.fat) || 0)) > userTargets.fat ? 'text-rose-500' : 'text-slate-700'}`}>{todayTotals.fat + (parseInt(manualForm.fat) || 0)}g <span className="text-[7px] md:text-[8px] text-slate-400">/ {userTargets.fat}g</span></p>
-                            </div>
-                          </div>
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                           <div className="text-center md:text-left">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Kalori</p>
+                              <span className="text-5xl font-black text-[#0F172A] tracking-tighter">{calcCals}<span className="text-base text-slate-400 font-bold ml-1.5">Kkal</span></span>
+                           </div>
+                           
+                           <div className="flex justify-center gap-3">
+                              <div className="bg-white p-3 rounded-2xl border border-emerald-100 text-center shadow-sm w-20">
+                                <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Protein</p>
+                                <p className="text-sm font-black text-slate-800">{calcPro}g</p>
+                              </div>
+                              <div className="bg-white p-3 rounded-2xl border border-emerald-100 text-center shadow-sm w-20">
+                                <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Karbo</p>
+                                <p className="text-sm font-black text-slate-800">{calcCar}g</p>
+                              </div>
+                              <div className="bg-white p-3 rounded-2xl border border-emerald-100 text-center shadow-sm w-20">
+                                <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Lemak</p>
+                                <p className="text-sm font-black text-slate-800">{calcFat}g</p>
+                              </div>
+                           </div>
+                        </div>
+
+                        {/* Prediksi Track Harian */}
+                        <div className="mt-6 pt-5 border-t border-emerald-200/50">
+                           <div className="flex justify-between text-[10px] font-bold mb-2">
+                             <span className="text-slate-500 uppercase tracking-wider">Jatah Kalori Harianmu</span>
+                             <span className="text-slate-800">{todayTotals.calories + calcCals} / {userTargets.calories} Kkal</span>
+                           </div>
+                           <div className="w-full h-2 bg-emerald-100 rounded-full overflow-hidden flex">
+                             <div className="h-full bg-slate-400" style={{ width: `${Math.min((todayTotals.calories / userTargets.calories) * 100, 100)}%`}}></div>
+                             <div className={`h-full ${(todayTotals.calories + calcCals) > userTargets.calories ? 'bg-rose-500' : 'bg-[#1EAB57]'}`} style={{ width: `${Math.min((calcCals / userTargets.calories) * 100, 100 - Math.min((todayTotals.calories / userTargets.calories) * 100, 100))}%`}}></div>
+                           </div>
+                           {(todayTotals.calories + calcCals) > userTargets.calories && (
+                              <p className="text-[9px] font-black text-rose-500 mt-2 text-right uppercase tracking-widest">⚠️ Melebihi Batas Harian</p>
+                           )}
                         </div>
                       </div>
                     )}
 
                     <div className="mb-4">
-                      <label className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Kategori Waktu Makan</label>
+                      <label className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block cursor-pointer">Kategori Waktu Makan</label>
                       {renderMealTypeDropdown()}
                     </div>
 
-                    <button type="submit" className="w-full bg-[#1EAB57] hover:bg-[#168E46] text-white py-4 md:py-5 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-[0_15px_30px_-5px_rgba(30,171,87,0.4)] active:scale-95 transition-all outline-none text-xs md:text-sm">
+                    <button type="submit" className="w-full bg-[#1EAB57] hover:bg-[#168E46] text-white py-4 md:py-5 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-[0_15px_30px_-5px_rgba(30,171,87,0.4)] active:scale-95 transition-all outline-none text-xs md:text-sm cursor-pointer">
                        <IconPlus className="w-4 h-4 md:w-5 md:h-5" /> Makan Makanan Ini
                     </button>
                  </form>
@@ -667,11 +744,13 @@ export default function ScannerPage() {
               <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 border border-slate-100 shadow-sm relative overflow-hidden h-full flex flex-col">
                 <div className="absolute right-[-10%] top-[-10%] w-32 h-32 bg-emerald-50 rounded-full blur-[30px] pointer-events-none"></div>
                 <IconSparkles className="w-10 h-10 text-[#1EAB57] mb-6 relative z-10" />
-                <h3 className="text-xl md:text-2xl font-black text-[#0F172A] tracking-tight mb-4 relative z-10">Kenapa Input Manual?</h3>
-                <p className="text-xs md:text-sm font-medium text-slate-500 leading-relaxed relative z-10 mb-6">Cocok digunakan saat Anda mengonsumsi jajanan yang sudah diketahui nilai kalori spesifiknya (seperti minuman kaleng atau menu restoran terstandarisasi).</p>
+                <h3 className="text-xl md:text-2xl font-black text-[#0F172A] tracking-tight mb-4 relative z-10">Kalkulasi Otomatis</h3>
+                <p className="text-xs md:text-sm font-medium text-slate-500 leading-relaxed relative z-10 mb-6">
+                  Tidak perlu repot menghitung manual! Cukup masukkan <span className="font-bold text-slate-700">kandungan gizi per 100 gram</span>, lalu isi berat porsi yang kamu konsumsi.
+                </p>
                 <div className="mt-auto bg-emerald-50 border border-emerald-100 rounded-xl md:rounded-2xl p-4 md:p-5 relative z-10">
                    <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-[#1EAB57] mb-2">Pro Tip Gizify</p>
-                   <p className="text-[10px] md:text-xs text-slate-600 leading-relaxed font-bold">Pastikan untuk selalu melengkapi makronutrisi (Protein, Karbo, Lemak) dan Gizi Mikro jika datanya tersedia, agar laporan gizi harian Anda semakin akurat!</p>
+                   <p className="text-[10px] md:text-xs text-slate-600 leading-relaxed font-bold">Informasi gizi (per 100g) ini biasanya bisa langsung kamu temukan di Google atau pada tabel kemasan bagian belakang produk.</p>
                 </div>
               </div>
             ) : scanState === "idle" ? (
@@ -741,11 +820,11 @@ export default function ScannerPage() {
                         {/* TOMBOL EDIT MAKRO */}
                         <div className="shrink-0 pl-2">
                            {isEditingMacro ? (
-                             <button onClick={saveEditMacro} className="flex items-center gap-1.5 px-3 py-2 bg-[#1EAB57] rounded-xl text-[10px] font-black text-white hover:bg-[#168E46] uppercase tracking-widest shadow-md transition-all active:scale-95">
+                             <button onClick={saveEditMacro} className="flex items-center gap-1.5 px-3 py-2 bg-[#1EAB57] rounded-xl text-[10px] font-black text-white hover:bg-[#168E46] uppercase tracking-widest shadow-md transition-all active:scale-95 cursor-pointer">
                                <IconCheckCircle className="w-3.5 h-3.5"/> Simpan
                              </button>
                            ) : (
-                             <button onClick={startEditMacro} className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black text-slate-500 hover:text-[#1EAB57] hover:border-[#1EAB57] hover:bg-emerald-50 uppercase tracking-widest shadow-sm transition-all active:scale-95" title="Edit jika nilai gizi kurang tepat">
+                             <button onClick={startEditMacro} className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black text-slate-500 hover:text-[#1EAB57] hover:border-[#1EAB57] hover:bg-emerald-50 uppercase tracking-widest shadow-sm transition-all active:scale-95 cursor-pointer" title="Edit jika nilai gizi kurang tepat">
                                <IconEdit3 className="w-3.5 h-3.5"/> Edit Gizi
                              </button>
                            )}
@@ -840,7 +919,7 @@ export default function ScannerPage() {
                     <div className="mt-2 md:mt-4 pt-4 border-t border-slate-100 shrink-0">
                       
                       <div className="mb-4">
-                        <label className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1 mb-2 block">Kategori Waktu Makan</label>
+                        <label className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1 mb-2 block cursor-pointer">Kategori Waktu Makan</label>
                         {renderMealTypeDropdown()}
                       </div>
 
@@ -938,7 +1017,6 @@ const IconChevronDown = ({ className }: { className?: string }) => <svg classNam
 const IconShare = ({ className }: { className?: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>;
 const IconEdit3 = ({ className }: { className?: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>;
 
-// ICONS BARU UNTUK DROPDOWN WAKTU MAKAN
 const IconSunrise = ({ className }: { className?: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="M5 10.5L3.5 9"></path><path d="M19 10.5l1.5-1.5"></path><path d="M2 17h20"></path><path d="M12 17a5 5 0 0 0-5-5"></path></svg>;
 const IconSun = ({ className }: { className?: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>;
 const IconCookie = ({ className }: { className?: string }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 12v.01"></path><path d="M8 12v.01"></path><path d="M16 12v.01"></path><path d="M12 8v.01"></path><path d="M16 16v.01"></path><path d="M8 16v.01"></path></svg>;
