@@ -79,7 +79,7 @@ export default function RegisterPage() {
 
       // Rumus 6 bulan = 60 detik * 60 menit * 24 jam * 180 hari
       const sixMonths = 60 * 60 * 24 * 180;
-      document.cookie = `giziku_session=true; path=/; max-age=${sixMonths}; Secure; SameSite=Strict`;
+      document.cookie = `gizify_session=true; path=/; max-age=${sixMonths}; Secure; SameSite=Strict`;
 
       // Munculkan SweetAlert Sukses
       Swal.fire({
@@ -120,6 +120,10 @@ export default function RegisterPage() {
     setIsGoogleLoading(true);
     
     try {
+      // Set Session Cookie supaya tidak di-redirect middleware ke login lagi
+      const sixMonths = 60 * 60 * 24 * 180;
+      document.cookie = `gizify_session=true; path=/; max-age=${sixMonths}; Secure; SameSite=Strict`;
+
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
       const user = userCredential.user;

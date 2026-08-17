@@ -56,11 +56,11 @@ export default function About() {
   const featuresData = [
     {
       icon: <IconScanner />,
-      title: "AI Food Scanner",
-      desc: "Foto makananmu, biarkan AI Giziku menghitung kalori & makro nutrisi secara instan dengan akurasi tinggi.",
+      title: "Food Scanner",
+      desc: "Foto makananmu, biarkan Computer Vision Gizify menghitung kalori & makro nutrisi secara instan dengan akurasi tinggi.",
       color: "#1A453A",
       vibe: "✨ Instant ",
-      img: "/feature-scanner.jpg"
+      img: "image/feature-scanner.jpg"
     },
     {
       icon: <IconActivity />, 

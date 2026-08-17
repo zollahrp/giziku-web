@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Swal from "sweetalert2";
 
 export default function MealPlanResultPage() {
   const router = useRouter();
@@ -44,9 +45,27 @@ export default function MealPlanResultPage() {
 
   const handleSimpanJurnal = () => {
     if (planData) {
-      // Save to local storage for the 'resep' page to use
-      localStorage.setItem("gizify_saved_plan", JSON.stringify(planData));
-      router.push("/resep");
+      const today = new Date().toISOString().split('T')[0];
+      Swal.fire({
+        title: "Pilih Tanggal Mulai",
+        text: "Kapan kamu ingin memulai rencana menu ini?",
+        input: "date",
+        inputValue: today,
+        showCancelButton: true,
+        confirmButtonColor: "#1EAB57",
+        cancelButtonColor: "#EF4444",
+        confirmButtonText: "Simpan Rencana",
+        cancelButtonText: "Batal"
+      }).then((result) => {
+        if (result.isConfirmed && result.value) {
+          const planWithDate = {
+            ...planData,
+            startDate: result.value
+          };
+          localStorage.setItem("gizify_saved_plan", JSON.stringify(planWithDate));
+          router.push("/resep");
+        }
+      });
     }
   };
 

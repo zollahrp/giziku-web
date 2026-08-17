@@ -122,7 +122,6 @@ export default function DashboardLayout({
     return () => unsubscribe();
   }, [router]);
 
-  // --- STRUKTUR MENU GIZIFY ---
   const menuGroups = [
     {
       title: "DASHBOARD",
@@ -147,6 +146,30 @@ export default function DashboardLayout({
       ]
     }
   ];
+
+  const handleMenuClick = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
+    if (path === "/meal-plan") {
+      const savedPlan = localStorage.getItem("gizify_saved_plan");
+      if (savedPlan) {
+        e.preventDefault();
+        Swal.fire({
+          title: "Meal Plan Sudah Ada",
+          text: "Kamu sudah memiliki Meal Plan aktif. Apakah kamu ingin mereset dan membuat baru?",
+          icon: "question",
+          showCancelButton: true,
+          confirmButtonColor: "#1EAB57",
+          cancelButtonColor: "#EF4444",
+          confirmButtonText: "Ya, Buat Baru",
+          cancelButtonText: "Batal"
+        }).then((result) => {
+          if (result.isConfirmed) {
+            localStorage.removeItem("gizify_saved_plan");
+            router.push("/meal-plan");
+          }
+        });
+      }
+    }
+  };
 
   // FUNGSI LOGOUT YANG SAKTI
   const handleLogout = async () => {
@@ -215,6 +238,7 @@ export default function DashboardLayout({
                   <Link
                     key={item.name}
                     href={item.path}
+                    onClick={(e) => handleMenuClick(e, item.path)}
                     className={`group relative overflow-hidden flex items-center gap-4 px-4 py-3.5 rounded-2xl font-bold transition-all duration-300 ease-out cursor-pointer ${
                       isActive 
                         ? "bg-gradient-to-r from-[#1A453A] to-emerald-900 text-white shadow-[0_10px_20px_-5px_rgba(26,69,58,0.4)] translate-x-1" 
@@ -339,7 +363,7 @@ export default function DashboardLayout({
             <Link href="/chatbot" className={`flex flex-col items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-[12px] transition-all duration-300 ${pathname === "/chatbot" ? "text-emerald-600 bg-emerald-50 scale-110 shadow-sm" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>
               <IconBot className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px]" />
             </Link>
-            <Link href="/meal-plan" className={`flex flex-col items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-[12px] transition-all duration-300 ${pathname === "/meal-plan" ? "text-emerald-600 bg-emerald-50 scale-110 shadow-sm" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>
+            <Link href="/meal-plan" onClick={(e) => handleMenuClick(e, "/meal-plan")} className={`flex flex-col items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-[12px] transition-all duration-300 ${pathname === "/meal-plan" ? "text-emerald-600 bg-emerald-50 scale-110 shadow-sm" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>
               <IconWallet className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px]" />
             </Link>
             <Link href="/profile" className={`flex flex-col items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-[12px] transition-all duration-300 ${pathname === "/profile" ? "text-emerald-600 bg-emerald-50 scale-110 shadow-sm" : "text-slate-400 hover:text-emerald-500 hover:bg-slate-50"}`}>

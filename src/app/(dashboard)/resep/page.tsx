@@ -546,7 +546,9 @@ function ResepPageContent() {
                 <div className="pt-6 border-t border-slate-200 flex justify-between items-center bg-white p-4 rounded-xl shadow-sm">
                   <div>
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Status Plan</p>
-                    <p className="text-sm font-black text-[#1EAB57]">{savedPlanData ? "Aktif" : "Kosong"}</p>
+                    <p className="text-sm font-black text-[#1EAB57]">
+                      {savedPlanData ? (savedPlanData.startDate ? `Aktif (${new Date(savedPlanData.startDate).toLocaleDateString('id-ID')})` : "Aktif") : "Kosong"}
+                    </p>
                   </div>
                   <div className="w-px h-8 bg-slate-200"></div>
                   <div className="text-right">

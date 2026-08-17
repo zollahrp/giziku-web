@@ -31,7 +31,7 @@ export default function Footer() {
                   G
                 </div>
                 <span className="text-2xl font-black tracking-tight text-gray-900 transition-all duration-300">
-                  GIZIKU<span className="text-green-600">.AI</span>
+                  GIZIFY<span className="text-green-600">.AI</span>
                 </span>
               </Link>
               <p className="text-gray-500 text-sm leading-relaxed font-medium max-w-sm">

@@ -228,7 +228,7 @@ export default function LoginPage() {
         {/* Header Text */}
         <div className="text-center mb-10">
           <h1 className="text-3xl font-black mb-3 tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-gray-950 to-gray-600 drop-shadow-sm">
-            Mulai Sehatmu 👋
+            Mulai Sehatmu
           </h1>
           <p className="text-sm font-semibold text-gray-500">
             Masuk untuk melihat asupan kalori hari ini.

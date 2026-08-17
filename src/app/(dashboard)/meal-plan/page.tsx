@@ -523,7 +523,7 @@ export default function MealPlanGeneratorPage() {
           <div className="h-[76px] md:h-[86px] shrink-0 bg-white border-b border-slate-100 px-6 md:px-10 flex items-center justify-between z-20 shadow-sm relative">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 md:w-14 md:h-14 rounded-[1rem] bg-slate-50 flex items-center justify-center shadow-inner overflow-hidden border border-slate-200/60 p-2 shrink-0">
-                <img src="/image/icon-plan-resep.png" alt="Meal Plan" className="w-full h-full object-contain" />
+                <img src="/image/icon-plan-resep.jpg" alt="Meal Plan" className="w-full h-full object-contain" />
               </div>
               <div>
                 <h2 className="text-lg md:text-2xl font-black text-[#0F172A] tracking-tight leading-none mb-1">Rencana Menu Budget</h2>
@@ -670,7 +670,7 @@ export default function MealPlanGeneratorPage() {
                         
                         {/* Icon Container */}
                         <div className="w-24 h-24 bg-white rounded-[1.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.08)] flex items-center justify-center border border-slate-50 relative z-10 animate-float p-4">
-                          <img src="/image/icon-plan-resep.png" alt="Meal Plan" className="w-full h-full object-contain drop-shadow-sm" />
+                          <img src="/image/icon-plan-resep.jpg" alt="Meal Plan" className="w-full h-full object-contain drop-shadow-sm" />
                         </div>
                       </div>
                       

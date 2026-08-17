@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 // FIREBASE IMPORTS
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
 
 export default function HomePage() {
   const router = useRouter();
@@ -31,6 +31,8 @@ export default function HomePage() {
   // STATE DATA MAKANAN & JADWAL (Bisa dikembangkan jadi dinamis nanti)
   const [scanHistory, setScanHistory] = useState<any[]>([]); // Default kosong buat ngetes Empty State
   const [mealSchedule, setMealSchedule] = useState<any[]>([]); // Default kosong
+  const [todayTotals, setTodayTotals] = useState({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+  const [weeklyData, setWeeklyData] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
 
   // STATE KALENDER
   const [calendarInfo, setCalendarInfo] = useState({
@@ -85,6 +87,57 @@ export default function HomePage() {
           }
         } catch (error) {
           console.error("Error fetching data:", error);
+        }
+
+        try {
+          // AMBIL DATA FOOD LOGS MINGGU INI
+          const curr = new Date();
+          const currentDayOfWeek = curr.getDay(); // 0 (Sun) to 6 (Sat)
+          const diff = curr.getDate() - currentDayOfWeek + (currentDayOfWeek === 0 ? -6 : 1); 
+          const firstDayOfWeek = new Date(curr);
+          firstDayOfWeek.setDate(diff);
+          firstDayOfWeek.setHours(0,0,0,0);
+          
+          const qWeek = query(
+            collection(db, "users", user.uid, "foodLogs"), 
+            where("scannedAt", ">=", firstDayOfWeek)
+          );
+          const snaps = await getDocs(qWeek);
+          
+          let weekTotals = [0, 0, 0, 0, 0, 0, 0]; // 0: Sen, 6: Min
+          let calsToday = 0, pro = 0, car = 0, fat = 0;
+          const todayNow = new Date();
+          todayNow.setHours(0,0,0,0);
+
+          snaps.forEach(d => {
+             const data = d.data();
+             const dateStr = data.scannedAt?.toDate?.() || new Date();
+             
+             let dayIdx = dateStr.getDay() === 0 ? 6 : dateStr.getDay() - 1;
+             weekTotals[dayIdx] += (data.calories || 0);
+
+             if (dateStr >= todayNow) {
+               calsToday += data.calories || 0; 
+               pro += data.protein || 0; 
+               car += data.carbs || 0; 
+               fat += data.fat || 0;
+             }
+          });
+          setWeeklyData(weekTotals);
+          setTodayTotals({ calories: calsToday, protein: pro, carbs: car, fat: fat });
+
+          // AMBIL RIWAYAT TERAKHIR
+          const qHistory = query(
+            collection(db, "users", user.uid, "foodLogs"), 
+            orderBy("scannedAt", "desc"), 
+            limit(5)
+          );
+          const histSnaps = await getDocs(qHistory);
+          const logs: any[] = [];
+          histSnaps.forEach(d => logs.push({ id: d.id, ...d.data() }));
+          setScanHistory(logs);
+        } catch (error) {
+          console.error("Error fetching food logs:", error);
         } finally {
           setIsLoaded(true);
         }
@@ -205,7 +258,11 @@ export default function HomePage() {
                 </div>
                 <div>
                   <h4 className="text-xs font-black text-indigo-900 mb-1">Saran Nutrisi AI</h4>
-                  <p className="text-[11px] font-medium text-indigo-700 leading-relaxed">Belum ada makanan yang dicatat hari ini. Mulai dengan sarapan bergizi untuk mengisi kebutuhan energimu!</p>
+                  <p className="text-[11px] font-medium text-indigo-700 leading-relaxed">
+                    {todayTotals.calories === 0 
+                      ? "Belum ada makanan yang dicatat hari ini. Mulai dengan sarapan bergizi untuk mengisi kebutuhan energimu!" 
+                      : "Gizi makro dan mikro sedang dihitung. Pertahankan asupan makanan sehat!"}
+                  </p>
                 </div>
               </div>
             </div>
@@ -259,7 +316,7 @@ export default function HomePage() {
                   Halo {userData.name.split(" ")[0]}, ini ringkasan hari ini!
                 </h2>
                 <p className="text-sm font-medium text-slate-600 leading-relaxed max-w-2xl">
-                  Target <strong className="text-slate-900">{userData.bodyGoal}</strong> mu membutuhkan <strong className="text-slate-900">{userData.calories} Kkal</strong> harian. Kamu belum mencatat makanan hari ini. Ayo scan makananmu sekarang!
+                  Target <strong className="text-slate-900">{userData.bodyGoal}</strong> mu membutuhkan <strong className="text-slate-900">{userData.calories} Kkal</strong> harian. {todayTotals.calories === 0 ? "Kamu belum mencatat makanan hari ini. Ayo scan makananmu sekarang!" : `Kamu sudah mengonsumsi ${todayTotals.calories} Kkal hari ini.`}
                 </p>
               </div>
             </div>
@@ -306,23 +363,68 @@ export default function HomePage() {
                   <line x1="0" y1="20" x2="800" y2="20" stroke="#F1F5F9" strokeWidth="1" className="transition-all duration-500 group-hover:stroke-slate-200" />
                   <line x1="0" y1="95" x2="800" y2="95" stroke="#F1F5F9" strokeWidth="1" className="transition-all duration-500 group-hover:stroke-slate-200" />
                   <line x1="0" y1="170" x2="800" y2="170" stroke="#F1F5F9" strokeWidth="1" className="transition-all duration-500 group-hover:stroke-slate-200" />
-                  <line x1="0" y1="80" x2="800" y2="80" stroke="#EF4444" strokeWidth="2" strokeDasharray="6 6" className="opacity-60" />
+                  
+                  {/* Batas Target Kalori Dinamis */}
+                  {(() => {
+                    const targetY = 170 - ((parseInt(userData.calories) || 2000) / 3000) * 150;
+                    const safeY = Math.max(20, Math.min(170, targetY));
+                    return <line x1="0" y1={safeY} x2="800" y2={safeY} stroke="#EF4444" strokeWidth="2" strokeDasharray="6 6" className="opacity-60" />;
+                  })()}
+
+                  {/* Garis Aktual (Hijau) */}
+                  {(() => {
+                    // Cek jika array tidak semuanya 0 (artinya ada data yang bisa di plot)
+                    const hasData = weeklyData.some(val => val > 0);
+                    if (!hasData) return null;
+
+                    const points = weeklyData.map((val, idx) => {
+                       const x = (idx / 6) * 800; // 0 to 800
+                       const y = 170 - (val / 3000) * 150;
+                       const safeY = Math.max(20, Math.min(170, y));
+                       return `${x},${safeY}`;
+                    }).join(" ");
+                    
+                    return (
+                      <>
+                        <polyline points={points} fill="none" stroke="#1EAB57" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md" />
+                        {weeklyData.map((val, idx) => {
+                          const x = (idx / 6) * 800;
+                          const y = 170 - (val / 3000) * 150;
+                          const safeY = Math.max(20, Math.min(170, y));
+                          
+                          // Lingkaran akan terisi hijau jika ada isinya, atau putih jika itu hari ini tapi belum ada isinya
+                          const currentDayIdx = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+                          const isToday = idx === currentDayIdx;
+                          
+                          if (val > 0 || isToday) {
+                            return (
+                              <circle key={idx} cx={x} cy={safeY} r="6" fill={val > 0 ? "#1EAB57" : "#fff"} stroke={val > 0 ? "white" : "#1EAB57"} strokeWidth="2" />
+                            );
+                          }
+                          return null;
+                        })}
+                      </>
+                    )
+                  })()}
                 </svg>
 
                 {/* Empty State Teks Tengah Chart */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                   <IconActivity className="w-8 h-8 text-slate-200 mb-2" />
-                   <p className="text-xs font-bold text-slate-400">Belum ada data kalori hari ini.</p>
-                </div>
+                {weeklyData.every(val => val === 0) && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                     <IconActivity className="w-8 h-8 text-slate-200 mb-2" />
+                     <p className="text-xs font-bold text-slate-400">Belum ada data kalori minggu ini.</p>
+                  </div>
+                )}
 
                 <div className="absolute -bottom-6 left-0 w-full flex justify-between text-[10px] font-bold text-slate-400 px-1">
-                  <span>Sen</span>
-                  <span>Sel</span>
-                  <span>Rab</span>
-                  <span className="text-[#1EAB57] font-black bg-emerald-50 px-2 py-0.5 rounded">Kam</span>
-                  <span>Jum</span>
-                  <span>Sab</span>
-                  <span>Min</span>
+                  {['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'].map((hari, idx) => {
+                     const currentDayIdx = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+                     return (
+                        <span key={hari} className={currentDayIdx === idx ? "text-[#1EAB57] font-black bg-emerald-50 px-2 py-0.5 rounded" : ""}>
+                          {hari}
+                        </span>
+                     )
+                  })}
                 </div>
               </div>
             </div>
@@ -335,15 +437,17 @@ export default function HomePage() {
             <div className="flex justify-between items-start mb-4">
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Sisa Kalori</p>
-                <h3 className="text-2xl md:text-3xl font-black text-slate-900 group-hover:text-emerald-600 transition-colors">{userData.calories}<span className="text-xs font-semibold text-slate-400">kcal</span></h3>
+                <h3 className="text-2xl md:text-3xl font-black text-slate-900 group-hover:text-emerald-600 transition-colors">{Math.max(0, targetCals - todayTotals.calories)}<span className="text-xs font-semibold text-slate-400">kcal</span></h3>
               </div>
               <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                 <IconActivity className="w-4 h-4" />
               </div>
             </div>
             <div>
-              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2"></div>
-              <p className="text-[10px] font-bold text-slate-400">0 / {userData.calories} Kkal Terpakai</p>
+              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2">
+                <div className={`h-full ${todayTotals.calories > targetCals ? 'bg-rose-500' : 'bg-emerald-500'} rounded-full`} style={{ width: `${Math.min((todayTotals.calories / targetCals) * 100, 100)}%` }}></div>
+              </div>
+              <p className="text-[10px] font-bold text-slate-400">{todayTotals.calories} / {targetCals} Kkal Terpakai</p>
             </div>
           </div>
 
@@ -351,14 +455,16 @@ export default function HomePage() {
             <div className="flex justify-between items-start mb-4">
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Protein Harian</p>
-                <h3 className="text-2xl md:text-3xl font-black text-slate-900 group-hover:text-blue-600 transition-colors">0<span className="text-xs font-semibold text-slate-400">g</span></h3>
+                <h3 className="text-2xl md:text-3xl font-black text-slate-900 group-hover:text-blue-600 transition-colors">{todayTotals.protein}<span className="text-xs font-semibold text-slate-400">g</span></h3>
               </div>
               <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                 <IconDumbbell className="w-4 h-4" />
               </div>
             </div>
             <div>
-              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2"></div>
+              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2">
+                <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min((todayTotals.protein / targetProtein) * 100, 100)}%` }}></div>
+              </div>
               <p className="text-[10px] font-bold text-slate-400">Target: {targetProtein}g</p>
             </div>
           </div>
@@ -367,14 +473,16 @@ export default function HomePage() {
             <div className="flex justify-between items-start mb-4">
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Karbo Harian</p>
-                <h3 className="text-2xl md:text-3xl font-black text-slate-900 group-hover:text-amber-500 transition-colors">0<span className="text-xs font-semibold text-slate-400">g</span></h3>
+                <h3 className="text-2xl md:text-3xl font-black text-slate-900 group-hover:text-amber-500 transition-colors">{todayTotals.carbs}<span className="text-xs font-semibold text-slate-400">g</span></h3>
               </div>
               <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                 <IconBread className="w-4 h-4" />
               </div>
             </div>
             <div>
-              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2"></div>
+              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2">
+                <div className="h-full bg-amber-500 rounded-full" style={{ width: `${Math.min((todayTotals.carbs / targetCarbs) * 100, 100)}%` }}></div>
+              </div>
               <p className="text-[10px] font-bold text-slate-400">Target: {targetCarbs}g</p>
             </div>
           </div>
@@ -383,14 +491,16 @@ export default function HomePage() {
             <div className="flex justify-between items-start mb-4">
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Lemak Harian</p>
-                <h3 className="text-2xl md:text-3xl font-black text-slate-900 group-hover:text-rose-500 transition-colors">0<span className="text-xs font-semibold text-slate-400">g</span></h3>
+                <h3 className="text-2xl md:text-3xl font-black text-slate-900 group-hover:text-rose-500 transition-colors">{todayTotals.fat}<span className="text-xs font-semibold text-slate-400">g</span></h3>
               </div>
               <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                 <IconDrop className="w-4 h-4" />
               </div>
             </div>
             <div>
-              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2"></div>
+              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2">
+                <div className="h-full bg-rose-500 rounded-full" style={{ width: `${Math.min((todayTotals.fat / targetFat) * 100, 100)}%` }}></div>
+              </div>
               <p className="text-[10px] font-bold text-slate-400">Target: {targetFat}g</p>
             </div>
           </div>
@@ -452,7 +562,25 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Tempat Map data history jika ada */}
+              {scanHistory.map((item, idx) => (
+                <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 transition-colors rounded-2xl border border-slate-100 group cursor-pointer">
+                  <div className="flex items-center gap-4 mb-2 sm:mb-0">
+                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm border border-slate-200 group-hover:border-emerald-300 transition-colors shrink-0">
+                      <IconCutlery className="w-5 h-5 text-emerald-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-black text-slate-900 line-clamp-1 group-hover:text-emerald-600 transition-colors">{item.name}</p>
+                      <p className="text-[10px] font-bold text-slate-500 mt-0.5">{item.type || 'Input Manual'} • {item.mealType || 'Tidak diketahui'}</p>
+                    </div>
+                  </div>
+                  <div className="text-left sm:text-right pl-16 sm:pl-0">
+                    <p className="text-sm font-black text-slate-900">{item.calories} <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Kkal</span></p>
+                    <p className="text-[10px] font-bold text-slate-400 mt-0.5">
+                      {item.scannedAt?.toDate?.()?.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) || "Baru saja"}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -479,8 +607,14 @@ export default function HomePage() {
             <div className="flex gap-3 items-start bg-black/10 p-3.5 rounded-xl border border-white/10 backdrop-blur-md transform transition-transform hover:scale-[1.03] cursor-default">
               <IconActivity className="w-4 h-4 text-emerald-200 shrink-0 mt-0.5 drop-shadow-md animate-[bounce_2s_infinite]" />
               <div>
-                <p className="text-[11px] font-bold text-emerald-100 mb-0.5">Mulai Harimu!</p>
-                <p className="text-[10px] font-medium leading-relaxed text-white/90">Belum ada kalori yang masuk. Jangan lupa sarapan agar punya energi beraktivitas.</p>
+                <p className="text-[11px] font-bold text-emerald-100 mb-0.5">
+                  {todayTotals.calories === 0 ? "Mulai Harimu!" : todayTotals.calories >= targetCals ? "Hebat!" : "Ayo Semangat!"}
+                </p>
+                <p className="text-[10px] font-medium leading-relaxed text-white/90">
+                  {todayTotals.calories === 0 ? "Belum ada kalori yang masuk. Jangan lupa sarapan agar punya energi beraktivitas." :
+                   todayTotals.calories >= targetCals ? `Kamu sudah mencapai atau melebih target kalori harianmu (${targetCals} Kkal). Jaga pola makanmu!` : 
+                   `Kamu sudah mengonsumsi ${todayTotals.calories} Kkal hari ini. Masih ada sisa ${Math.max(0, targetCals - todayTotals.calories)} Kkal lagi.`}
+                </p>
               </div>
             </div>
           </div>
