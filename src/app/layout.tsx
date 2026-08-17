@@ -9,7 +9,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Giziku - Asisten Nutrisi Cerdasmu",
+  title: "Gizify - Asisten Nutrisi Cerdasmu",
   description: "Aplikasi pantau gizi, kalori, dan resep pintar.",
 };
 
