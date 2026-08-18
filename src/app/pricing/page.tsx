@@ -11,7 +11,7 @@ import { doc, updateDoc } from "firebase/firestore";
 
 const pricingPlans = [
   {
-    name: "GIZIKU BASIC",
+    name: "GIZIFY BASIC",
     desc: "Mulai sadar kalori harian.",
     price: { bulanan: 0, tahunan: 0 },
     features: [
@@ -25,7 +25,7 @@ const pricingPlans = [
     delay: "delay-100",
   },
   {
-    name: "GIZIKU PRO",
+    name: "GIZIFY PRO",
     desc: "Unlock semua kekuatan AI.",
     badge: "PALING PAS BUAT KAMU",
     price: { bulanan: 25000, tahunan: 240000 }, 
@@ -40,7 +40,7 @@ const pricingPlans = [
     delay: "delay-0",
   },
   {
-    name: "GIZIKU FAMILY",
+    name: "GIZIFY FAMILY",
     desc: "Untuk kesehatan keluarga.",
     price: { bulanan: 80000, tahunan: 780000 }, 
     features: [
@@ -122,7 +122,7 @@ export default function PricingPage() {
         body: JSON.stringify({
           planName: plan.name,
           price: price,
-          orderId: `GIZIKU-${Date.now()}`
+          orderId: `GIZIFY-${Date.now()}`
         })
       });
       const data = await response.json();
@@ -133,7 +133,7 @@ export default function PricingPage() {
             // JIKA PEMBAYARAN MIDTRANS BERHASIL, KITA UPDATE DATABASE-NYA!
             try {
               // 1. Tentukan Rolenya (PRO atau FAMILY)
-              const newRole = plan.name === "GIZIKU PRO" ? "PRO" : "FAMILY";
+              const newRole = plan.name === "GIZIFY PRO" ? "PRO" : "FAMILY";
               
               // 2. Hitung Tanggal Kedaluwarsa (Masa Aktif)
               const expiryDate = new Date();

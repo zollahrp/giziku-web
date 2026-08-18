@@ -160,7 +160,7 @@ export default function About() {
               
               <p className={`text-base lg:text-lg text-gray-500 leading-relaxed font-medium transition-all duration-[1000ms] delay-[500ms]
                 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'}`}>
-                Giziku bukan sekadar pencatat kalori. Kami hadir sebagai ekosistem kesehatan digital berbasis AI yang memahami kebutuhan unik tubuhmu, isi dompetmu, dan target kebugaranmu.
+                Gizify bukan sekadar pencatat kalori. Kami hadir sebagai ekosistem kesehatan digital berbasis AI yang memahami kebutuhan unik tubuhmu, isi dompetmu, dan target kebugaranmu.
               </p>
             </div>
 
@@ -198,7 +198,7 @@ export default function About() {
               <a href="/scanner" className="relative overflow-hidden inline-flex items-center justify-center gap-3 px-8 py-4 bg-[#1A453A] text-white font-bold text-sm uppercase tracking-wider rounded-full transition-all duration-500 shadow-[0_10px_30px_rgba(26,69,58,0.25)] hover:shadow-[0_20px_40px_rgba(26,69,58,0.4)] hover:-translate-y-1 group/btn w-full sm:w-auto">
                 <div className="absolute inset-0 -translate-x-[150%] bg-gradient-to-r from-transparent via-white/25 to-transparent group-hover/btn:translate-x-[150%] transition-transform duration-1000 ease-in-out" />
                 <span className="relative z-10 flex items-center gap-2">
-                  Coba Giziku Sekarang
+                  Coba Gizify Sekarang
                 </span>
                 <span className="relative z-10 transition-transform duration-300 group-hover/btn:translate-x-1">
                   <IconArrowRight />
@@ -207,7 +207,7 @@ export default function About() {
             </div>
           </div>
 
-          {/* --- RIGHT CONTENT: INTERACTIVE GIZIKU APP SHOWCASE --- */}
+          {/* --- RIGHT CONTENT: INTERACTIVE GIZIFY APP SHOWCASE --- */}
           <div className={`w-full lg:w-[55%] relative mt-10 lg:mt-0 transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] delay-[300ms]
             ${isVisible ? 'translate-x-0 opacity-100' : 'translate-x-16 opacity-0'}`}>
             

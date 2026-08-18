@@ -99,7 +99,7 @@ export default function Navbar() {
               : "bg-white/40 backdrop-blur-md border border-white/50 px-6 py-3.5 rounded-full"
           }`}
         >
-          {/* KIRI: Logo GIZIKU */}
+          {/* KIRI: Logo GIZIFY */}
           <Link 
             href="/" 
             onClick={(e) => handleSmoothScroll(e, "/")}

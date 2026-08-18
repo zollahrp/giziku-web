@@ -221,7 +221,7 @@ export default function RegisterPage() {
             Mulai Transformasi
           </h1>
           <p className="text-sm font-semibold text-gray-500">
-            Buat akun GIZIKU gratis dan capai targetmu.
+            Buat akun GIZIFY gratis dan capai targetmu.
           </p>
         </div>
 

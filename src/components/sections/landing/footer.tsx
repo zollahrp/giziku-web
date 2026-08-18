@@ -14,7 +14,7 @@ export default function Footer() {
   return (
     <footer className="w-full bg-white relative overflow-hidden">
       
-      {/* Garis gradien super tipis pemisah section (Warna Giziku) */}
+      {/* Garis gradien super tipis pemisah section (Warna Gizify) */}
       <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#1A453A]/20 to-transparent" />
       
       {/* Ambient Glow Tipis di background footer */}
@@ -94,7 +94,7 @@ export default function Footer() {
         <div className="max-w-[1200px] mx-auto flex items-center justify-between flex-col md:flex-row gap-6">
           
           <p className="text-gray-400 font-medium text-sm flex items-center flex-wrap gap-2 md:gap-4 justify-center">
-            <span>© {new Date().getFullYear()} <span className="font-bold text-[#1A453A]">GIZIKU AI</span>. All Rights Reserved.</span>
+            <span>© {new Date().getFullYear()} <span className="font-bold text-[#1A453A]">GIZIFY AI</span>. All Rights Reserved.</span>
             <span className="hidden md:inline text-gray-300">|</span>
             <span className="flex gap-4">
               <a href="#" className="hover:text-[#1A453A] transition-colors">Kebijakan Privasi</a>

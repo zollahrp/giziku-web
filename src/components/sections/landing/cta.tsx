@@ -231,7 +231,7 @@ export default function CTA() {
 
         {/* Copywriting Penutup */}
         <p className="text-base md:text-lg text-gray-600 font-medium mb-8 leading-relaxed">
-          Ubah cara pandangmu terhadap makanan. Mulai kebiasaan sehat hari ini dengan bantuan <span className="font-bold text-[#1A453A]">AI GIZIKU</span>.
+          Ubah cara pandangmu terhadap makanan. Mulai kebiasaan sehat hari ini dengan bantuan <span className="font-bold text-[#1A453A]">AI GIZIFY</span>.
         </p>
         
         {/* Tombol CTA "Super Shine" */}

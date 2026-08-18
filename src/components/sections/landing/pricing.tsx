@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 // Data Paket Pricing
 const pricingPlans = [
   {
-    name: "GIZIKU BASIC",
+    name: "GIZIFY BASIC",
     desc: "Langkah awal buat kamu yang mau mulai sadar kalori harian.",
     price: { bulanan: 0, tahunan: 0 },
     features: [
@@ -20,7 +20,7 @@ const pricingPlans = [
     delay: "delay-100",
   },
   {
-    name: "GIZIKU PRO",
+    name: "GIZIFY PRO",
     desc: "Unlock semua kekuatan AI untuk capai body goals lebih cepat.",
     badge: "PALING PAS BUAT KAMU",
     price: { bulanan: 25000, tahunan: 240000 }, 
@@ -36,7 +36,7 @@ const pricingPlans = [
     delay: "delay-0",
   },
   {
-    name: "GIZIKU FAMILY",
+    name: "GIZIFY FAMILY",
     desc: "Satu langganan untuk kesehatan seluruh anggota keluarga di rumah.",
     price: { bulanan: 80000, tahunan: 780000 }, 
     features: [
@@ -113,7 +113,7 @@ export default function Pricing() {
         body: JSON.stringify({
           planName: plan.name,
           price: price,
-          orderId: `GIZIKU-${Date.now()}` // Harus unik setiap transaksi
+          orderId: `GIZIFY-${Date.now()}` // Harus unik setiap transaksi
         })
       });
 

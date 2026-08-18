@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       },
       item_details: [
         {
-          id: "GIZIKU-PLAN",
+          id: "GIZIFY-PLAN",
           price: price,
           quantity: 1,
           name: planName,

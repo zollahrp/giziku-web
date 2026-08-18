@@ -6,7 +6,7 @@ const testimonials = [
   {
     name: "Ibu Rina S.",
     role: "Kader PKK Kota Bogor",
-    text: "Giziku ngebantu banget buat program sadar gizi di kelurahan. Kader jadi gampang ngasih contoh menu sehat murah ke warga. Sangat direkomendasikan!",
+    text: "Gizify ngebantu banget buat program sadar gizi di kelurahan. Kader jadi gampang ngasih contoh menu sehat murah ke warga. Sangat direkomendasikan!",
     rating: 5,
   },
   {
@@ -108,74 +108,74 @@ export default function Testimonial() {
           {/* Col 1 */}
           <div className={`hidden lg:flex flex-col gap-4 pt-36 ${isVisible ? 'pop-out' : 'opacity-0'}`} style={{ animationDelay: '700ms' }}>
              <div className="w-[100px] xl:w-[130px] h-[130px] rounded-3xl overflow-hidden bg-gray-100 hover:scale-105 transition-transform duration-500 shadow-sm">
-               <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Giziku Moment" />
+               <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Gizify Moment" />
              </div>
              <div className="w-[100px] xl:w-[130px] h-[180px] rounded-3xl overflow-hidden bg-gray-100 hover:scale-105 transition-transform duration-500 shadow-sm">
-               <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Giziku Moment" />
+               <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Gizify Moment" />
              </div>
           </div>
 
           {/* Col 2 */}
           <div className={`hidden md:flex flex-col gap-4 pt-12 ${isVisible ? 'pop-out' : 'opacity-0'}`} style={{ animationDelay: '500ms' }}>
              <div className="w-[110px] xl:w-[140px] h-[120px] rounded-3xl overflow-hidden bg-gray-100 hover:scale-105 transition-transform duration-500 shadow-sm">
-               <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Giziku Moment" />
+               <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Gizify Moment" />
              </div>
              <div className="w-[110px] xl:w-[140px] h-[130px] rounded-3xl overflow-hidden bg-gray-100 hover:scale-105 transition-transform duration-500 shadow-sm">
-               <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Giziku Moment" />
+               <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Gizify Moment" />
              </div>
              <div className="w-[110px] xl:w-[140px] h-[170px] rounded-3xl overflow-hidden bg-gray-100 hover:scale-105 transition-transform duration-500 shadow-sm">
-               <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Giziku Moment" />
+               <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Gizify Moment" />
              </div>
           </div>
 
           {/* Col 3 */}
           <div className={`flex flex-col gap-4 pt-28 ${isVisible ? 'pop-out' : 'opacity-0'}`} style={{ animationDelay: '300ms' }}>
              <div className="w-[120px] md:w-[140px] xl:w-[160px] h-[220px] md:h-[260px] rounded-3xl overflow-hidden bg-gray-100 hover:scale-105 transition-transform duration-500 shadow-md">
-                <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Giziku Moment" />
+                <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Gizify Moment" />
              </div>
           </div>
 
           {/* Col 4 (Center Left) */}
           <div className={`flex flex-col gap-4 pt-0 ${isVisible ? 'pop-out' : 'opacity-0'}`} style={{ animationDelay: '100ms' }}>
              <div className="w-[130px] md:w-[160px] xl:w-[180px] h-[280px] md:h-[340px] rounded-[2rem] overflow-hidden bg-gray-100 z-10 border-4 border-white hover:scale-105 transition-transform duration-500 shadow-xl">
-                <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Giziku Moment" />
+                <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Gizify Moment" />
              </div>
           </div>
 
           {/* Col 5 (Center Right) */}
           <div className={`flex flex-col gap-4 pt-10 ${isVisible ? 'pop-out' : 'opacity-0'}`} style={{ animationDelay: '100ms' }}>
              <div className="w-[130px] md:w-[150px] xl:w-[170px] h-[240px] md:h-[280px] rounded-[2rem] overflow-hidden bg-gray-100 z-10 border-4 border-white hover:scale-105 transition-transform duration-500 shadow-xl">
-                <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Giziku Moment" />
+                <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Gizify Moment" />
              </div>
           </div>
 
           {/* Col 6 */}
           <div className={`flex flex-col gap-4 pt-32 ${isVisible ? 'pop-out' : 'opacity-0'}`} style={{ animationDelay: '300ms' }}>
              <div className="w-[120px] md:w-[140px] xl:w-[160px] h-[200px] md:h-[230px] rounded-3xl overflow-hidden bg-gray-100 hover:scale-105 transition-transform duration-500 shadow-md">
-                <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Giziku Moment" />
+                <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Gizify Moment" />
              </div>
           </div>
 
           {/* Col 7 */}
           <div className={`hidden md:flex flex-col gap-4 pt-12 ${isVisible ? 'pop-out' : 'opacity-0'}`} style={{ animationDelay: '500ms' }}>
              <div className="w-[110px] xl:w-[140px] h-[130px] rounded-3xl overflow-hidden bg-gray-100 hover:scale-105 transition-transform duration-500 shadow-sm">
-                <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Giziku Moment" />
+                <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Gizify Moment" />
              </div>
              <div className="w-[110px] xl:w-[140px] h-[170px] rounded-3xl overflow-hidden bg-gray-100 hover:scale-105 transition-transform duration-500 shadow-sm">
-                <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Giziku Moment" />
+                <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Gizify Moment" />
              </div>
              <div className="w-[110px] xl:w-[140px] h-[120px] rounded-3xl overflow-hidden bg-gray-100 hover:scale-105 transition-transform duration-500 shadow-sm">
-                <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Giziku Moment" />
+                <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Gizify Moment" />
              </div>
           </div>
 
           {/* Col 8 (Far Right) */}
           <div className={`hidden lg:flex flex-col gap-4 pt-36 ${isVisible ? 'pop-out' : 'opacity-0'}`} style={{ animationDelay: '700ms' }}>
              <div className="w-[100px] xl:w-[130px] h-[150px] rounded-3xl overflow-hidden bg-gray-100 hover:scale-105 transition-transform duration-500 shadow-sm">
-                <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Giziku Moment" />
+                <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Gizify Moment" />
              </div>
              <div className="w-[100px] xl:w-[130px] h-[150px] rounded-3xl overflow-hidden bg-gray-100 hover:scale-105 transition-transform duration-500 shadow-sm">
-                <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Giziku Moment" />
+                <img src="/image/about-giziku.jpg" className="w-full h-full object-cover" alt="Gizify Moment" />
              </div>
           </div>
 

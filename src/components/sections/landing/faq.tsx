@@ -2,11 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 
-// Data FAQ disesuaikan untuk Giziku
+// Data FAQ disesuaikan untuk Gizify
 const faqData = [
   {
     id: 1,
-    question: "Apakah aplikasi Giziku berbayar?",
+    question: "Apakah aplikasi Gizify berbayar?",
     answer: "Kamu bisa menggunakan fitur dasar seperti tracking kalori, BMI, dan akses resep standar secara GRATIS selamanya! Namun, jika kamu ingin fitur AI lanjutan seperti Unlimited Scan dan Custom Meal Plan, kamu bisa berlangganan Paket Pro."
   },
   {
@@ -16,13 +16,13 @@ const faqData = [
   },
   {
     id: 3,
-    question: "Seberapa akurat AI Scanner makanan Giziku?",
+    question: "Seberapa akurat AI Scanner makanan Gizify?",
     answer: "AI kami dilatih dengan puluhan ribu dataset makanan lokal dan global. Tingkat akurasinya mencapai 95%+ untuk mendeteksi kalori dan makronutrisi dari foto makanan utuh. Namun, untuk masakan olahan yang kompleks, GiziBot mungkin akan menanyakan beberapa detail tambahan."
   },
   {
     id: 4,
     question: "Apakah saya bisa membatalkan langganan kapan saja?",
-    answer: "Bisa banget! Giziku tidak mengikat penggunanya. Kamu bebas melakukan upgrade, downgrade, atau membatalkan langganan kapan saja langsung melalui menu Pengaturan Profil tanpa syarat yang ribet."
+    answer: "Bisa banget! Gizify tidak mengikat penggunanya. Kamu bebas melakukan upgrade, downgrade, atau membatalkan langganan kapan saja langsung melalui menu Pengaturan Profil tanpa syarat yang ribet."
   },
   {
     id: 5,
@@ -60,7 +60,7 @@ export default function Faq() {
   return (
     <section ref={sectionRef} className="w-full py-24 md:py-32 px-4 md:px-8 bg-[#FAFAFA] relative overflow-hidden" id="faq">
       
-      {/* Decorative Background Glow (Diganti Hijau Giziku) */}
+      {/* Decorative Background Glow (Diganti Hijau Gizify) */}
       <div className="absolute top-1/2 left-0 -translate-y-1/2 -ml-64 w-[600px] h-[600px] rounded-full bg-green-500/10 blur-[120px] pointer-events-none animate-pulse" />
 
       {/* Injeksi CSS Animasi */}
