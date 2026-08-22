@@ -574,6 +574,16 @@ function ResepPageContent() {
                   {savedPlanData && savedPlanData.plan && savedPlanData.plan.map((dayObj: any, index: number) => {
                     const isActive = activeDayIndex === index;
                     
+                    let baseDate = new Date();
+                    if (savedPlanData.startDate) {
+                      baseDate = new Date(savedPlanData.startDate);
+                    }
+                    const targetDate = new Date(baseDate);
+                    targetDate.setDate(targetDate.getDate() + index);
+                    
+                    const dayName = targetDate.toLocaleDateString('id-ID', { weekday: 'short' });
+                    const dateNum = targetDate.getDate();
+                    
                     return (
                       <button 
                         key={index} 
@@ -585,10 +595,10 @@ function ResepPageContent() {
                         }`}
                       >
                         <span className={`text-[10px] font-black uppercase tracking-widest mb-1.5 transition-colors ${isActive ? 'text-emerald-100' : 'text-slate-400 group-hover:text-emerald-600'}`}>
-                          Hari
+                          {dayName}
                         </span>
                         <span className={`text-2xl font-black transition-colors ${isActive ? 'text-white' : 'text-[#0F172A]'}`}>
-                          {index + 1}
+                          {dateNum}
                         </span>
                         
                         <div className={`mt-2 flex gap-1.5 transition-opacity ${isActive ? 'opacity-100' : 'opacity-40 group-hover:opacity-100'}`}>
@@ -610,7 +620,17 @@ function ResepPageContent() {
             <div className={`bg-white rounded-[2.5rem] p-6 md:p-10 border border-slate-100 shadow-[0_15px_40px_-10px_rgb(0,0,0,0.03)] ${isLoaded ? 'animate-fade-up delay-400' : 'opacity-0'}`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-10 gap-4">
                 <div>
-                  <h3 className="text-2xl md:text-3xl font-black text-[#0F172A] tracking-tight">Jadwal Masak Hari {activeDayIndex + 1}</h3>
+                  <h3 className="text-2xl md:text-3xl font-black text-[#0F172A] tracking-tight">
+                    {(() => {
+                      let baseDate = new Date();
+                      if (savedPlanData.startDate) {
+                        baseDate = new Date(savedPlanData.startDate);
+                      }
+                      const targetDate = new Date(baseDate);
+                      targetDate.setDate(targetDate.getDate() + activeDayIndex);
+                      return targetDate.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                    })()}
+                  </h3>
                   <div className="flex items-center gap-3 mt-2 cursor-default">
                     <span className="text-[11px] font-black text-[#1EAB57] uppercase tracking-widest flex items-center gap-1.5">
                        <IconFlame className="w-3.5 h-3.5"/> Total: {savedPlanData.plan[activeDayIndex].meals.reduce((sum: number, meal: any) => sum + parseInt(meal.kal), 0)} Kkal

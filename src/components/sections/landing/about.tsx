@@ -68,7 +68,7 @@ export default function About() {
       desc: "Lacak asupan harianmu. Dapatkan notifikasi cerdas jika kamu kelebihan kalori atau kekurangan protein untuk bangun massa otot.",
       color: "#F43F5E", 
       vibe: "📈 Tracker",
-      img: "/feature-tracking.jpg"
+      img: "image/track-nutrition.png"
     },
     {
       icon: <IconWallet />,
@@ -76,7 +76,7 @@ export default function About() {
       desc: "Dapatkan rekomendasi menu harian lezat yang disesuaikan dengan target gizi dan isi dompet keluargamu.",
       color: "#F59E0B",
       vibe: "💰 Savvy",
-      img: "/feature-mealplan.jpg"
+      img: "image/meal-plan.png"
     }
   ];
 

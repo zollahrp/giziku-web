@@ -49,19 +49,19 @@ export default function HomePage() {
     const calYear = today.getFullYear();
     const calMonth = today.getMonth();
     const currentDay = today.getDate();
-    
+
     const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
     const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-    
+
     // JS Date: 0 = Minggu, 1 = Senin. Kita ubah jadi 0 = Senin biar sesuai UI
     let firstDayOfMonth = new Date(calYear, calMonth, 1).getDay();
-    let startDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1; 
-    
+    let startDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
+
     setCalendarInfo({
       monthName: monthNames[calMonth],
       year: calYear,
-      emptyDays: Array.from({length: startDay}, (_, i) => i),
-      daysArray: Array.from({length: daysInMonth}, (_, i) => i + 1),
+      emptyDays: Array.from({ length: startDay }, (_, i) => i),
+      daysArray: Array.from({ length: daysInMonth }, (_, i) => i + 1),
       currentDay: currentDay
     });
 
@@ -93,43 +93,43 @@ export default function HomePage() {
           // AMBIL DATA FOOD LOGS MINGGU INI
           const curr = new Date();
           const currentDayOfWeek = curr.getDay(); // 0 (Sun) to 6 (Sat)
-          const diff = curr.getDate() - currentDayOfWeek + (currentDayOfWeek === 0 ? -6 : 1); 
+          const diff = curr.getDate() - currentDayOfWeek + (currentDayOfWeek === 0 ? -6 : 1);
           const firstDayOfWeek = new Date(curr);
           firstDayOfWeek.setDate(diff);
-          firstDayOfWeek.setHours(0,0,0,0);
-          
+          firstDayOfWeek.setHours(0, 0, 0, 0);
+
           const qWeek = query(
-            collection(db, "users", user.uid, "foodLogs"), 
+            collection(db, "users", user.uid, "foodLogs"),
             where("scannedAt", ">=", firstDayOfWeek)
           );
           const snaps = await getDocs(qWeek);
-          
+
           let weekTotals = [0, 0, 0, 0, 0, 0, 0]; // 0: Sen, 6: Min
           let calsToday = 0, pro = 0, car = 0, fat = 0;
           const todayNow = new Date();
-          todayNow.setHours(0,0,0,0);
+          todayNow.setHours(0, 0, 0, 0);
 
           snaps.forEach(d => {
-             const data = d.data();
-             const dateStr = data.scannedAt?.toDate?.() || new Date();
-             
-             let dayIdx = dateStr.getDay() === 0 ? 6 : dateStr.getDay() - 1;
-             weekTotals[dayIdx] += (data.calories || 0);
+            const data = d.data();
+            const dateStr = data.scannedAt?.toDate?.() || new Date();
 
-             if (dateStr >= todayNow) {
-               calsToday += data.calories || 0; 
-               pro += data.protein || 0; 
-               car += data.carbs || 0; 
-               fat += data.fat || 0;
-             }
+            let dayIdx = dateStr.getDay() === 0 ? 6 : dateStr.getDay() - 1;
+            weekTotals[dayIdx] += (data.calories || 0);
+
+            if (dateStr >= todayNow) {
+              calsToday += data.calories || 0;
+              pro += data.protein || 0;
+              car += data.carbs || 0;
+              fat += data.fat || 0;
+            }
           });
           setWeeklyData(weekTotals);
           setTodayTotals({ calories: calsToday, protein: pro, carbs: car, fat: fat });
 
           // AMBIL RIWAYAT TERAKHIR
           const qHistory = query(
-            collection(db, "users", user.uid, "foodLogs"), 
-            orderBy("scannedAt", "desc"), 
+            collection(db, "users", user.uid, "foodLogs"),
+            orderBy("scannedAt", "desc"),
             limit(5)
           );
           const histSnaps = await getDocs(qHistory);
@@ -169,7 +169,7 @@ export default function HomePage() {
         <div className="w-full h-16 bg-white rounded-2xl border border-slate-100 shadow-sm animate-pulse"></div>
         <div className="w-full h-48 bg-white rounded-[2rem] border border-slate-100 shadow-sm animate-pulse"></div>
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
-          {[1,2,3,4].map(i => <div key={i} className="h-28 bg-white rounded-2xl border border-slate-100 shadow-sm animate-pulse"></div>)}
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-28 bg-white rounded-2xl border border-slate-100 shadow-sm animate-pulse"></div>)}
         </div>
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
           <div className="xl:col-span-8 space-y-6">
@@ -177,8 +177,8 @@ export default function HomePage() {
             <div className="h-64 bg-white rounded-[2rem] border border-slate-100 shadow-sm animate-pulse"></div>
           </div>
           <div className="xl:col-span-4 space-y-6">
-             <div className="h-48 bg-emerald-100/50 rounded-[2rem] shadow-sm animate-pulse"></div>
-             <div className="h-64 bg-white rounded-[2rem] border border-slate-100 shadow-sm animate-pulse"></div>
+            <div className="h-48 bg-emerald-100/50 rounded-[2rem] shadow-sm animate-pulse"></div>
+            <div className="h-64 bg-white rounded-[2rem] border border-slate-100 shadow-sm animate-pulse"></div>
           </div>
         </div>
       </div>
@@ -187,7 +187,7 @@ export default function HomePage() {
 
   return (
     <div className="w-full pb-12 flex flex-col xl:flex-row gap-6 relative overflow-x-hidden">
-      
+
       {/* INJEKSI CSS ANIMASI KUSTOM */}
       <style dangerouslySetInnerHTML={{
         __html: `
@@ -223,12 +223,12 @@ export default function HomePage() {
                 <IconClose className="w-4 h-4" />
               </button>
             </div>
-            
+
             <div className="p-6 md:p-8 overflow-y-auto custom-scroll space-y-8">
               <div>
                 <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-4">Gizi Mikro (Vitamin & Mineral)</h3>
                 <div className="space-y-5 bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
-                  
+
                   <div className="group">
                     <div className="flex justify-between items-end mb-2">
                       <span className="text-xs font-bold text-slate-700">Vitamin C</span>
@@ -259,8 +259,8 @@ export default function HomePage() {
                 <div>
                   <h4 className="text-xs font-black text-indigo-900 mb-1">Saran Nutrisi AI</h4>
                   <p className="text-[11px] font-medium text-indigo-700 leading-relaxed">
-                    {todayTotals.calories === 0 
-                      ? "Belum ada makanan yang dicatat hari ini. Mulai dengan sarapan bergizi untuk mengisi kebutuhan energimu!" 
+                    {todayTotals.calories === 0
+                      ? "Belum ada makanan yang dicatat hari ini. Mulai dengan sarapan bergizi untuk mengisi kebutuhan energimu!"
                       : "Gizi makro dan mikro sedang dihitung. Pertahankan asupan makanan sehat!"}
                   </p>
                 </div>
@@ -274,7 +274,7 @@ export default function HomePage() {
       {/* BAGIAN KIRI & TENGAH (MAIN ANALYTICS) */}
       {/* ======================================= */}
       <div className="flex-1 space-y-6 min-w-0">
-        
+
         {/* TOP NAVBAR */}
         <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm relative z-10 animate-fade-up`}>
           <div className="relative w-full md:max-w-xs xl:max-w-md group">
@@ -306,7 +306,7 @@ export default function HomePage() {
         <div className={`bg-white rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden transition-all duration-500 animate-fade-up delay-100`}>
           <div className="p-6 md:p-8 bg-gradient-to-r from-[#F0FDF4] to-[#E8F8EE] border-b border-emerald-100/50 flex flex-col md:flex-row gap-6 justify-between items-start md:items-center relative overflow-hidden">
             <div className="absolute right-0 top-0 w-64 h-64 bg-white/40 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/4 animate-pulse"></div>
-            
+
             <div className="flex gap-4 relative z-10">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#1EAB57] to-[#127236] text-white flex items-center justify-center shadow-[0_5px_15px_rgba(30,171,87,0.3)] shrink-0 transform transition-transform hover:rotate-12">
                 <IconSparkles className="w-6 h-6" />
@@ -323,14 +323,13 @@ export default function HomePage() {
 
             <div className="bg-white/60 backdrop-blur-sm p-1 rounded-xl flex items-center border border-white/80 shadow-sm relative z-10 shrink-0">
               {['Harian', 'Mingguan', 'Bulanan'].map((tab) => (
-                <button 
+                <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer ${
-                    activeTab === tab 
-                    ? 'bg-white text-[#1EAB57] shadow-sm transform scale-105' 
-                    : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
-                  }`}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer ${activeTab === tab
+                      ? 'bg-white text-[#1EAB57] shadow-sm transform scale-105'
+                      : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
+                    }`}
                 >
                   {tab}
                 </button>
@@ -363,7 +362,7 @@ export default function HomePage() {
                   <line x1="0" y1="20" x2="800" y2="20" stroke="#F1F5F9" strokeWidth="1" className="transition-all duration-500 group-hover:stroke-slate-200" />
                   <line x1="0" y1="95" x2="800" y2="95" stroke="#F1F5F9" strokeWidth="1" className="transition-all duration-500 group-hover:stroke-slate-200" />
                   <line x1="0" y1="170" x2="800" y2="170" stroke="#F1F5F9" strokeWidth="1" className="transition-all duration-500 group-hover:stroke-slate-200" />
-                  
+
                   {/* Batas Target Kalori Dinamis */}
                   {(() => {
                     const targetY = 170 - ((parseInt(userData.calories) || 2000) / 3000) * 150;
@@ -378,12 +377,12 @@ export default function HomePage() {
                     if (!hasData) return null;
 
                     const points = weeklyData.map((val, idx) => {
-                       const x = (idx / 6) * 800; // 0 to 800
-                       const y = 170 - (val / 3000) * 150;
-                       const safeY = Math.max(20, Math.min(170, y));
-                       return `${x},${safeY}`;
+                      const x = (idx / 6) * 800; // 0 to 800
+                      const y = 170 - (val / 3000) * 150;
+                      const safeY = Math.max(20, Math.min(170, y));
+                      return `${x},${safeY}`;
                     }).join(" ");
-                    
+
                     return (
                       <>
                         <polyline points={points} fill="none" stroke="#1EAB57" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md" />
@@ -391,11 +390,11 @@ export default function HomePage() {
                           const x = (idx / 6) * 800;
                           const y = 170 - (val / 3000) * 150;
                           const safeY = Math.max(20, Math.min(170, y));
-                          
+
                           // Lingkaran akan terisi hijau jika ada isinya, atau putih jika itu hari ini tapi belum ada isinya
                           const currentDayIdx = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
                           const isToday = idx === currentDayIdx;
-                          
+
                           if (val > 0 || isToday) {
                             return (
                               <circle key={idx} cx={x} cy={safeY} r="6" fill={val > 0 ? "#1EAB57" : "#fff"} stroke={val > 0 ? "white" : "#1EAB57"} strokeWidth="2" />
@@ -411,19 +410,19 @@ export default function HomePage() {
                 {/* Empty State Teks Tengah Chart */}
                 {weeklyData.every(val => val === 0) && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                     <IconActivity className="w-8 h-8 text-slate-200 mb-2" />
-                     <p className="text-xs font-bold text-slate-400">Belum ada data kalori minggu ini.</p>
+                    <IconActivity className="w-8 h-8 text-slate-200 mb-2" />
+                    <p className="text-xs font-bold text-slate-400">Belum ada data kalori minggu ini.</p>
                   </div>
                 )}
 
                 <div className="absolute -bottom-6 left-0 w-full flex justify-between text-[10px] font-bold text-slate-400 px-1">
                   {['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'].map((hari, idx) => {
-                     const currentDayIdx = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
-                     return (
-                        <span key={hari} className={currentDayIdx === idx ? "text-[#1EAB57] font-black bg-emerald-50 px-2 py-0.5 rounded" : ""}>
-                          {hari}
-                        </span>
-                     )
+                    const currentDayIdx = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+                    return (
+                      <span key={hari} className={currentDayIdx === idx ? "text-[#1EAB57] font-black bg-emerald-50 px-2 py-0.5 rounded" : ""}>
+                        {hari}
+                      </span>
+                    )
                   })}
                 </div>
               </div>
@@ -509,7 +508,7 @@ export default function HomePage() {
         {/* KONDISI TUBUH & TOMBOL DETAIL NUTRISI */}
         <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-6 relative overflow-hidden hover:shadow-md transition-shadow duration-300 animate-fade-up delay-300">
           <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-emerald-100/50 rounded-full blur-[40px] pointer-events-none animate-pulse"></div>
-          
+
           <div className="flex-1 w-full grid grid-cols-2 md:grid-cols-4 gap-4 relative z-10">
             <div className="bg-slate-50 hover:bg-slate-100 transition-colors rounded-xl p-3 border border-slate-100/50 cursor-pointer text-center md:text-left">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 line-clamp-1">Target Tubuh</p>
@@ -528,8 +527,8 @@ export default function HomePage() {
               <p className={`text-[11px] font-black mt-1 line-clamp-1 ${userData.dislikedFoods === 'Tidak Ada' ? 'text-slate-600' : 'text-rose-500'}`}>{userData.dislikedFoods}</p>
             </div>
           </div>
-          
-          <button 
+
+          <button
             onClick={() => setShowDetailNutrisi(true)}
             className="w-full lg:w-auto shrink-0 px-6 py-4 bg-[#1A453A] hover:bg-[#13352C] text-white rounded-xl flex items-center justify-center gap-3 transition-all cursor-pointer shadow-[0_8px_20px_rgba(26,69,58,0.2)] hover:shadow-[0_12px_25px_rgba(26,69,58,0.3)] active:scale-95 group relative z-10"
           >
@@ -591,11 +590,11 @@ export default function HomePage() {
       {/* BAGIAN KANAN (RIGHT SIDEBAR) */}
       {/* ======================================= */}
       <div className="w-full xl:w-[320px] 2xl:w-[360px] flex flex-col gap-6 shrink-0 min-w-0">
-        
+
         {/* AI RINGKASAN HARIAN WIDGET */}
         <div className="bg-gradient-to-b from-[#1EAB57] to-[#127236] rounded-[2rem] p-6 shadow-[0_15px_30px_rgba(30,171,87,0.3)] text-white relative overflow-hidden transition-all duration-500 hover:shadow-[0_20px_40px_rgba(30,171,87,0.4)] hover:-translate-y-1 animate-fade-up delay-200">
           <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/20 rounded-full blur-[30px] pointer-events-none animate-spin-slow origin-bottom-left"></div>
-          
+
           <div className="flex items-center gap-3 mb-6 relative z-10">
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-md border border-white/30">
               <IconSparkles className="w-4 h-4 text-white animate-pulse" />
@@ -612,8 +611,8 @@ export default function HomePage() {
                 </p>
                 <p className="text-[10px] font-medium leading-relaxed text-white/90">
                   {todayTotals.calories === 0 ? "Belum ada kalori yang masuk. Jangan lupa sarapan agar punya energi beraktivitas." :
-                   todayTotals.calories >= targetCals ? `Kamu sudah mencapai atau melebih target kalori harianmu (${targetCals} Kkal). Jaga pola makanmu!` : 
-                   `Kamu sudah mengonsumsi ${todayTotals.calories} Kkal hari ini. Masih ada sisa ${Math.max(0, targetCals - todayTotals.calories)} Kkal lagi.`}
+                    todayTotals.calories >= targetCals ? `Kamu sudah mencapai atau melebih target kalori harianmu (${targetCals} Kkal). Jaga pola makanmu!` :
+                      `Kamu sudah mengonsumsi ${todayTotals.calories} Kkal hari ini. Masih ada sisa ${Math.max(0, targetCals - todayTotals.calories)} Kkal lagi.`}
                 </p>
               </div>
             </div>
@@ -644,13 +643,12 @@ export default function HomePage() {
           <div className="grid grid-cols-7 gap-y-2 gap-x-1 text-center items-center">
             {calendarInfo.emptyDays.map(i => <div key={`e-${i}`}></div>)}
             {calendarInfo.daysArray.map(d => (
-              <div 
-                key={d} 
-                className={`py-2 w-8 h-8 mx-auto flex items-center justify-center text-xs rounded-full cursor-pointer transition-colors ${
-                  d === calendarInfo.currentDay 
-                  ? "font-black text-white bg-[#1EAB57] shadow-[0_4px_10px_rgba(30,171,87,0.4)] scale-110" 
-                  : "font-medium text-slate-600 hover:bg-slate-100"
-                }`}
+              <div
+                key={d}
+                className={`py-2 w-8 h-8 mx-auto flex items-center justify-center text-xs rounded-full cursor-pointer transition-colors ${d === calendarInfo.currentDay
+                    ? "font-black text-white bg-[#1EAB57] shadow-[0_4px_10px_rgba(30,171,87,0.4)] scale-110"
+                    : "font-medium text-slate-600 hover:bg-slate-100"
+                  }`}
               >
                 {d}
               </div>
@@ -658,26 +656,60 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* TIMELINE / TODAY'S SCHEDULE (EMPTY STATE HANDLED) */}
+        {/* TIMELINE / TODAY'S SCHEDULE (DUMMY DATA INJECTED FOR PREVIEW) */}
         <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col hover:shadow-md transition-shadow duration-300 animate-fade-up delay-400">
           <div className="flex justify-between items-center mb-8">
             <h3 className="text-sm font-black text-slate-900">Jadwal Makan</h3>
             <Link href="/meal-plan" className="text-[10px] font-bold text-[#1EAB57] uppercase tracking-widest cursor-pointer hover:underline">Atur</Link>
           </div>
 
-          {mealSchedule.length === 0 ? (
-            <div className="py-6 flex flex-col items-center justify-center text-center">
-              <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 mb-2">
-                <IconCalendar className="w-5 h-5" />
+          <div className="flex flex-col relative before:absolute before:inset-0 before:ml-4 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
+            {/* Timeline Item 1 - Selesai */}
+            <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active mb-6">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full border-4 border-white bg-[#1EAB57] text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 ml-0 md:ml-0 absolute left-0 md:left-1/2 z-10">
+                <IconCheckCircle className="w-4 h-4" />
               </div>
-              <p className="text-xs font-black text-slate-500 mb-1">Belum Ada Jadwal</p>
-              <p className="text-[10px] font-medium text-slate-400 max-w-[200px]">Atur Rencana Menu untuk menjadwalkan makananmu hari ini.</p>
+              <div className="w-[calc(100%-3rem)] md:w-[calc(50%-2rem)] p-4 rounded-2xl bg-emerald-50/50 border border-emerald-100 shadow-sm ml-12 md:ml-0 flex flex-col">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-[10px] font-black text-[#1EAB57] uppercase tracking-widest bg-emerald-100 px-2 py-0.5 rounded">07:00</span>
+                  <IconDots className="w-4 h-4 text-emerald-400 cursor-pointer hover:text-[#1EAB57]" />
+                </div>
+                <h4 className="text-sm font-black text-slate-900 mb-1">Oatmeal Buah Naga</h4>
+                <p className="text-[11px] font-medium text-slate-500 mb-2">Sarapan • 320 Kkal</p>
+              </div>
             </div>
-          ) : (
-            <div className="flex flex-col">
-              {/* Timeline akan diloop disini nanti jika ada data */}
+
+            {/* Timeline Item 2 - Sekarang */}
+            <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active mb-6">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full border-4 border-white bg-blue-500 text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 ml-0 md:ml-0 absolute left-0 md:left-1/2 z-10">
+                <span className="flex h-3 w-3 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span></span>
+              </div>
+              <div className="w-[calc(100%-3rem)] md:w-[calc(50%-2rem)] p-4 rounded-2xl bg-white border border-blue-100 shadow-[0_8px_30px_rgba(59,130,246,0.12)] ml-12 md:ml-0 flex flex-col relative overflow-hidden group-hover:-translate-y-1 transition-transform">
+                <div className="absolute top-0 right-0 w-16 h-16 bg-blue-50 rounded-full blur-xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                <div className="flex justify-between items-center mb-2 relative z-10">
+                  <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-0.5 rounded">12:30</span>
+                  <IconDots className="w-4 h-4 text-blue-300 cursor-pointer hover:text-blue-500" />
+                </div>
+                <h4 className="text-sm font-black text-slate-900 mb-1 relative z-10">Dada Ayam Bakar</h4>
+                <p className="text-[11px] font-medium text-slate-500 mb-2 relative z-10">Makan Siang • 550 Kkal</p>
+              </div>
             </div>
-          )}
+
+            {/* Timeline Item 3 - Belum */}
+            <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full border-4 border-white bg-slate-200 text-slate-400 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 ml-0 md:ml-0 absolute left-0 md:left-1/2 z-10">
+                <IconCutlery className="w-3.5 h-3.5" />
+              </div>
+              <div className="w-[calc(100%-3rem)] md:w-[calc(50%-2rem)] p-4 rounded-2xl bg-white border border-slate-100 shadow-sm ml-12 md:ml-0 flex flex-col group-hover:border-slate-300 transition-colors">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded">19:00</span>
+                  <IconDots className="w-4 h-4 text-slate-300 cursor-pointer hover:text-slate-500" />
+                </div>
+                <h4 className="text-sm font-black text-slate-600 mb-1 group-hover:text-slate-900 transition-colors">Salad Tuna Zesty</h4>
+                <p className="text-[11px] font-medium text-slate-400 mb-2">Makan Malam • 400 Kkal</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* REKOMENDASI INSTAN WIDGET (SaaS AI Magic) */}
@@ -690,9 +722,9 @@ export default function HomePage() {
               <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-md border border-white/30 shrink-0">
                 <IconSparkles className="w-4 h-4 text-white animate-spin-slow" />
               </div>
-              <h3 className="text-sm font-black tracking-tight drop-shadow-sm leading-tight">Bingung Mau<br/>Makan Apa?</h3>
+              <h3 className="text-sm font-black tracking-tight drop-shadow-sm leading-tight">Bingung Mau<br />Makan Apa?</h3>
             </div>
-            
+
             <p className="text-[11px] font-medium text-indigo-100/90 leading-relaxed mb-5 drop-shadow-sm">
               Tingkatkan gizimu! GiziBot siap buatkan rekomendasi instan untuk penuhi target <strong className="text-white">{userData.calories} Kkal</strong> hari ini.
             </p>

@@ -235,7 +235,7 @@ export default function CTA() {
         </p>
         
         {/* Tombol CTA "Super Shine" */}
-        <a href="/auth/register" className="relative overflow-hidden inline-flex items-center justify-center gap-3 px-8 py-4 bg-[#1A453A] text-white font-bold text-sm md:text-base uppercase tracking-wider rounded-full transition-all duration-500 shadow-[0_10px_30px_rgba(26,69,58,0.3)] hover:shadow-[0_20px_50px_rgba(26,69,58,0.5)] hover:-translate-y-1 group/btn ring-4 ring-transparent hover:ring-[#1A453A]/20">
+        <a href="/register" className="relative overflow-hidden inline-flex items-center justify-center gap-3 px-8 py-4 bg-[#1A453A] text-white font-bold text-sm md:text-base uppercase tracking-wider rounded-full transition-all duration-500 shadow-[0_10px_30px_rgba(26,69,58,0.3)] hover:shadow-[0_20px_50px_rgba(26,69,58,0.5)] hover:-translate-y-1 group/btn ring-4 ring-transparent hover:ring-[#1A453A]/20">
           <div className="absolute inset-0 -translate-x-[150%] bg-gradient-to-r from-transparent via-white/30 to-transparent group-hover/btn:translate-x-[150%] transition-transform duration-1000 ease-in-out" />
           <span className="relative z-10">Mulai Gratis Sekarang</span>
           <span className="relative z-10 transition-transform duration-300 group-hover/btn:translate-x-1">

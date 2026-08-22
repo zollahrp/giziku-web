@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 
 // FIREBASE IMPORTS
 import { auth } from "@/lib/firebase";
@@ -105,12 +106,9 @@ export default function Navbar() {
             onClick={(e) => handleSmoothScroll(e, "/")}
             className="flex items-center gap-2 group z-20"
           >
-            <div className={`flex items-center justify-center text-white font-black bg-[#1A453A] rounded-full shadow-md transition-all duration-500 ease-out group-hover:scale-105 ${isScrolled ? "w-8 h-8 text-base" : "w-9 h-9 text-lg"}`}>
-              G
+            <div className={`relative transition-all duration-500 ease-out group-hover:scale-105 ${isScrolled ? "w-14 h-14" : "w-20 h-20"}`}>
+              <Image src="/image/logo.png" alt="Gizify Logo" fill className="object-contain" />
             </div>
-            <span className={`font-black tracking-tight text-gray-900 transition-all duration-500 ${isScrolled ? "text-lg" : "text-xl"}`}>
-              GIZIFY<span className="text-green-600">.AI</span>
-            </span>
           </Link>
 
           {/* TENGAH: Desktop Nav - Floating Island dengan efek Sliding Hover */}

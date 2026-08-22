@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
@@ -209,16 +210,15 @@ export default function DashboardLayout({
         {/* Header - LOGO GIZIFY */}
         <div className="pt-8 pb-4 px-8 flex flex-col gap-2 relative z-10">
           <Link href="/home" className="flex items-center gap-2 group w-fit cursor-pointer hover:scale-105 transition-transform duration-500 origin-left">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#1A453A] to-emerald-700 text-white flex items-center justify-center font-black text-xl shadow-[0_8px_15px_rgba(26,69,58,0.3)] transition-all duration-500 group-hover:rotate-12 group-hover:shadow-[0_12px_20px_rgba(26,69,58,0.4)] group-hover:rounded-xl">
-              G
+            <div className="relative w-14 h-14 transition-all duration-500 ease-out group-hover:scale-110">
+              <Image src="/image/logo.png" alt="Gizify Logo" fill className="object-contain" />
             </div>
-            <span className="text-2xl font-black tracking-tight text-slate-800 transition-colors duration-300">
-              GIZIFY<span className="text-emerald-500">.AI</span>
-            </span>
+            <div className="flex flex-col">
+              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em] mt-0.5 transition-colors duration-300 group-hover/sidebar:text-emerald-600/80">
+                Nutrition Assistant
+              </p>
+            </div>
           </Link>
-          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em] pl-1.5 mt-1 transition-colors duration-300 group-hover/sidebar:text-emerald-600/80">
-            Nutrition Assistant
-          </p>
         </div>
 
         {/* Navigation Area */}
@@ -311,12 +311,9 @@ export default function DashboardLayout({
         {/* Header Mobile (Hanya muncul di layar kecil) */}
         <header className="lg:hidden flex items-center justify-between bg-white/80 backdrop-blur-xl px-5 py-4 border-b border-slate-100 z-30 sticky top-0 shadow-sm">
           <Link href="/home" className="flex items-center gap-2 cursor-pointer active:scale-95 transition-transform">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#1A453A] to-emerald-700 text-white flex items-center justify-center font-black text-sm shadow-md">
-              G
+            <div className="relative w-10 h-10 transition-all duration-500 ease-out">
+              <Image src="/image/logo.png" alt="Gizify Logo" fill className="object-contain" />
             </div>
-            <span className="text-lg font-black tracking-tight text-slate-800">
-              GIZIFY<span className="text-emerald-500">.AI</span>
-            </span>
           </Link>
           <div 
             className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center font-bold text-sm shadow-md cursor-pointer overflow-hidden border-2 border-white active:scale-95 transition-transform" 

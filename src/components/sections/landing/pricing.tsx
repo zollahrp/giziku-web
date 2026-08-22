@@ -31,7 +31,7 @@ const pricingPlans = [
       { text: "Custom Meal Plan AI", included: true },
       { text: "GiziBot Assistant 24/7", included: true },
     ],
-    cta: "Upgrade ke Pro",
+    cta: "Semua fitur gratis dalam tahap uji coba",
     primary: true, 
     delay: "delay-0",
   },
@@ -46,7 +46,7 @@ const pricingPlans = [
       { text: "Laporan Gizi Anak & Dewasa", included: true },
       { text: "Priority CS Support", included: true },
     ],
-    cta: "Pilih Paket Family",
+    cta: "Semua fitur gratis dalam tahap uji coba",
     primary: false,
     delay: "delay-200", 
   },
@@ -96,61 +96,7 @@ export default function Pricing() {
 
   // 2. FUNGSI UNTUK MENGIRIM DATA KE API DAN MEMBUKA POPUP
   const handlePurchase = async (plan: any) => {
-    const price = isAnnual ? plan.price.tahunan : plan.price.bulanan;
-    
-    if (price === 0) {
-      alert(`Paket ${plan.name} berhasil diaktifkan secara gratis!`);
-      return;
-    }
-
-    setIsProcessing(true);
-
-    try {
-      // Panggil API Backend
-      const response = await fetch("/api/payment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          planName: plan.name,
-          price: price,
-          orderId: `GIZIFY-${Date.now()}` // Harus unik setiap transaksi
-        })
-      });
-
-      const data = await response.json();
-
-      if (data.token) {
-        // Panggil Popup Midtrans Snap Asli
-        (window as any).snap.pay(data.token, {
-          onSuccess: function (result: any) {
-            alert("Pembayaran sukses! Akun berhasil di-upgrade.");
-            console.log(result);
-            setIsProcessing(false);
-          },
-          onPending: function (result: any) {
-            alert("Menunggu pembayaran...");
-            console.log(result);
-            setIsProcessing(false);
-          },
-          onError: function (result: any) {
-            alert("Pembayaran gagal atau error!");
-            console.log(result);
-            setIsProcessing(false);
-          },
-          onClose: function () {
-            alert("Popup ditutup tanpa menyelesaikan pembayaran.");
-            setIsProcessing(false);
-          }
-        });
-      } else {
-        alert("Gagal mendapatkan token Midtrans.");
-        setIsProcessing(false);
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Terjadi kesalahan jaringan.");
-      setIsProcessing(false);
-    }
+    window.location.href = "https://gizify.vercel.app/register";
   };
 
   return (

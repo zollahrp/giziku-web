@@ -39,10 +39,15 @@ export default function MealPlanGeneratorPage() {
   useEffect(() => {
     const fixHeight = () => {
       if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const paddingBottom = rect.top > 0 ? rect.top : 24; 
-        const exactHeight = window.innerHeight - rect.top - paddingBottom;
-        containerRef.current.style.height = `${exactHeight}px`;
+        if (window.innerWidth < 768) {
+          // On mobile, use dvh to handle address bar gracefully, minus approx top nav height
+          containerRef.current.style.height = `calc(100dvh - 70px)`;
+        } else {
+          const rect = containerRef.current.getBoundingClientRect();
+          const paddingBottom = rect.top > 0 ? rect.top : 24; 
+          const exactHeight = window.innerHeight - rect.top - paddingBottom;
+          containerRef.current.style.height = `${exactHeight}px`;
+        }
       }
     };
     fixHeight();
@@ -443,18 +448,18 @@ export default function MealPlanGeneratorPage() {
   // KOMPONEN: PROGRESS BAR PREMIUM
   // ==========================================
   const renderProgressBar = (currentStep: number) => (
-    <div className="flex flex-col w-full mb-8 animate-fade-in-up">
-      <div className="flex items-center gap-4 mb-3">
-        <button onClick={prevStep} className="w-12 h-12 flex items-center justify-center rounded-full bg-white shadow-sm border border-slate-100 hover:bg-slate-50 transition-colors text-slate-500 hover:text-[#1EAB57] active:scale-95 cursor-pointer shrink-0">
-          <IconChevronLeft className="w-6 h-6" />
+    <div className="flex flex-col w-full mb-6 md:mb-8 animate-fade-in-up">
+      <div className="flex items-center gap-3 md:gap-4 mb-3">
+        <button onClick={prevStep} className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-white shadow-sm border border-slate-100 hover:bg-slate-50 transition-colors text-slate-500 hover:text-[#1EAB57] active:scale-95 cursor-pointer shrink-0">
+          <IconChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
         </button>
-        <div className="flex-1 flex gap-3">
-          <div className={`h-2 flex-1 rounded-full transition-all duration-700 ${currentStep >= 1 ? 'bg-[#1EAB57] shadow-[0_0_12px_rgba(30,171,87,0.4)]' : 'bg-slate-200'}`}></div>
-          <div className={`h-2 flex-1 rounded-full transition-all duration-700 ${currentStep >= 2 ? 'bg-[#1EAB57] shadow-[0_0_12px_rgba(30,171,87,0.4)]' : 'bg-slate-200'}`}></div>
-          <div className={`h-2 flex-1 rounded-full transition-all duration-700 ${currentStep >= 3 ? 'bg-[#1EAB57] shadow-[0_0_12px_rgba(30,171,87,0.4)]' : 'bg-slate-200'}`}></div>
+        <div className="flex-1 flex gap-2 md:gap-3">
+          <div className={`h-1.5 md:h-2 flex-1 rounded-full transition-all duration-700 ${currentStep >= 1 ? 'bg-[#1EAB57] shadow-[0_0_12px_rgba(30,171,87,0.4)]' : 'bg-slate-200'}`}></div>
+          <div className={`h-1.5 md:h-2 flex-1 rounded-full transition-all duration-700 ${currentStep >= 2 ? 'bg-[#1EAB57] shadow-[0_0_12px_rgba(30,171,87,0.4)]' : 'bg-slate-200'}`}></div>
+          <div className={`h-1.5 md:h-2 flex-1 rounded-full transition-all duration-700 ${currentStep >= 3 ? 'bg-[#1EAB57] shadow-[0_0_12px_rgba(30,171,87,0.4)]' : 'bg-slate-200'}`}></div>
         </div>
       </div>
-      <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-16">Tahap {currentStep} Dari 3</p>
+      <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest pl-14 md:pl-16">Tahap {currentStep} Dari 3</p>
     </div>
   );
 
@@ -545,8 +550,8 @@ export default function MealPlanGeneratorPage() {
             
             {/* LOADING SKELETON */}
             {isPageLoading ? (
-              <div className="flex flex-col h-full p-8 md:p-12 w-full">
-                <div className="flex flex-col w-full mb-8 animate-fade-in-up">
+              <div className="flex flex-col h-full p-5 md:p-12 w-full">
+                <div className="flex flex-col w-full mb-6 md:mb-8 animate-fade-in-up">
                   <div className="flex items-center gap-4 mb-3">
                     <div className="w-12 h-12 rounded-full animate-skeleton shrink-0"></div>
                     <div className="flex-1 flex gap-3">
@@ -572,75 +577,75 @@ export default function MealPlanGeneratorPage() {
                 
                 {/* WIZARD STEPS (1-3) */}
                 {step < 4 && (
-                  <div className="flex flex-col h-full p-8 md:p-12 w-full">
+                  <div className="flex flex-col h-full p-5 md:p-12 w-full">
                     {renderProgressBar(step)}
-                    <div className="flex-1 flex flex-col lg:flex-row items-center gap-10 lg:gap-16 mt-6">
+                    <div className="flex-1 flex flex-col lg:flex-row items-center gap-8 lg:gap-16 mt-4 md:mt-6">
                       
                       {step === 1 && (
                         <div className="flex-1 flex flex-col text-center lg:text-left items-center lg:items-start w-full">
-                          <div className="w-20 h-20 rounded-[1.5rem] bg-emerald-50 flex items-center justify-center text-[#1EAB57] mb-6 shadow-sm border border-emerald-100 animate-fade-in-right delay-100">
-                            <IconWallet className="w-10 h-10" />
+                          <div className="w-16 h-16 md:w-20 md:h-20 rounded-[1.25rem] md:rounded-[1.5rem] bg-emerald-50 flex items-center justify-center text-[#1EAB57] mb-4 md:mb-6 shadow-sm border border-emerald-100 animate-fade-in-right delay-100">
+                            <IconWallet className="w-8 h-8 md:w-10 md:h-10" />
                           </div>
-                          <h1 className="text-4xl md:text-5xl font-black text-[#0F172A] tracking-tight mb-4 leading-[1.1] animate-fade-in-right delay-150">Berapa budget<br className="hidden lg:block"/> makananmu?</h1>
-                          <p className="text-base font-medium text-slate-500 leading-relaxed max-w-md animate-fade-in-right delay-200">Kami akan membantu membuat rencana gizi harian terbaik yang ramah di kantong sesuai dengan budget yang kamu miliki.</p>
+                          <h1 className="text-3xl md:text-5xl font-black text-[#0F172A] tracking-tight mb-3 md:mb-4 leading-[1.1] animate-fade-in-right delay-150">Berapa budget<br className="hidden lg:block"/> makananmu?</h1>
+                          <p className="text-sm md:text-base font-medium text-slate-500 leading-relaxed max-w-md animate-fade-in-right delay-200">Kami akan membantu membuat rencana gizi harian terbaik yang ramah di kantong sesuai dengan budget yang kamu miliki.</p>
                         </div>
                       )}
 
                       {step === 2 && (
                         <div className="flex-1 flex flex-col text-center lg:text-left items-center lg:items-start w-full">
-                          <div className="w-20 h-20 rounded-[1.5rem] bg-emerald-50 flex items-center justify-center text-[#1EAB57] mb-6 shadow-sm border border-emerald-100 animate-fade-in-right delay-100">
-                            <IconCalendar className="w-10 h-10" />
+                          <div className="w-16 h-16 md:w-20 md:h-20 rounded-[1.25rem] md:rounded-[1.5rem] bg-emerald-50 flex items-center justify-center text-[#1EAB57] mb-4 md:mb-6 shadow-sm border border-emerald-100 animate-fade-in-right delay-100">
+                            <IconCalendar className="w-8 h-8 md:w-10 md:h-10" />
                           </div>
-                          <h1 className="text-4xl md:text-5xl font-black text-[#0F172A] tracking-tight mb-4 leading-[1.1] animate-fade-in-right delay-150">Untuk berapa hari?</h1>
-                          <p className="text-base font-medium text-slate-500 leading-relaxed max-w-md animate-fade-in-right delay-200">Tentukan durasi program dietmu agar AI kami dapat menghitung pembagian kalori dan budget harian secara presisi.</p>
+                          <h1 className="text-3xl md:text-5xl font-black text-[#0F172A] tracking-tight mb-3 md:mb-4 leading-[1.1] animate-fade-in-right delay-150">Untuk berapa hari?</h1>
+                          <p className="text-sm md:text-base font-medium text-slate-500 leading-relaxed max-w-md animate-fade-in-right delay-200">Tentukan durasi program dietmu agar AI kami dapat menghitung pembagian kalori dan budget harian secara presisi.</p>
                         </div>
                       )}
 
                       {step === 3 && (
                         <div className="flex-1 flex flex-col text-center lg:text-left items-center lg:items-start w-full">
-                          <div className="w-20 h-20 rounded-[1.5rem] bg-emerald-50 flex items-center justify-center text-[#1EAB57] mb-6 shadow-sm border border-emerald-100 animate-fade-in-right delay-100">
-                            <IconUsers className="w-10 h-10" />
+                          <div className="w-16 h-16 md:w-20 md:h-20 rounded-[1.25rem] md:rounded-[1.5rem] bg-emerald-50 flex items-center justify-center text-[#1EAB57] mb-4 md:mb-6 shadow-sm border border-emerald-100 animate-fade-in-right delay-100">
+                            <IconUsers className="w-8 h-8 md:w-10 md:h-10" />
                           </div>
-                          <h1 className="text-4xl md:text-5xl font-black text-[#0F172A] tracking-tight mb-4 leading-[1.1] animate-fade-in-right delay-150">Untuk berapa orang?</h1>
-                          <p className="text-base font-medium text-slate-500 leading-relaxed max-w-md animate-fade-in-right delay-200">Kami akan menyesuaikan porsi resep masakan agar gizi seluruh anggota keluarga atau temanmu tercukupi dengan pas.</p>
+                          <h1 className="text-3xl md:text-5xl font-black text-[#0F172A] tracking-tight mb-3 md:mb-4 leading-[1.1] animate-fade-in-right delay-150">Untuk berapa orang?</h1>
+                          <p className="text-sm md:text-base font-medium text-slate-500 leading-relaxed max-w-md animate-fade-in-right delay-200">Kami akan menyesuaikan porsi resep masakan agar gizi seluruh anggota keluarga atau temanmu tercukupi dengan pas.</p>
                         </div>
                       )}
 
-                      <div className="flex-1 w-full flex flex-col justify-center gap-6 animate-fade-in-up delay-250">
+                      <div className="flex-1 w-full flex flex-col justify-center gap-4 md:gap-6 animate-fade-in-up delay-250">
                         {step === 1 && (
-                          <div className="relative flex items-center bg-white border-2 border-slate-100 rounded-[2rem] p-6 md:p-8 focus-within:border-[#1EAB57] focus-within:ring-[6px] focus-within:ring-[#1EAB57]/10 transition-all shadow-sm">
-                            <span className="text-[#1EAB57] font-black text-3xl md:text-4xl mr-4 bg-emerald-50 px-4 py-2 rounded-2xl">Rp</span>
+                          <div className="relative flex items-center bg-white border-2 border-slate-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-8 focus-within:border-[#1EAB57] focus-within:ring-[6px] focus-within:ring-[#1EAB57]/10 transition-all shadow-sm">
+                            <span className="text-[#1EAB57] font-black text-2xl md:text-4xl mr-3 md:mr-4 bg-emerald-50 px-3 md:px-4 py-1.5 md:py-2 rounded-xl md:rounded-2xl shrink-0">Rp</span>
                             <input 
                               type="text" value={budget} onChange={handleBudgetChange}
-                              className="flex-1 bg-transparent text-4xl md:text-5xl font-black text-[#0F172A] focus:outline-none placeholder:text-slate-300 w-full"
+                              className="flex-1 bg-transparent text-3xl md:text-5xl font-black text-[#0F172A] focus:outline-none placeholder:text-slate-300 w-full min-w-0"
                               placeholder="0" autoFocus
                             />
                           </div>
                         )}
                         {step === 2 && (
-                          <div className="relative flex items-center bg-white border-2 border-slate-100 rounded-[2rem] p-6 md:p-8 focus-within:border-[#1EAB57] focus-within:ring-[6px] focus-within:ring-[#1EAB57]/10 transition-all shadow-sm">
-                            <div className="bg-emerald-50 p-3 rounded-2xl mr-5"><IconClock className="w-8 h-8 text-[#1EAB57]" /></div>
+                          <div className="relative flex items-center bg-white border-2 border-slate-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-8 focus-within:border-[#1EAB57] focus-within:ring-[6px] focus-within:ring-[#1EAB57]/10 transition-all shadow-sm">
+                            <div className="bg-emerald-50 p-2 md:p-3 rounded-xl md:rounded-2xl mr-3 md:mr-5 shrink-0"><IconClock className="w-6 h-6 md:w-8 md:h-8 text-[#1EAB57]" /></div>
                             {/* UPDATE PENTING DI SINI: MENGGUNAKAN FUNGSI PENAHAN */}
                             <input 
                               type="number" 
                               value={days} onChange={handleDaysChange}
-                              className="flex-1 bg-transparent text-4xl md:text-5xl font-black text-[#0F172A] focus:outline-none placeholder:text-slate-300 w-full"
+                              className="flex-1 bg-transparent text-3xl md:text-5xl font-black text-[#0F172A] focus:outline-none placeholder:text-slate-300 w-full min-w-0"
                               placeholder="1 - 7" autoFocus
                             />
-                            <span className="text-slate-400 font-black text-2xl uppercase tracking-widest ml-4">Hari</span>
+                            <span className="text-slate-400 font-black text-lg md:text-2xl uppercase tracking-widest ml-2 md:ml-4 shrink-0">Hari</span>
                           </div>
                         )}
                         {step === 3 && (
-                          <div className="relative flex items-center bg-white border-2 border-slate-100 rounded-[2rem] p-6 md:p-8 focus-within:border-[#1EAB57] focus-within:ring-[6px] focus-within:ring-[#1EAB57]/10 transition-all shadow-sm">
-                            <div className="bg-emerald-50 p-3 rounded-2xl mr-5"><IconUsers className="w-8 h-8 text-[#1EAB57]" /></div>
+                          <div className="relative flex items-center bg-white border-2 border-slate-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-8 focus-within:border-[#1EAB57] focus-within:ring-[6px] focus-within:ring-[#1EAB57]/10 transition-all shadow-sm">
+                            <div className="bg-emerald-50 p-2 md:p-3 rounded-xl md:rounded-2xl mr-3 md:mr-5 shrink-0"><IconUsers className="w-6 h-6 md:w-8 md:h-8 text-[#1EAB57]" /></div>
                             {/* UPDATE PENTING DI SINI: MENGGUNAKAN FUNGSI PENAHAN */}
                             <input 
                               type="number" 
                               value={people} onChange={handlePeopleChange}
-                              className="flex-1 bg-transparent text-4xl md:text-5xl font-black text-[#0F172A] focus:outline-none placeholder:text-slate-300 w-full"
+                              className="flex-1 bg-transparent text-3xl md:text-5xl font-black text-[#0F172A] focus:outline-none placeholder:text-slate-300 w-full min-w-0"
                               placeholder="1 - 10" autoFocus
                             />
-                            <span className="text-slate-400 font-black text-2xl uppercase tracking-widest ml-4">Orang</span>
+                            <span className="text-slate-400 font-black text-lg md:text-2xl uppercase tracking-widest ml-2 md:ml-4 shrink-0">Orang</span>
                           </div>
                         )}
                         <button onClick={nextStep} disabled={step === 1 ? !budget : step === 2 ? !days : !people} className="w-full bg-[#1EAB57] hover:bg-[#168E46] disabled:bg-slate-200 disabled:text-slate-400 text-white py-6 rounded-[2rem] text-sm md:text-base font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all active:scale-95 shadow-[0_15px_30px_-5px_rgba(30,171,87,0.4)] cursor-pointer group hover:-translate-y-1">

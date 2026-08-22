@@ -180,7 +180,7 @@ export default function CaraKerja() {
                  
                  {/* Visual 1 */}
                  <div className={getVisualClass(0)}>
-                   <img src="/cara-1.jpg" alt="Step 1: Jepret Makanan" className="w-full h-full object-cover opacity-90" />
+                   <img src="/image/feature-scanner.jpg" alt="Step 1: Jepret Makanan" className="w-full h-full object-cover opacity-90" />
                    {/* Overlay Gelap Tipis biar teks AI kebaca */}
                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
                    <div className="absolute inset-4 border-[1.5px] border-dashed border-white/60 rounded-2xl flex items-end justify-start p-3 md:p-4">
@@ -193,12 +193,12 @@ export default function CaraKerja() {
                  
                  {/* Visual 2 */}
                  <div className={getVisualClass(1)}>
-                   <img src="/cara-2.jpg" alt="Step 2: Cek Rapor" className="w-full h-full object-cover" />
+                   <img src="/image/track-nutrition.png" alt="Step 2: Cek Rapor" className="w-full h-full object-cover" />
                  </div>
                  
                  {/* Visual 3 */}
                  <div className={getVisualClass(2)}>
-                   <img src="/cara-3.jpg" alt="Step 3: Eksekusi Menu" className="w-full h-full object-cover" />
+                   <img src="/image/meal-plan.png" alt="Step 3: Eksekusi Menu" className="w-full h-full object-cover" />
                  </div>
 
                </div>
